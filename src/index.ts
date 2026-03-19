@@ -1,0 +1,11 @@
+// Root barrel export — re-exports everything
+export * from "./core/state/index"
+export * from "./core/view/index"
+export * from "./core/language/index"
+export * from "./core/commands/index"
+export * from "./core/search/index"
+export * from "./core/autocomplete/index"
+export * from "./core/lint/index"
+export * from "./parser/common/index"
+export * from "./parser/lr/index"
+export * from "./parser/highlight/index"

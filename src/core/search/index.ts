@@ -1,0 +1,5 @@
+export * from "./cursor"
+export * from "./goto-line"
+export * from "./regexp"
+export * from "./search"
+export * from "./selection-match"

@@ -1,0 +1,204 @@
+{
+  "name": "@duskmoon-dev/code-engine",
+  "version": "0.1.0",
+  "description": "Deep fork of CodeMirror 6 + Lezer ecosystem — single package, zero dependencies",
+  "type": "module",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/duskmoon-dev/code-engine.git"
+  },
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    },
+    "./state": {
+      "types": "./dist/core/state/index.d.ts",
+      "import": "./dist/core/state/index.js"
+    },
+    "./view": {
+      "types": "./dist/core/view/index.d.ts",
+      "import": "./dist/core/view/index.js"
+    },
+    "./language": {
+      "types": "./dist/core/language/index.d.ts",
+      "import": "./dist/core/language/index.js"
+    },
+    "./commands": {
+      "types": "./dist/core/commands/index.d.ts",
+      "import": "./dist/core/commands/index.js"
+    },
+    "./search": {
+      "types": "./dist/core/search/index.d.ts",
+      "import": "./dist/core/search/index.js"
+    },
+    "./autocomplete": {
+      "types": "./dist/core/autocomplete/index.d.ts",
+      "import": "./dist/core/autocomplete/index.js"
+    },
+    "./lint": {
+      "types": "./dist/core/lint/index.d.ts",
+      "import": "./dist/core/lint/index.js"
+    },
+    "./collab": {
+      "types": "./dist/core/collab/index.d.ts",
+      "import": "./dist/core/collab/index.js"
+    },
+    "./merge": {
+      "types": "./dist/core/merge/index.d.ts",
+      "import": "./dist/core/merge/index.js"
+    },
+    "./lsp": {
+      "types": "./dist/core/lsp/index.d.ts",
+      "import": "./dist/core/lsp/index.js"
+    },
+    "./language-data": {
+      "types": "./dist/core/language-data/index.d.ts",
+      "import": "./dist/core/language-data/index.js"
+    },
+    "./parser/common": {
+      "types": "./dist/parser/common/index.d.ts",
+      "import": "./dist/parser/common/index.js"
+    },
+    "./parser/lr": {
+      "types": "./dist/parser/lr/index.d.ts",
+      "import": "./dist/parser/lr/index.js"
+    },
+    "./parser/highlight": {
+      "types": "./dist/parser/highlight/index.d.ts",
+      "import": "./dist/parser/highlight/index.js"
+    },
+    "./lang/javascript": {
+      "types": "./dist/lang/javascript/index.d.ts",
+      "import": "./dist/lang/javascript/index.js"
+    },
+    "./lang/python": {
+      "types": "./dist/lang/python/index.d.ts",
+      "import": "./dist/lang/python/index.js"
+    },
+    "./lang/html": {
+      "types": "./dist/lang/html/index.d.ts",
+      "import": "./dist/lang/html/index.js"
+    },
+    "./lang/css": {
+      "types": "./dist/lang/css/index.d.ts",
+      "import": "./dist/lang/css/index.js"
+    },
+    "./lang/json": {
+      "types": "./dist/lang/json/index.d.ts",
+      "import": "./dist/lang/json/index.js"
+    },
+    "./lang/markdown": {
+      "types": "./dist/lang/markdown/index.d.ts",
+      "import": "./dist/lang/markdown/index.js"
+    },
+    "./lang/xml": {
+      "types": "./dist/lang/xml/index.d.ts",
+      "import": "./dist/lang/xml/index.js"
+    },
+    "./lang/sql": {
+      "types": "./dist/lang/sql/index.d.ts",
+      "import": "./dist/lang/sql/index.js"
+    },
+    "./lang/rust": {
+      "types": "./dist/lang/rust/index.d.ts",
+      "import": "./dist/lang/rust/index.js"
+    },
+    "./lang/go": {
+      "types": "./dist/lang/go/index.d.ts",
+      "import": "./dist/lang/go/index.js"
+    },
+    "./lang/java": {
+      "types": "./dist/lang/java/index.d.ts",
+      "import": "./dist/lang/java/index.js"
+    },
+    "./lang/cpp": {
+      "types": "./dist/lang/cpp/index.d.ts",
+      "import": "./dist/lang/cpp/index.js"
+    },
+    "./lang/php": {
+      "types": "./dist/lang/php/index.d.ts",
+      "import": "./dist/lang/php/index.js"
+    },
+    "./lang/sass": {
+      "types": "./dist/lang/sass/index.d.ts",
+      "import": "./dist/lang/sass/index.js"
+    },
+    "./lang/less": {
+      "types": "./dist/lang/less/index.d.ts",
+      "import": "./dist/lang/less/index.js"
+    },
+    "./lang/yaml": {
+      "types": "./dist/lang/yaml/index.d.ts",
+      "import": "./dist/lang/yaml/index.js"
+    },
+    "./lang/angular": {
+      "types": "./dist/lang/angular/index.d.ts",
+      "import": "./dist/lang/angular/index.js"
+    },
+    "./lang/vue": {
+      "types": "./dist/lang/vue/index.d.ts",
+      "import": "./dist/lang/vue/index.js"
+    },
+    "./lang/liquid": {
+      "types": "./dist/lang/liquid/index.d.ts",
+      "import": "./dist/lang/liquid/index.js"
+    },
+    "./lang/wast": {
+      "types": "./dist/lang/wast/index.d.ts",
+      "import": "./dist/lang/wast/index.js"
+    },
+    "./lang/jinja": {
+      "types": "./dist/lang/jinja/index.d.ts",
+      "import": "./dist/lang/jinja/index.js"
+    },
+    "./lang/lezer": {
+      "types": "./dist/lang/lezer/index.d.ts",
+      "import": "./dist/lang/lezer/index.js"
+    },
+    "./lang/legacy/*": {
+      "types": "./dist/lang/legacy/*.d.ts",
+      "import": "./dist/lang/legacy/*.js"
+    },
+    "./theme/one-dark": {
+      "types": "./dist/theme/one-dark.d.ts",
+      "import": "./dist/theme/one-dark.js"
+    },
+    "./theme/duskmoon": {
+      "types": "./dist/theme/duskmoon.d.ts",
+      "import": "./dist/theme/duskmoon.js"
+    },
+    "./setup": {
+      "types": "./dist/setup.d.ts",
+      "import": "./dist/setup.js"
+    },
+    "./keymaps/vim": {
+      "types": "./dist/keymaps/vim.d.ts",
+      "import": "./dist/keymaps/vim.js"
+    },
+    "./keymaps/emacs": {
+      "types": "./dist/keymaps/emacs.d.ts",
+      "import": "./dist/keymaps/emacs.js"
+    }
+  },
+  "files": [
+    "dist",
+    "LICENSE",
+    "README.md"
+  ],
+  "scripts": {
+    "build": "bun run scripts/build.ts",
+    "build:grammars": "bun run scripts/build-grammars.ts",
+    "test": "bun test",
+    "typecheck": "tsc --noEmit",
+    "sync": "bun run scripts/sync-upstream.ts",
+    "verify": "bun run scripts/verify-exports.ts",
+    "clean": "rm -rf dist"
+  },
+  "devDependencies": {
+    "@lezer/generator": "^1.8.0",
+    "typescript": "^5.6.0",
+    "@types/bun": "latest"
+  }
+}
