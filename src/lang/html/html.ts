@@ -6,8 +6,10 @@ import {EditorView} from "../../core/view"
 import {EditorSelection} from "../../core/state"
 import {LRLanguage, indentNodeProp, foldNodeProp, LanguageSupport, syntaxTree,
         bracketMatchingHandle} from "../../core/language"
-import {elementName, htmlCompletionSourceWith, TagSpec, eventAttributes} from "./complete"
-export {htmlCompletionSource, TagSpec, htmlCompletionSourceWith} from "./complete"
+import {elementName, htmlCompletionSourceWith, eventAttributes} from "./complete"
+import type {TagSpec} from "./complete"
+export {htmlCompletionSource, htmlCompletionSourceWith} from "./complete"
+export type {TagSpec} from "./complete"
 
 type NestedLang = {
   tag: string,

@@ -10,11 +10,12 @@ import {baseTheme} from "./theme"
 
 export {snippet, snippetCompletion, nextSnippetField, prevSnippetField,
         hasNextSnippetField, hasPrevSnippetField, clearSnippet, snippetKeymap} from "./snippet"
-export {Completion, CompletionInfo, CompletionSection, CompletionContext, CompletionSource, CompletionResult,
-        pickedCompletion, completeFromList, ifIn, ifNotIn, insertCompletionText} from "./completion"
+export {CompletionContext, pickedCompletion, completeFromList, ifIn, ifNotIn, insertCompletionText} from "./completion"
+export type {Completion, CompletionInfo, CompletionSection, CompletionSource, CompletionResult} from "./completion"
 export {startCompletion, closeCompletion, acceptCompletion, moveCompletionSelection} from "./view"
 export {completeAnyWord} from "./word"
-export {CloseBracketConfig, closeBrackets, closeBracketsKeymap, deleteBracketPair, insertBracket} from "./closebrackets"
+export {closeBrackets, closeBracketsKeymap, deleteBracketPair, insertBracket} from "./closebrackets"
+export type {CloseBracketConfig} from "./closebrackets"
 
 /// Returns an extension that enables autocompletion.
 export function autocompletion(config: CompletionConfig = {}): Extension {
@@ -49,7 +50,7 @@ export const completionKeymap: readonly KeyBinding[] = [
   {key: "Enter", run: acceptCompletion}
 ]
 
-const completionKeymapExt = Prec.highest(keymap.computeN([completionConfig], state => 
+const completionKeymapExt = Prec.highest(keymap.computeN([completionConfig], state =>
   state.facet(completionConfig).defaultKeymap ? [completionKeymap] : []))
 
 /// Get the current completion status. When completions are available,
