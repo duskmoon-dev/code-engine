@@ -4,8 +4,10 @@ import {indentNodeProp, foldNodeProp, LRLanguage, LanguageSupport, bracketMatchi
         syntaxTree} from "../../core/language"
 import {EditorSelection, Text} from "../../core/state"
 import {EditorView} from "../../core/view"
-import {ElementSpec, AttrSpec, completeFromSchema} from "./complete"
-export {ElementSpec, AttrSpec, completeFromSchema}
+import {completeFromSchema} from "./complete"
+import type {ElementSpec, AttrSpec} from "./complete"
+export type {ElementSpec, AttrSpec}
+export {completeFromSchema}
 
 /// A language provider based on the [Lezer XML
 /// parser](https://github.com/lezer-parser/xml), extended with
