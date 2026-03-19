@@ -48,6 +48,7 @@ import {
   lineNumberWidgetMarker,
   highlightWhitespace,
   highlightTrailingWhitespace,
+  shadowDOMTooltipSpace,
   __test,
 } from "../../src/core/view/index";
 
@@ -614,6 +615,26 @@ describe("core/view exports", () => {
       const a = new RectangleMarker("cls", 0, 0, null, 50);
       const b = new RectangleMarker("cls", 0, 0, null, 50);
       expect(a.eq(b)).toBe(true);
+    });
+  });
+
+  // [DUSKMOON] Shadow DOM improvements
+  describe("Shadow DOM improvements", () => {
+    describe("EditorView.shadowHostOverflow", () => {
+      it("is a facet on EditorView", () => {
+        expect(EditorView.shadowHostOverflow).toBeDefined();
+      });
+
+      it("can be used as an extension", () => {
+        const ext = EditorView.shadowHostOverflow.of(true);
+        expect(ext).toBeDefined();
+      });
+    });
+
+    describe("shadowDOMTooltipSpace", () => {
+      it("is exported as a function", () => {
+        expect(typeof shadowDOMTooltipSpace).toBe("function");
+      });
     });
   });
 });

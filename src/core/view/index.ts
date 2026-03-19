@@ -21,7 +21,7 @@ export type {LayerMarker} from "./layer"
 export {MatchDecorator} from "./matchdecorator"
 export {rectangularSelection, crosshairCursor} from "./rectangular-selection"
 export {showTooltip, tooltips, getTooltip, hoverTooltip, hasHoverTooltips,
-        closeHoverTooltips, repositionTooltips} from "./tooltip"
+        closeHoverTooltips, repositionTooltips, shadowDOMTooltipSpace} from "./tooltip"
 export type {Tooltip, TooltipView, HoverTooltipSource} from "./tooltip"
 export {showPanel, getPanel, panels} from "./panel"
 export type {PanelConstructor, Panel} from "./panel"

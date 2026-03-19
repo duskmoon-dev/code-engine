@@ -122,6 +122,26 @@ function windowSpace(view: EditorView) {
   return {top: 0, left: 0, bottom: docElt.clientHeight, right: docElt.clientWidth}
 }
 
+// [DUSKMOON] Shadow DOM-aware tooltip space — not in upstream
+// Constrains tooltip positioning to the Shadow DOM host's bounding rect
+// when the editor is inside a shadow root, preventing tooltips from
+// overflowing the host element's visible area.
+/// Returns a `tooltipSpace` function suitable for use with the
+/// [`tooltips`](#view.tooltips) configuration. When the editor lives
+/// inside a Shadow DOM, this constrains tooltip positioning to the
+/// host element's bounding rectangle, preventing overflow.
+export function shadowDOMTooltipSpace(view: EditorView): Rect {
+  let root = view.root as any
+  if (root.nodeType == 11) { // ShadowRoot
+    let host = (root as ShadowRoot).host
+    if (host) {
+      let hostRect = host.getBoundingClientRect()
+      return {top: hostRect.top, left: hostRect.left, bottom: hostRect.bottom, right: hostRect.right}
+    }
+  }
+  return windowSpace(view)
+}
+
 const tooltipConfig = Facet.define<Partial<TooltipConfig>, TooltipConfig>({
   combine: values => ({
     position: browser.ios ? "absolute" : values.find(conf => conf.position)?.position || "fixed",

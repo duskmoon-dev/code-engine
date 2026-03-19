@@ -41,6 +41,13 @@ export const nativeSelectionHidden = Facet.define<boolean, boolean>({
   combine: values => values.some(x => x)
 })
 
+// [DUSKMOON] Shadow DOM overflow control — not in upstream
+// When enabled, sets `overflow: visible` on the Shadow DOM host element
+// to prevent tooltip and autocomplete popups from being clipped.
+export const shadowHostOverflow = Facet.define<boolean, boolean>({
+  combine: values => values.some(x => x)
+})
+
 export const scrollHandler = Facet.define<(
   view: EditorView,
   range: SelectionRange,

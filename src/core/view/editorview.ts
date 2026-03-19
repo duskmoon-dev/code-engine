@@ -16,7 +16,7 @@ import {ViewUpdate, styleModule,
         viewPlugin, ViewPlugin, PluginValue, PluginInstance, decorations, outerDecorations, blockWrappers,
         atomicRanges, scrollMargins, MeasureRequest, editable, inputHandler, focusChangeEffect, perLineTextDirection,
         scrollIntoView, UpdateFlag, ScrollTarget, bidiIsolatedRanges, getIsolatedRanges, scrollHandler,
-        clipboardInputFilter, clipboardOutputFilter} from "./extension"
+        clipboardInputFilter, clipboardOutputFilter, shadowHostOverflow} from "./extension"
 import {theme, darkTheme, buildTheme, baseThemeID, baseLightID, baseDarkID, lightDarkIDs, baseTheme} from "./theme"
 import {DOMObserver} from "./domobserver"
 import {Attrs, updateAttrs, combineAttrs} from "./attributes"
@@ -213,6 +213,9 @@ export class EditorView {
     this.mountStyles()
     this.updateAttrs()
     this.updateState = UpdateState.Idle
+
+    // [DUSKMOON] Apply overflow: visible on Shadow DOM host when facet is enabled
+    this.applyShadowHostOverflow()
 
     this.requestMeasure()
     if (document.fonts?.ready) document.fonts.ready.then(() => {
@@ -865,6 +868,22 @@ export class EditorView {
       this._root = root
       this.observer.setWindow((root.nodeType == 9 ? root as Document : root.ownerDocument!).defaultView || window)
       this.mountStyles()
+      // [DUSKMOON] Re-apply shadow host overflow when root changes
+      this.applyShadowHostOverflow()
+    }
+  }
+
+  // [DUSKMOON] Apply overflow: visible on Shadow DOM host element — not in upstream
+  // This prevents tooltip and autocomplete popups from being clipped by the Shadow DOM boundary.
+  private applyShadowHostOverflow() {
+    if (this.state.facet(shadowHostOverflow)) {
+      let root = this._root as any
+      if (root.nodeType == 11) { // ShadowRoot
+        let host = (root as ShadowRoot).host as HTMLElement
+        if (host && host.style) {
+          host.style.overflow = "visible"
+        }
+      }
     }
   }
 
@@ -1161,6 +1180,13 @@ export class EditorView {
   /// An extension that enables line wrapping in the editor (by
   /// setting CSS `white-space` to `pre-wrap` in the content).
   static lineWrapping = EditorView.contentAttributes.of({"class": "cm-lineWrapping"})
+
+  // [DUSKMOON] Shadow DOM overflow control — not in upstream
+  /// Facet that controls whether `overflow: visible` is applied to
+  /// the Shadow DOM host element. When enabled, this prevents tooltips
+  /// and autocomplete popups from being clipped by the Shadow DOM boundary.
+  /// Only has an effect when the editor is mounted inside a Shadow DOM.
+  static shadowHostOverflow = shadowHostOverflow
 
   /// State effect used to include screen reader announcements in a
   /// transaction. These will be added to the DOM in a visually hidden
