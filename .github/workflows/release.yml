@@ -25,6 +25,8 @@ jobs:
       - uses: oven-sh/setup-bun@v2
         with:
           bun-version: latest
+          cache: true
+          cache-dependency-path: bun.lockb
 
       - run: bun install --frozen-lockfile
 
