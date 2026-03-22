@@ -1,5 +1,9 @@
 # @duskmoon-dev/code-engine
 
+[![CI](https://github.com/duskmoon-dev/code-engine/actions/workflows/ci.yml/badge.svg)](https://github.com/duskmoon-dev/code-engine/actions/workflows/ci.yml)
+[![Test](https://github.com/duskmoon-dev/code-engine/actions/workflows/test.yml/badge.svg)](https://github.com/duskmoon-dev/code-engine/actions/workflows/test.yml)
+[![npm version](https://img.shields.io/npm/v/@duskmoon-dev/code-engine)](https://www.npmjs.com/package/@duskmoon-dev/code-engine)
+
 Deep fork of CodeMirror 6 + Lezer ecosystem — single package, zero dependencies.
 
 Collapses 44 upstream repositories into one npm package with 42 tree-shakeable subpath exports.
