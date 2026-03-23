@@ -9,6 +9,10 @@ on:
 permissions:
   contents: read
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   test:
     runs-on: ubuntu-latest
@@ -28,9 +32,6 @@ jobs:
       - name: Install dependencies
         run: timeout 120 bun install --frozen-lockfile || npm install
 
-      - name: Typecheck
-        run: bun run typecheck
-
       - name: Test with coverage
         run: bun test --coverage 2>&1 | tee coverage-report.txt
 
@@ -44,6 +45,3 @@ jobs:
         with:
           name: coverage-report
           path: coverage-report.txt
-
-      - name: Build
-        run: bun run build

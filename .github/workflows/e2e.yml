@@ -1,0 +1,80 @@
+name: E2E
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "Release version to test (e.g. 1.2.3)"
+        required: true
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  e2e:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+          cache: true
+          cache-dependency-path: bun.lockb
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: Download release artifacts
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release download "v${{ inputs.version }}" --dir release-artifacts || echo "No artifacts attached to release"
+
+      - name: Install released package
+        run: |
+          mkdir e2e-test && cd e2e-test
+          npm init -y
+          npm install @duskmoon-dev/code-engine@${{ inputs.version }}
+
+      - name: Verify package exports
+        run: |
+          cd e2e-test
+          node -e "
+            import('@duskmoon-dev/code-engine').then(m => {
+              console.log('Root export OK — keys:', Object.keys(m).length);
+            }).catch(e => { console.error(e); process.exit(1); });
+          "
+
+      - name: Verify subpath exports
+        run: |
+          cd e2e-test
+          node -e "
+            const subpaths = [
+              '@duskmoon-dev/code-engine/state',
+              '@duskmoon-dev/code-engine/view',
+              '@duskmoon-dev/code-engine/language',
+              '@duskmoon-dev/code-engine/commands',
+              '@duskmoon-dev/code-engine/search',
+              '@duskmoon-dev/code-engine/autocomplete',
+              '@duskmoon-dev/code-engine/lint',
+              '@duskmoon-dev/code-engine/parser/common',
+              '@duskmoon-dev/code-engine/parser/lr',
+              '@duskmoon-dev/code-engine/parser/highlight',
+              '@duskmoon-dev/code-engine/lang/javascript',
+              '@duskmoon-dev/code-engine/lang/python',
+              '@duskmoon-dev/code-engine/lang/html',
+              '@duskmoon-dev/code-engine/lang/css',
+              '@duskmoon-dev/code-engine/lang/json',
+              '@duskmoon-dev/code-engine/lang/markdown',
+            ];
+            Promise.all(subpaths.map(async s => {
+              const m = await import(s);
+              console.log(s, '— OK, keys:', Object.keys(m).length);
+            })).catch(e => { console.error(e); process.exit(1); });
+          "
