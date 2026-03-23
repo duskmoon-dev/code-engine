@@ -9,7 +9,8 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ## Commands
 
 ```bash
-bun test                              # run all tests (37 test files)
+bun install                           # install dependencies (frozen lockfile in CI)
+bun test                              # run all tests (37 files, ~500 tests)
 bun test test/core/state.test.ts      # run a single test file
 bun test --coverage                   # run tests with coverage report
 bun run typecheck                     # tsc --noEmit
@@ -43,6 +44,8 @@ Each module has an `index.ts` barrel. The 42 subpath exports in `package.json` m
 
 - **Runtime**: Bun for building, testing, and running scripts
 - **Tests**: `bun:test` (`describe`/`it`/`expect`), import from `src/` not `dist/`. Tests mirror source structure in `test/`
+- **Path alias**: `tsconfig.json` maps `@duskmoon-dev/code-engine/*` → `./src/*` so source files can import each other using the package's public subpath specifiers
 - **Language pack pattern**: export a factory function (`javascript()`) + language instance (`javascriptLanguage`) + optional variants, completions, and snippets
 - **All external code is vendored** — never add runtime dependencies
 - **Upstream tracking**: UPSTREAM.md maps each module to its upstream repo + commit SHA. Mark any fork-specific changes with `// [DUSKMOON]` comments
+- **CI**: GitHub Actions runs typecheck + tests + build on every push/PR to `main`
