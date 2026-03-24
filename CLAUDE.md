@@ -42,7 +42,7 @@ Each module has an `index.ts` barrel. The 42 subpath exports in `package.json` m
 
 ## Conventions
 
-- **Runtime**: Bun for building, testing, and running scripts
+- **Runtime**: Bun for building, testing, and running scripts — always use `bun`/`bunx`/`bun add`/`bun publish`, never `npm`/`npx`/`npm install`/`npm publish`
 - **Tests**: `bun:test` (`describe`/`it`/`expect`), import from `src/` not `dist/`. Tests mirror source structure in `test/`
 - **Path alias**: `tsconfig.json` maps `@duskmoon-dev/code-engine/*` → `./src/*` so source files can import each other using the package's public subpath specifiers
 - **Language pack pattern**: export a factory function (`javascript()`) + language instance (`javascriptLanguage`) + optional variants, completions, and snippets
