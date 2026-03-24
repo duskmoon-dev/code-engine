@@ -13,6 +13,7 @@ on:
 
 permissions:
   contents: write
+  id-token: write
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
@@ -22,7 +23,7 @@ jobs:
   release:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
         with:
           ref: ${{ inputs.git_ref }}
 
@@ -32,13 +33,13 @@ jobs:
           cache: true
           cache-dependency-path: bun.lockb
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v6
         with:
           node-version: "22"
           registry-url: "https://registry.npmjs.org"
 
       - name: Install dependencies
-        run: timeout 120 bun install --frozen-lockfile || npm install
+        run: bun install --frozen-lockfile
 
       - name: Typecheck
         run: bun run typecheck
@@ -64,7 +65,7 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git add package.json
-          git commit -m "chore(release): v${{ inputs.version }}"
+          git diff --cached --quiet || git commit -m "chore(release): v${{ inputs.version }}"
           git tag "v${{ inputs.version }}"
           git push origin HEAD:${{ inputs.git_ref }} --tags
 

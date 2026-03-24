@@ -18,7 +18,7 @@ jobs:
   e2e:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
       - uses: oven-sh/setup-bun@v2
         with:
@@ -26,7 +26,7 @@ jobs:
           cache: true
           cache-dependency-path: bun.lockb
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v6
         with:
           node-version: "22"
 
@@ -39,8 +39,8 @@ jobs:
       - name: Install released package
         run: |
           mkdir e2e-test && cd e2e-test
-          npm init -y
-          npm install @duskmoon-dev/code-engine@${{ inputs.version }}
+          bun init -y
+          bun add @duskmoon-dev/code-engine@${{ inputs.version }}
 
       - name: Verify package exports
         run: |
