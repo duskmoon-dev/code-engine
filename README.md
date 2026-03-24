@@ -12,8 +12,6 @@ Collapses 44 upstream repositories into one npm package with 42 tree-shakeable s
 
 ```bash
 bun add @duskmoon-dev/code-engine
-# or
-npm install @duskmoon-dev/code-engine
 ```
 
 ## Quick Start
