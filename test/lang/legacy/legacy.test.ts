@@ -375,5 +375,44 @@ describe("Legacy language packs (StreamLanguage)", () => {
       });
       expect(state.doc.lines).toBe(3);
     });
+
+    it("ruby doc length is correct", () => {
+      const lang = StreamLanguage.define(ruby);
+      const doc = "def hello\n  puts 'Hello'\nend";
+      const state = EditorState.create({ doc, extensions: [new LanguageSupport(lang)] });
+      expect(state.doc.length).toBe(doc.length);
+    });
+
+    it("dockerfile doc mutation via transaction works", () => {
+      const lang = StreamLanguage.define(dockerfile);
+      let state = EditorState.create({ doc: "FROM ubuntu:latest", extensions: [new LanguageSupport(lang)] });
+      state = state.update({ changes: { from: 18, insert: "\nRUN apt-get update" } }).state;
+      expect(state.doc.lines).toBe(2);
+    });
+
+    it("swift doc line text is accessible", () => {
+      const lang = StreamLanguage.define(swift);
+      const state = EditorState.create({
+        doc: "import Foundation\nlet x = 42",
+        extensions: [new LanguageSupport(lang)],
+      });
+      expect(state.doc.line(1).text).toBe("import Foundation");
+    });
+
+    it("clojure doc replacement transaction works", () => {
+      const lang = StreamLanguage.define(clojure);
+      let state = EditorState.create({ doc: "(def x 1)", extensions: [new LanguageSupport(lang)] });
+      state = state.update({ changes: { from: 5, to: 6, insert: "y" } }).state;
+      expect(state.doc.toString()).toBe("(def y 1)");
+    });
+
+    it("shell doc line count is correct", () => {
+      const lang = StreamLanguage.define(shell);
+      const state = EditorState.create({
+        doc: "#!/bin/bash\necho 'hello'\nexit 0",
+        extensions: [new LanguageSupport(lang)],
+      });
+      expect(state.doc.lines).toBe(3);
+    });
   });
 });

@@ -279,4 +279,40 @@ describe("C++ language pack", () => {
     expect(tree.length).toBeGreaterThan(0);
     expect(tree.type.isTop).toBe(true);
   });
+
+  it("cpp() state doc line text is accessible", () => {
+    const state = EditorState.create({
+      doc: "#include <iostream>\nint main() { return 0; }",
+      extensions: [cpp()],
+    });
+    expect(state.doc.line(1).text).toBe("#include <iostream>");
+    expect(state.doc.line(2).text).toBe("int main() { return 0; }");
+  });
+
+  it("cpp() state allows multiple sequential transactions", () => {
+    let state = EditorState.create({ doc: "int x = 1;", extensions: [cpp()] });
+    state = state.update({ changes: { from: 10, insert: "\nint y = 2;" } }).state;
+    state = state.update({ changes: { from: state.doc.length, insert: "\nint z = 3;" } }).state;
+    expect(state.doc.lines).toBe(3);
+  });
+
+  it("cpp() state with unicode comment works", () => {
+    const doc = "// こんにちは\nint main() {}";
+    const state = EditorState.create({ doc, extensions: [cpp()] });
+    expect(state.doc.toString()).toBe(doc);
+  });
+
+  it("cpp() state replacement transaction works", () => {
+    let state = EditorState.create({ doc: "int x = 1;", extensions: [cpp()] });
+    state = state.update({ changes: { from: 4, to: 5, insert: "y" } }).state;
+    expect(state.doc.toString()).toBe("int y = 1;");
+  });
+
+  it("cpp() state line count is correct", () => {
+    const state = EditorState.create({
+      doc: "#include <a>\n#include <b>\n#include <c>",
+      extensions: [cpp()],
+    });
+    expect(state.doc.lines).toBe(3);
+  });
 });

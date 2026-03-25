@@ -277,4 +277,40 @@ describe("Java language pack", () => {
     expect(tree.length).toBeGreaterThan(0);
     expect(tree.type.isTop).toBe(true);
   });
+
+  it("java() state doc line text is accessible", () => {
+    const state = EditorState.create({
+      doc: "import java.util.List;\nimport java.util.ArrayList;",
+      extensions: [java()],
+    });
+    expect(state.doc.line(1).text).toBe("import java.util.List;");
+    expect(state.doc.line(2).text).toBe("import java.util.ArrayList;");
+  });
+
+  it("java() state allows multiple sequential transactions", () => {
+    let state = EditorState.create({ doc: "class A {}", extensions: [java()] });
+    state = state.update({ changes: { from: 10, insert: "\nclass B {}" } }).state;
+    state = state.update({ changes: { from: state.doc.length, insert: "\nclass C {}" } }).state;
+    expect(state.doc.lines).toBe(3);
+  });
+
+  it("java() state with unicode comment works", () => {
+    const doc = "// こんにちは\nclass Hello {}";
+    const state = EditorState.create({ doc, extensions: [java()] });
+    expect(state.doc.toString()).toBe(doc);
+  });
+
+  it("java() state replacement transaction works", () => {
+    let state = EditorState.create({ doc: "class Foo {}", extensions: [java()] });
+    state = state.update({ changes: { from: 6, to: 9, insert: "Bar" } }).state;
+    expect(state.doc.toString()).toBe("class Bar {}");
+  });
+
+  it("java() state line count is correct", () => {
+    const state = EditorState.create({
+      doc: "import java.util.List;\nimport java.util.Map;\nimport java.util.Set;",
+      extensions: [java()],
+    });
+    expect(state.doc.lines).toBe(3);
+  });
 });

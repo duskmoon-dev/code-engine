@@ -336,4 +336,40 @@ describe("collab extra behavioral tests", () => {
     state = state.update({ changes: { from: 2, insert: "c" } }).state;
     expect(getClientID(state)).toBe("stable");
   });
+
+  it("collab doc line count is correct", () => {
+    const state = EditorState.create({
+      doc: "line1\nline2\nline3",
+      extensions: [collab()],
+    });
+    expect(state.doc.lines).toBe(3);
+  });
+
+  it("collab doc line text is accessible", () => {
+    const state = EditorState.create({
+      doc: "hello\nworld",
+      extensions: [collab()],
+    });
+    expect(state.doc.line(1).text).toBe("hello");
+    expect(state.doc.line(2).text).toBe("world");
+  });
+
+  it("collab doc length invariant holds", () => {
+    const doc = "abc def ghi";
+    const state = EditorState.create({ doc, extensions: [collab()] });
+    expect(state.doc.length).toBe(doc.length);
+  });
+
+  it("collab replacement transaction produces sendable update", () => {
+    let state = EditorState.create({ doc: "foo bar", extensions: [collab()] });
+    state = state.update({ changes: { from: 4, to: 7, insert: "baz" } }).state;
+    expect(state.doc.toString()).toBe("foo baz");
+    expect(sendableUpdates(state).length).toBeGreaterThan(0);
+  });
+
+  it("collab with unicode content works", () => {
+    const doc = "こんにちは世界";
+    const state = EditorState.create({ doc, extensions: [collab()] });
+    expect(state.doc.toString()).toBe(doc);
+  });
 });

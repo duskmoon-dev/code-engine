@@ -381,5 +381,44 @@ describe("Legacy language packs (batch 5)", () => {
       });
       expect(state.doc.lines).toBe(4);
     });
+
+    it("elm doc length is correct", () => {
+      const lang = StreamLanguage.define(elm);
+      const doc = "module Main exposing (main)\nmain = text \"Hello\"";
+      const state = EditorState.create({ doc, extensions: [new LanguageSupport(lang)] });
+      expect(state.doc.length).toBe(doc.length);
+    });
+
+    it("crystal doc mutation via transaction works", () => {
+      const lang = StreamLanguage.define(crystal);
+      let state = EditorState.create({ doc: "def hello", extensions: [new LanguageSupport(lang)] });
+      state = state.update({ changes: { from: 9, insert: "\n  puts \"Hello\"\nend" } }).state;
+      expect(state.doc.lines).toBe(3);
+    });
+
+    it("cypher doc line text is accessible", () => {
+      const lang = StreamLanguage.define(cypher);
+      const state = EditorState.create({
+        doc: "MATCH (n:Person)\nRETURN n.name",
+        extensions: [new LanguageSupport(lang)],
+      });
+      expect(state.doc.line(1).text).toBe("MATCH (n:Person)");
+    });
+
+    it("http doc replacement transaction works", () => {
+      const lang = StreamLanguage.define(http);
+      let state = EditorState.create({ doc: "GET /api/v1 HTTP/1.1", extensions: [new LanguageSupport(lang)] });
+      state = state.update({ changes: { from: 4, to: 11, insert: "/api/v2" } }).state;
+      expect(state.doc.toString()).toBe("GET /api/v2 HTTP/1.1");
+    });
+
+    it("mathematica doc line count is correct", () => {
+      const lang = StreamLanguage.define(mathematica);
+      const state = EditorState.create({
+        doc: "f[x_] := x^2\ng[x_] := x^3\nh[x_] := f[x] + g[x]",
+        extensions: [new LanguageSupport(lang)],
+      });
+      expect(state.doc.lines).toBe(3);
+    });
   });
 });

@@ -297,5 +297,44 @@ describe("Setup extensions", () => {
       expect(state.doc.toString()).toBe("xyz");
       expect(state.doc.length).toBe(3);
     });
+
+    it("basicSetup state doc line text is accessible", () => {
+      const state = EditorState.create({
+        doc: "first line\nsecond line\nthird line",
+        extensions: basicSetup,
+      });
+      expect(state.doc.line(1).text).toBe("first line");
+      expect(state.doc.line(3).text).toBe("third line");
+    });
+
+    it("basicSetup state deletion transaction works", () => {
+      let state = EditorState.create({ doc: "hello\nworld", extensions: basicSetup });
+      state = state.update({ changes: { from: 5, to: 11 } }).state;
+      expect(state.doc.toString()).toBe("hello");
+    });
+
+    it("minimalSetup state line count is correct", () => {
+      const state = EditorState.create({
+        doc: "a\nb\nc\nd\ne",
+        extensions: minimalSetup,
+      });
+      expect(state.doc.lines).toBe(5);
+    });
+
+    it("basicSetup with unicode content works", () => {
+      const doc = "// こんにちは\nconst x = 1;";
+      const state = EditorState.create({ doc, extensions: basicSetup });
+      expect(state.doc.toString()).toBe(doc);
+    });
+
+    it("minimalSetup state selection within single line", () => {
+      const state = EditorState.create({
+        doc: "hello world",
+        selection: { anchor: 6, head: 11 },
+        extensions: minimalSetup,
+      });
+      expect(state.selection.main.from).toBe(6);
+      expect(state.selection.main.to).toBe(11);
+    });
   });
 });
