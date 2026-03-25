@@ -117,6 +117,13 @@ const categories = categoryOrder
   table {
     width: 100%;
     border-collapse: collapse;
+    table-layout: fixed;
+  }
+
+  td:first-child, th:first-child {
+    width: 55%;
+    overflow-wrap: break-word;
+    word-break: break-all;
   }
   th {
     padding: 0.4rem 0.6rem;
