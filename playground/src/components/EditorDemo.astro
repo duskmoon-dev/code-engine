@@ -57,6 +57,7 @@
       <span id="font-size-display" class="font-size-display">14</span>
       <button id="btn-font-increase" class="toolbar-btn" aria-label="Increase font size">A+</button>
     </div>
+    <button id="btn-fullscreen" class="toolbar-btn" aria-label="Toggle fullscreen">Fullscreen</button>
     <button id="btn-download" class="toolbar-btn" aria-label="Download editor content">Download</button>
     <button id="btn-share" class="toolbar-btn" aria-label="Copy share link">Share</button>
     <button id="btn-reset" class="toolbar-btn" aria-label="Reset to defaults">Reset</button>
@@ -674,6 +675,20 @@ BinaryExpression { expression !add "+" expression }
     URL.revokeObjectURL(url)
   })
 
+  // Fullscreen toggle
+  const fullscreenBtn = document.getElementById('btn-fullscreen')!
+  const editorDemo = document.querySelector('.editor-demo') as HTMLElement
+  fullscreenBtn.addEventListener('click', () => {
+    if (document.fullscreenElement) {
+      document.exitFullscreen()
+    } else {
+      editorDemo.requestFullscreen()
+    }
+  })
+  document.addEventListener('fullscreenchange', () => {
+    fullscreenBtn.textContent = document.fullscreenElement ? 'Exit' : 'Fullscreen'
+  })
+
   // Reset button — restore all defaults
   const resetBtn = document.getElementById('btn-reset')!
   resetBtn.addEventListener('click', () => {
@@ -898,6 +913,11 @@ BinaryExpression { expression !add "+" expression }
       grid-column: 1 / -1;
       border-radius: 0 0 var(--radius) var(--radius);
     }
+  }
+
+  .editor-demo:fullscreen {
+    background: var(--color-bg);
+    height: 100vh;
   }
 
   .noscript-msg {
