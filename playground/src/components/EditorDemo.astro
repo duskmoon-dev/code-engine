@@ -28,6 +28,10 @@
       Word Wrap
     </label>
     <label class="checkbox">
+      <input type="checkbox" id="ext-readonly" aria-label="Toggle read-only mode">
+      Read-only
+    </label>
+    <label class="checkbox">
       <input type="checkbox" id="ext-whitespace" aria-label="Toggle whitespace visibility">
       Whitespace
     </label>
@@ -359,6 +363,7 @@ BinaryExpression { expression !add "+" expression }
   const lineNumbersCheckbox = document.getElementById('ext-linenumbers') as HTMLInputElement
   const autocompleteCheckbox = document.getElementById('ext-autocomplete') as HTMLInputElement
   const wordWrapCheckbox = document.getElementById('ext-wordwrap') as HTMLInputElement
+  const readOnlyCheckbox = document.getElementById('ext-readonly') as HTMLInputElement
   const whitespaceCheckbox = document.getElementById('ext-whitespace') as HTMLInputElement
   const vimCheckbox = document.getElementById('ext-vim') as HTMLInputElement
   const emacsCheckbox = document.getElementById('ext-emacs') as HTMLInputElement
@@ -431,6 +436,7 @@ BinaryExpression { expression !add "+" expression }
     if (lineNumbersCheckbox.checked) exts.push(lineNumbersExt())
     if (autocompleteCheckbox.checked) exts.push(autocompletion())
     if (wordWrapCheckbox.checked) exts.push(EditorView.lineWrapping)
+    if (readOnlyCheckbox.checked) exts.push(EditorState.readOnly.of(true))
     if (whitespaceCheckbox.checked) exts.push(highlightWhitespace())
     if (vimCheckbox.checked) exts.push(vim())
     if (emacsCheckbox.checked) exts.push(emacs())
@@ -512,6 +518,7 @@ BinaryExpression { expression !add "+" expression }
   lineNumbersCheckbox.addEventListener('change', reconfigureExtensions)
   autocompleteCheckbox.addEventListener('change', reconfigureExtensions)
   wordWrapCheckbox.addEventListener('change', reconfigureExtensions)
+  readOnlyCheckbox.addEventListener('change', reconfigureExtensions)
   whitespaceCheckbox.addEventListener('change', reconfigureExtensions)
 
   vimCheckbox.addEventListener('change', () => {
@@ -532,6 +539,7 @@ BinaryExpression { expression !add "+" expression }
     if (!lineNumbersCheckbox.checked) params.set('ln', '0')
     if (!autocompleteCheckbox.checked) params.set('ac', '0')
     if (wordWrapCheckbox.checked) params.set('wrap', '1')
+    if (readOnlyCheckbox.checked) params.set('ro', '1')
     if (whitespaceCheckbox.checked) params.set('ws', '1')
     if (vimCheckbox.checked) params.set('vim', '1')
     if (emacsCheckbox.checked) params.set('emacs', '1')
@@ -553,6 +561,7 @@ BinaryExpression { expression !add "+" expression }
     if (params.get('ln') === '0') lineNumbersCheckbox.checked = false
     if (params.get('ac') === '0') autocompleteCheckbox.checked = false
     if (params.get('wrap') === '1') wordWrapCheckbox.checked = true
+    if (params.get('ro') === '1') readOnlyCheckbox.checked = true
     if (params.get('ws') === '1') whitespaceCheckbox.checked = true
     if (params.get('vim') === '1') { vimCheckbox.checked = true; emacsCheckbox.checked = false }
     if (params.get('emacs') === '1') { emacsCheckbox.checked = true; vimCheckbox.checked = false }
@@ -569,6 +578,7 @@ BinaryExpression { expression !add "+" expression }
   lineNumbersCheckbox.addEventListener('change', updateHash)
   autocompleteCheckbox.addEventListener('change', updateHash)
   wordWrapCheckbox.addEventListener('change', updateHash)
+  readOnlyCheckbox.addEventListener('change', updateHash)
   whitespaceCheckbox.addEventListener('change', updateHash)
   vimCheckbox.addEventListener('change', updateHash)
   emacsCheckbox.addEventListener('change', updateHash)
@@ -623,6 +633,7 @@ BinaryExpression { expression !add "+" expression }
     lineNumbersCheckbox.checked = true
     autocompleteCheckbox.checked = true
     wordWrapCheckbox.checked = false
+    readOnlyCheckbox.checked = false
     whitespaceCheckbox.checked = false
     vimCheckbox.checked = false
     emacsCheckbox.checked = false
