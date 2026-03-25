@@ -1,14 +1,37 @@
 ---
 import changelog from '../../../CHANGELOG.md?raw'
 
+// Basic markdown-to-HTML conversion at build time (no dependency needed)
+function renderMarkdown(md: string): string {
+  return md
+    // headings
+    .replace(/^### (.+)$/gm, '<h4>$1</h4>')
+    .replace(/^## (.+)$/gm, '<h3>$1</h3>')
+    .replace(/^# (.+)$/gm, '<h2>$1</h2>')
+    // bold & italic
+    .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+    .replace(/\*(.+?)\*/g, '<em>$1</em>')
+    // inline code
+    .replace(/`([^`]+)`/g, '<code>$1</code>')
+    // unordered lists
+    .replace(/^- (.+)$/gm, '<li>$1</li>')
+    // wrap consecutive <li> in <ul>
+    .replace(/((?:<li>.*<\/li>\n?)+)/g, '<ul>$1</ul>')
+    // paragraphs: blank-line separated blocks that aren't already HTML
+    .replace(/^(?!<[a-z])([\s\S]+?)(?=\n\n|$)/gm, (match) => {
+      const trimmed = match.trim()
+      if (!trimmed || trimmed.startsWith('<')) return match
+      return `<p>${trimmed}</p>`
+    })
+}
+
 const sections = changelog.split('\n## ').map((s, i) => i === 0 ? s : '## ' + s)
+const rendered = sections.map(s => renderMarkdown(s))
 ---
 
 <div class="changelog">
-  {sections.map(section => (
-    <section>
-      <pre set:html={section} />
-    </section>
+  {rendered.map(html => (
+    <section set:html={html} />
   ))}
 </div>
 
@@ -16,11 +39,38 @@ const sections = changelog.split('\n## ').map((s, i) => i === 0 ? s : '## ' + s)
   .changelog {
     margin-top: var(--space-md);
   }
-  section {
-    margin-bottom: var(--space-md);
+  .changelog :global(section) {
+    margin-bottom: var(--space-lg);
   }
-  pre {
-    white-space: pre-wrap;
-    word-wrap: break-word;
+  .changelog :global(h2) {
+    font-size: 1.5rem;
+    margin-bottom: var(--space-sm);
+    border-bottom: 1px solid var(--color-border);
+    padding-bottom: var(--space-sm);
+  }
+  .changelog :global(h3) {
+    font-size: 1.2rem;
+    margin: var(--space-md) 0 var(--space-sm);
+  }
+  .changelog :global(h4) {
+    font-size: 1rem;
+    margin: var(--space-sm) 0;
+  }
+  .changelog :global(ul) {
+    padding-left: 1.5rem;
+    margin: var(--space-sm) 0;
+  }
+  .changelog :global(li) {
+    margin-bottom: 0.25rem;
+  }
+  .changelog :global(code) {
+    background: var(--color-surface);
+    padding: 0.15rem 0.35rem;
+    border-radius: 3px;
+    font-family: var(--font-mono);
+    font-size: 0.9em;
+  }
+  .changelog :global(p) {
+    margin: var(--space-sm) 0;
   }
 </style>

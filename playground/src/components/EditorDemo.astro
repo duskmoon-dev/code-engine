@@ -2,36 +2,36 @@
 ---
 
 <div class="editor-demo">
-  <div class="controls">
-    <label>
+  <div class="controls" role="toolbar" aria-label="Editor settings">
+    <label for="lang-select">
       Language
-      <select id="lang-select"></select>
+      <select id="lang-select" aria-label="Select programming language"></select>
     </label>
-    <label>
+    <label for="theme-select">
       Theme
-      <select id="theme-select">
+      <select id="theme-select" aria-label="Select editor theme">
         <option value="one-dark">One Dark</option>
         <option value="duskmoon">DuskMoon</option>
       </select>
     </label>
     <label class="checkbox">
-      <input type="checkbox" id="ext-linenumbers" checked>
+      <input type="checkbox" id="ext-linenumbers" checked aria-label="Toggle line numbers">
       Line Numbers
     </label>
     <label class="checkbox">
-      <input type="checkbox" id="ext-autocomplete" checked>
+      <input type="checkbox" id="ext-autocomplete" checked aria-label="Toggle autocomplete">
       Autocomplete
     </label>
     <label class="checkbox">
-      <input type="checkbox" id="ext-vim">
+      <input type="checkbox" id="ext-vim" aria-label="Toggle Vim keymap">
       Vim
     </label>
     <label class="checkbox">
-      <input type="checkbox" id="ext-emacs">
+      <input type="checkbox" id="ext-emacs" aria-label="Toggle Emacs keymap">
       Emacs
     </label>
   </div>
-  <div id="editor"></div>
+  <div id="editor" role="region" aria-label="Code editor"></div>
 </div>
 
 <script>
@@ -45,55 +45,39 @@
   import { emacs } from '@duskmoon-dev/code-engine/keymaps/emacs'
 
   import { javascript } from '@duskmoon-dev/code-engine/lang/javascript'
-  import { python } from '@duskmoon-dev/code-engine/lang/python'
-  import { html } from '@duskmoon-dev/code-engine/lang/html'
-  import { css } from '@duskmoon-dev/code-engine/lang/css'
-  import { json } from '@duskmoon-dev/code-engine/lang/json'
-  import { markdown } from '@duskmoon-dev/code-engine/lang/markdown'
-  import { xml } from '@duskmoon-dev/code-engine/lang/xml'
-  import { sql } from '@duskmoon-dev/code-engine/lang/sql'
-  import { rust } from '@duskmoon-dev/code-engine/lang/rust'
-  import { go } from '@duskmoon-dev/code-engine/lang/go'
-  import { java } from '@duskmoon-dev/code-engine/lang/java'
-  import { cpp } from '@duskmoon-dev/code-engine/lang/cpp'
-  import { php } from '@duskmoon-dev/code-engine/lang/php'
-  import { sass } from '@duskmoon-dev/code-engine/lang/sass'
-  import { less } from '@duskmoon-dev/code-engine/lang/less'
-  import { yaml } from '@duskmoon-dev/code-engine/lang/yaml'
-  import { angular } from '@duskmoon-dev/code-engine/lang/angular'
-  import { vue } from '@duskmoon-dev/code-engine/lang/vue'
-  import { liquid } from '@duskmoon-dev/code-engine/lang/liquid'
-  import { wast } from '@duskmoon-dev/code-engine/lang/wast'
-  import { jinja } from '@duskmoon-dev/code-engine/lang/jinja'
-  import { lezer } from '@duskmoon-dev/code-engine/lang/lezer'
 
   import type { LanguageSupport } from '@duskmoon-dev/code-engine/language'
 
-  const languageMap: Record<string, () => LanguageSupport> = {
-    javascript: () => javascript(),
-    typescript: () => javascript({ typescript: true }),
-    python: () => python(),
-    html: () => html(),
-    css: () => css(),
-    json: () => json(),
-    markdown: () => markdown(),
-    xml: () => xml(),
-    sql: () => sql(),
-    rust: () => rust(),
-    go: () => go(),
-    java: () => java(),
-    cpp: () => cpp(),
-    php: () => php(),
-    sass: () => sass(),
-    less: () => less(),
-    yaml: () => yaml(),
-    angular: () => angular(),
-    vue: () => vue(),
-    liquid: () => liquid(),
-    wast: () => wast(),
-    jinja: () => jinja(),
-    lezer: () => lezer(),
+  // Dynamic loaders — only the initial language (javascript) is eagerly imported.
+  // All others are loaded on demand to reduce the initial bundle size.
+  const languageLoaders: Record<string, () => Promise<() => LanguageSupport>> = {
+    javascript: async () => () => javascript(),
+    typescript: async () => () => javascript({ typescript: true }),
+    python: async () => { const m = await import('@duskmoon-dev/code-engine/lang/python'); return () => m.python() },
+    html: async () => { const m = await import('@duskmoon-dev/code-engine/lang/html'); return () => m.html() },
+    css: async () => { const m = await import('@duskmoon-dev/code-engine/lang/css'); return () => m.css() },
+    json: async () => { const m = await import('@duskmoon-dev/code-engine/lang/json'); return () => m.json() },
+    markdown: async () => { const m = await import('@duskmoon-dev/code-engine/lang/markdown'); return () => m.markdown() },
+    xml: async () => { const m = await import('@duskmoon-dev/code-engine/lang/xml'); return () => m.xml() },
+    sql: async () => { const m = await import('@duskmoon-dev/code-engine/lang/sql'); return () => m.sql() },
+    rust: async () => { const m = await import('@duskmoon-dev/code-engine/lang/rust'); return () => m.rust() },
+    go: async () => { const m = await import('@duskmoon-dev/code-engine/lang/go'); return () => m.go() },
+    java: async () => { const m = await import('@duskmoon-dev/code-engine/lang/java'); return () => m.java() },
+    cpp: async () => { const m = await import('@duskmoon-dev/code-engine/lang/cpp'); return () => m.cpp() },
+    php: async () => { const m = await import('@duskmoon-dev/code-engine/lang/php'); return () => m.php() },
+    sass: async () => { const m = await import('@duskmoon-dev/code-engine/lang/sass'); return () => m.sass() },
+    less: async () => { const m = await import('@duskmoon-dev/code-engine/lang/less'); return () => m.less() },
+    yaml: async () => { const m = await import('@duskmoon-dev/code-engine/lang/yaml'); return () => m.yaml() },
+    angular: async () => { const m = await import('@duskmoon-dev/code-engine/lang/angular'); return () => m.angular() },
+    vue: async () => { const m = await import('@duskmoon-dev/code-engine/lang/vue'); return () => m.vue() },
+    liquid: async () => { const m = await import('@duskmoon-dev/code-engine/lang/liquid'); return () => m.liquid() },
+    wast: async () => { const m = await import('@duskmoon-dev/code-engine/lang/wast'); return () => m.wast() },
+    jinja: async () => { const m = await import('@duskmoon-dev/code-engine/lang/jinja'); return () => m.jinja() },
+    lezer: async () => { const m = await import('@duskmoon-dev/code-engine/lang/lezer'); return () => m.lezer() },
   }
+
+  // Cache resolved factories so each language is loaded only once
+  const resolvedFactories = new Map<string, () => LanguageSupport>()
 
   const sampleCode: Record<string, string> = {
     javascript: `function fibonacci(n) {
@@ -345,7 +329,7 @@ BinaryExpression { expression !add "+" expression }
   const emacsCheckbox = document.getElementById('ext-emacs') as HTMLInputElement
 
   // Populate language dropdown
-  for (const key of Object.keys(languageMap)) {
+  for (const key of Object.keys(languageLoaders)) {
     const opt = document.createElement('option')
     opt.value = key
     opt.textContent = key
@@ -374,12 +358,21 @@ BinaryExpression { expression !add "+" expression }
     parent: document.getElementById('editor')!,
   })
 
-  function switchLanguage(key: string) {
-    const langFactory = languageMap[key]
-    if (!langFactory) return
+  async function loadLanguage(key: string): Promise<() => LanguageSupport> {
+    const cached = resolvedFactories.get(key)
+    if (cached) return cached
+    const loader = languageLoaders[key]
+    if (!loader) throw new Error(`Unknown language: ${key}`)
+    const factory = await loader()
+    resolvedFactories.set(key, factory)
+    return factory
+  }
+
+  async function switchLanguage(key: string) {
+    const factory = await loadLanguage(key)
     view.dispatch({
       changes: { from: 0, to: view.state.doc.length, insert: sampleCode[key] ?? '' },
-      effects: languageCompartment.reconfigure(langFactory()),
+      effects: languageCompartment.reconfigure(factory()),
     })
   }
 
