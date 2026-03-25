@@ -36,6 +36,7 @@
       Emacs
     </label>
     <span class="spacer"></span>
+    <button id="btn-download" class="toolbar-btn" aria-label="Download editor content">Download</button>
     <button id="btn-share" class="toolbar-btn" aria-label="Copy share link">Share</button>
     <button id="btn-reset" class="toolbar-btn" aria-label="Reset to defaults">Reset</button>
   </div>
@@ -582,6 +583,26 @@ BinaryExpression { expression !add "+" expression }
       e.preventDefault()
       shareLink()
     }
+  })
+
+  // Download button — save editor content as a file
+  const fileExtensions: Record<string, string> = {
+    javascript: 'js', typescript: 'ts', python: 'py', html: 'html', css: 'css',
+    json: 'json', markdown: 'md', xml: 'xml', sql: 'sql', rust: 'rs',
+    go: 'go', java: 'java', cpp: 'cpp', php: 'php', sass: 'scss', less: 'less',
+    yaml: 'yaml', angular: 'html', vue: 'vue', liquid: 'liquid', wast: 'wat',
+    jinja: 'html', lezer: 'grammar',
+  }
+  const downloadBtn = document.getElementById('btn-download')!
+  downloadBtn.addEventListener('click', () => {
+    const ext = fileExtensions[langSelect.value] ?? 'txt'
+    const blob = new Blob([view.state.doc.toString()], { type: 'text/plain' })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = `playground.${ext}`
+    a.click()
+    URL.revokeObjectURL(url)
   })
 
   // Reset button — restore all defaults
