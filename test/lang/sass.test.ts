@@ -195,5 +195,35 @@ describe("Sass language pack", () => {
       expect(node.from).toBeLessThanOrEqual(8);
       expect(node.to).toBeGreaterThanOrEqual(8);
     });
+
+    it("sassLanguage can parse @use and @forward", () => {
+      const tree = sassLanguage.parser.parse("@use 'sass:math';\n@use 'colors' as c;\n.box { border-radius: math.div(10px, 2); }");
+      expect(tree.length).toBeGreaterThan(0);
+    });
+
+    it("sassLanguage can parse each loop", () => {
+      const tree = sassLanguage.parser.parse("$list: 10px 20px 30px;\n@each $size in $list { .size-#{$size} { padding: $size; } }");
+      expect(tree.length).toBeGreaterThan(0);
+      expect(tree.type.isTop).toBe(true);
+    });
+
+    it("sassLanguage can parse @while loop", () => {
+      const tree = sassLanguage.parser.parse("$i: 1;\n@while $i <= 3 { .col-#{$i} { width: 100% / $i; } $i: $i + 1; }");
+      expect(tree.length).toBeGreaterThan(0);
+    });
+
+    it("EditorState with sass() has correct doc line count", () => {
+      const state = EditorState.create({
+        doc: "$color: red;\n.btn { color: $color; }\n.link { color: blue; }",
+        extensions: [sass()],
+      });
+      expect(state.doc.lines).toBe(3);
+    });
+
+    it("sassLanguage allows doc mutation via transaction", () => {
+      let state = EditorState.create({ doc: "$x: 1;", extensions: [sass()] });
+      state = state.update({ changes: { from: 6, insert: "\n$y: 2;" } }).state;
+      expect(state.doc.lines).toBe(2);
+    });
   });
 });

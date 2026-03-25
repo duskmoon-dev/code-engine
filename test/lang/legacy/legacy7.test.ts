@@ -255,5 +255,64 @@ describe("Legacy language packs (batch 7)", () => {
       });
       expect(syntaxTree(state).length).toBeGreaterThan(0);
     });
+
+    it("csharp integrates with EditorState", () => {
+      const lang = StreamLanguage.define(csharp);
+      const state = EditorState.create({
+        doc: "using System;\nclass Hello {\n  static void Main() {\n    Console.WriteLine(\"Hello, World!\");\n  }\n}",
+        extensions: [new LanguageSupport(lang)],
+      });
+      expect(state.doc.toString()).toContain("Console.WriteLine");
+    });
+
+    it("kotlin integrates with EditorState", () => {
+      const lang = StreamLanguage.define(kotlin);
+      const state = EditorState.create({
+        doc: "fun main() {\n  val greeting = \"Hello, World!\"\n  println(greeting)\n}",
+        extensions: [new LanguageSupport(lang)],
+      });
+      expect(state.doc.toString()).toContain("fun main");
+    });
+
+    it("scala integrates with EditorState", () => {
+      const lang = StreamLanguage.define(scala);
+      const state = EditorState.create({
+        doc: "object Hello extends App {\n  println(\"Hello, World!\")\n}",
+        extensions: [new LanguageSupport(lang)],
+      });
+      expect(state.doc.toString()).toContain("object Hello");
+    });
+
+    it("csharp doc line count is correct", () => {
+      const lang = StreamLanguage.define(csharp);
+      const state = EditorState.create({
+        doc: "namespace App {\n  class Foo {}\n  class Bar {}\n}",
+        extensions: [new LanguageSupport(lang)],
+      });
+      expect(state.doc.lines).toBe(4);
+    });
+
+    it("kotlin doc mutation via transaction works", () => {
+      const lang = StreamLanguage.define(kotlin);
+      let state = EditorState.create({
+        doc: "val x = 1",
+        extensions: [new LanguageSupport(lang)],
+      });
+      state = state.update({ changes: { from: 9, insert: "\nval y = 2" } }).state;
+      expect(state.doc.lines).toBe(2);
+    });
+
+    it("csharp syntaxTree cursor traversal finds nodes", () => {
+      const lang = StreamLanguage.define(csharp);
+      const state = EditorState.create({
+        doc: "class Foo { int x = 1; void Bar() { x++; } }",
+        extensions: [new LanguageSupport(lang)],
+      });
+      const tree = syntaxTree(state);
+      const cursor = tree.cursor();
+      let count = 0;
+      do { count++; } while (cursor.next() && count < 50);
+      expect(count).toBeGreaterThan(0);
+    });
   });
 });

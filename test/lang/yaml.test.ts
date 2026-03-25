@@ -194,4 +194,34 @@ describe("YAML language pack", () => {
     expect(node.from).toBeLessThanOrEqual(5);
     expect(node.to).toBeGreaterThanOrEqual(5);
   });
+
+  it("yamlLanguage can parse block scalars", () => {
+    const tree = yamlLanguage.parser.parse("description: |\n  This is a\n  multi-line block scalar.\n  It preserves newlines.");
+    expect(tree.length).toBeGreaterThan(0);
+  });
+
+  it("yamlLanguage can parse flow sequences", () => {
+    const tree = yamlLanguage.parser.parse("colors: [red, green, blue]\nscores: [1, 2, 3, 4, 5]");
+    expect(tree.length).toBeGreaterThan(0);
+    expect(tree.type.isTop).toBe(true);
+  });
+
+  it("yamlLanguage can parse flow mappings", () => {
+    const tree = yamlLanguage.parser.parse("point: {x: 10, y: 20}\nsize: {width: 100, height: 200}");
+    expect(tree.length).toBeGreaterThan(0);
+  });
+
+  it("EditorState with yaml() has correct doc line count", () => {
+    const state = EditorState.create({
+      doc: "name: Alice\nage: 30\ncity: NYC",
+      extensions: [yaml()],
+    });
+    expect(state.doc.lines).toBe(3);
+  });
+
+  it("yamlLanguage allows doc mutation via transaction", () => {
+    let state = EditorState.create({ doc: "key: val", extensions: [yaml()] });
+    state = state.update({ changes: { from: 8, insert: "\nother: 42" } }).state;
+    expect(state.doc.lines).toBe(2);
+  });
 });

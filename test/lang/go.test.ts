@@ -209,4 +209,42 @@ describe("Go language pack", () => {
     // Just verify it doesn't throw
     expect(result === null || result !== undefined).toBe(true);
   });
+
+  it("goLanguage tree.toString() returns non-empty string", () => {
+    const tree = goLanguage.parser.parse("package main\nfunc main() {}");
+    expect(typeof tree.toString()).toBe("string");
+    expect(tree.toString().length).toBeGreaterThan(0);
+  });
+
+  it("goLanguage cursor traversal finds nodes", () => {
+    const tree = goLanguage.parser.parse("package main\nfunc add(a, b int) int { return a + b }");
+    let count = 0;
+    tree.iterate({ enter: () => { count++; } });
+    expect(count).toBeGreaterThan(3);
+  });
+
+  it("goLanguage can parse interface definition", () => {
+    const tree = goLanguage.parser.parse("type Stringer interface {\n  String() string\n}");
+    expect(tree.length).toBeGreaterThan(0);
+    expect(tree.type.isTop).toBe(true);
+  });
+
+  it("goLanguage can parse goroutine and channel", () => {
+    const tree = goLanguage.parser.parse("ch := make(chan int)\ngo func() { ch <- 42 }()\nval := <-ch");
+    expect(tree.length).toBeGreaterThan(0);
+  });
+
+  it("goLanguage can parse defer statement", () => {
+    const tree = goLanguage.parser.parse("func readFile(path string) error {\n  f, err := os.Open(path)\n  if err != nil { return err }\n  defer f.Close()\n  return nil\n}");
+    expect(tree.length).toBeGreaterThan(0);
+    expect(tree.type.isTop).toBe(true);
+  });
+
+  it("EditorState with go() has correct doc line count", () => {
+    const state = EditorState.create({
+      doc: "package main\n\nfunc main() {\n  println(\"hello\")\n}",
+      extensions: [go()],
+    });
+    expect(state.doc.lines).toBe(5);
+  });
 });

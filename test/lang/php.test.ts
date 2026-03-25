@@ -191,4 +191,36 @@ describe("PHP language pack", () => {
     expect(node.from).toBeLessThanOrEqual(10);
     expect(node.to).toBeGreaterThanOrEqual(10);
   });
+
+  it("phpLanguage tree.toString() returns non-empty string", () => {
+    const tree = phpLanguage.parser.parse("<?php echo 'Hello'; ?>");
+    expect(typeof tree.toString()).toBe("string");
+    expect(tree.toString().length).toBeGreaterThan(0);
+  });
+
+  it("phpLanguage cursor traversal finds multiple nodes", () => {
+    const tree = phpLanguage.parser.parse("<?php function add($a, $b) { return $a + $b; } ?>");
+    let count = 0;
+    tree.iterate({ enter: () => { count++; } });
+    expect(count).toBeGreaterThan(3);
+  });
+
+  it("phpLanguage can parse abstract class", () => {
+    const tree = phpLanguage.parser.parse("<?php abstract class Shape { abstract public function area(): float; public function describe(): string { return 'shape'; } } ?>");
+    expect(tree.length).toBeGreaterThan(0);
+    expect(tree.type.isTop).toBe(true);
+  });
+
+  it("phpLanguage can parse trait", () => {
+    const tree = phpLanguage.parser.parse("<?php trait Greetable { public function greet(): string { return 'Hello, ' . $this->name; } } class User { use Greetable; public string $name = 'World'; } ?>");
+    expect(tree.length).toBeGreaterThan(0);
+  });
+
+  it("EditorState with php() has correct doc line count", () => {
+    const state = EditorState.create({
+      doc: "<?php\n$x = 1;\n$y = 2;\necho $x + $y;\n?>",
+      extensions: [php()],
+    });
+    expect(state.doc.lines).toBe(5);
+  });
 });

@@ -184,4 +184,36 @@ describe("Java language pack", () => {
     expect(node.from).toBeLessThanOrEqual(10);
     expect(node.to).toBeGreaterThanOrEqual(10);
   });
+
+  it("javaLanguage tree.toString() returns non-empty string", () => {
+    const tree = javaLanguage.parser.parse("class Hello { public static void main(String[] args) {} }");
+    expect(typeof tree.toString()).toBe("string");
+    expect(tree.toString().length).toBeGreaterThan(0);
+  });
+
+  it("javaLanguage cursor traversal visits multiple nodes", () => {
+    const tree = javaLanguage.parser.parse("public class Foo { int x = 1; void bar() { x++; } }");
+    let count = 0;
+    tree.iterate({ enter: () => { count++; } });
+    expect(count).toBeGreaterThan(3);
+  });
+
+  it("javaLanguage can parse generic class", () => {
+    const tree = javaLanguage.parser.parse("class Box<T> { private T value; public T get() { return value; } public void set(T v) { value = v; } }");
+    expect(tree.length).toBeGreaterThan(0);
+    expect(tree.type.isTop).toBe(true);
+  });
+
+  it("javaLanguage can parse enum with methods", () => {
+    const tree = javaLanguage.parser.parse("enum Planet { MERCURY(3.303e+23), VENUS(4.869e+24); double mass; Planet(double mass) { this.mass = mass; } }");
+    expect(tree.length).toBeGreaterThan(0);
+  });
+
+  it("EditorState with java() has correct doc line count", () => {
+    const state = EditorState.create({
+      doc: "class A {}\nclass B {}\nclass C {}",
+      extensions: [java()],
+    });
+    expect(state.doc.lines).toBe(3);
+  });
 });

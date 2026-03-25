@@ -182,4 +182,37 @@ describe("C++ language pack", () => {
     expect(tree.length).toBeGreaterThan(0);
     expect(tree.type.isTop).toBe(true);
   });
+
+  it("cppLanguage tree.toString() returns non-empty string", () => {
+    const tree = cppLanguage.parser.parse("int x = 42;");
+    expect(typeof tree.toString()).toBe("string");
+    expect(tree.toString().length).toBeGreaterThan(0);
+  });
+
+  it("cppLanguage cursor traversal visits multiple nodes", () => {
+    const tree = cppLanguage.parser.parse("void foo(int x, int y) { return x + y; }");
+    let count = 0;
+    tree.iterate({ enter: () => { count++; } });
+    expect(count).toBeGreaterThan(3);
+  });
+
+  it("cppLanguage tree.resolveInner() finds innermost node", () => {
+    const tree = cppLanguage.parser.parse("int main() { return 0; }");
+    const node = tree.resolveInner(12);
+    expect(node).toBeDefined();
+    expect(node.from).toBeLessThanOrEqual(12);
+    expect(node.to).toBeGreaterThanOrEqual(12);
+  });
+
+  it("cppLanguage can parse constexpr", () => {
+    const tree = cppLanguage.parser.parse("constexpr int MAX = 100;\nconstexpr double PI = 3.14159;");
+    expect(tree.length).toBeGreaterThan(0);
+    expect(tree.type.isTop).toBe(true);
+  });
+
+  it("EditorState with cpp() has correct doc length", () => {
+    const doc = "#include <iostream>\nint main() { return 0; }";
+    const state = EditorState.create({ doc, extensions: [cpp()] });
+    expect(state.doc.length).toBe(doc.length);
+  });
 });

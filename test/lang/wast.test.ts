@@ -237,5 +237,38 @@ describe("WAST language pack", () => {
       expect(tree.length).toBeGreaterThan(0);
       expect(tree.type.isTop).toBe(true);
     });
+
+    it("wastLanguage tree.toString() returns non-empty string", () => {
+      const tree = wastLanguage.parser.parse("(module (func (result i32) i32.const 42))");
+      expect(typeof tree.toString()).toBe("string");
+      expect(tree.toString().length).toBeGreaterThan(0);
+    });
+
+    it("wastLanguage cursor traversal finds multiple nodes", () => {
+      const tree = wastLanguage.parser.parse("(module (func $main (result i32) i32.const 1 i32.const 2 i32.add))");
+      let count = 0;
+      tree.iterate({ enter: () => { count++; } });
+      expect(count).toBeGreaterThan(3);
+    });
+
+    it("wastLanguage tree.resolveInner() finds innermost node", () => {
+      const tree = wastLanguage.parser.parse("(module (func))");
+      const node = tree.resolveInner(5);
+      expect(node).toBeDefined();
+      expect(node.from).toBeLessThanOrEqual(5);
+      expect(node.to).toBeGreaterThanOrEqual(5);
+    });
+
+    it("EditorState with wast() has correct doc length", () => {
+      const doc = "(module (func (result i32) i32.const 42))";
+      const state = EditorState.create({ doc, extensions: [wast()] });
+      expect(state.doc.length).toBe(doc.length);
+    });
+
+    it("wastLanguage allows doc mutation via transaction", () => {
+      let state = EditorState.create({ doc: "(module)", extensions: [wast()] });
+      state = state.update({ changes: { from: 7, insert: " (func)" } }).state;
+      expect(state.doc.toString()).toBe("(module (func))");
+    });
   });
 });

@@ -212,5 +212,38 @@ describe("theme/one-dark", () => {
       expect(state.selection.main.from).toBe(5);
       expect(state.selection.main.to).toBe(9);
     });
+
+    it("oneDark state doc line text is accessible", () => {
+      const state = EditorState.create({
+        doc: "hello\nworld",
+        extensions: [oneDark],
+      });
+      expect(state.doc.line(1).text).toBe("hello");
+    });
+
+    it("oneDark state allows multiple sequential transactions", () => {
+      let state = EditorState.create({ doc: "a", extensions: [oneDark] });
+      for (let i = 0; i < 3; i++) {
+        state = state.update({ changes: { from: state.doc.length, insert: String(i) } }).state;
+      }
+      expect(state.doc.toString()).toBe("a012");
+    });
+
+    it("oneDark state allows replacement transaction", () => {
+      let state = EditorState.create({ doc: "hello world", extensions: [oneDark] });
+      state = state.update({ changes: { from: 0, to: 5, insert: "goodbye" } }).state;
+      expect(state.doc.toString()).toBe("goodbye world");
+    });
+
+    it("oneDark state doc length matches input", () => {
+      const doc = "const x = 42;";
+      const state = EditorState.create({ doc, extensions: [oneDark] });
+      expect(state.doc.length).toBe(doc.length);
+    });
+
+    it("oneDark with empty doc works", () => {
+      const state = EditorState.create({ doc: "", extensions: [oneDark] });
+      expect(state.doc.length).toBe(0);
+    });
   });
 });

@@ -212,5 +212,34 @@ describe("JSON language pack", () => {
       tree.iterate({ enter: () => { nodeCount++; } });
       expect(nodeCount).toBeGreaterThan(10);
     });
+
+    it("jsonLanguage tree.resolveInner() finds innermost node", () => {
+      const tree = jsonLanguage.parser.parse('{"key": "value"}');
+      const node = tree.resolveInner(3);
+      expect(node).toBeDefined();
+      expect(node.from).toBeLessThanOrEqual(3);
+      expect(node.to).toBeGreaterThanOrEqual(3);
+    });
+
+    it("jsonLanguage can parse null and boolean values", () => {
+      const tree = jsonLanguage.parser.parse('{"active": true, "deleted": false, "value": null}');
+      expect(tree.length).toBeGreaterThan(0);
+      expect(tree.type.isTop).toBe(true);
+    });
+
+    it("jsonParseLinter is a function", () => {
+      expect(typeof jsonParseLinter).toBe("function");
+    });
+
+    it("EditorState with json() allows doc mutation", () => {
+      let state = EditorState.create({ doc: '{"a":1}', extensions: [json()] });
+      state = state.update({ changes: { from: 6, to: 6, insert: ',"b":2' } }).state;
+      expect(state.doc.toString()).toBe('{"a":1,"b":2}');
+    });
+
+    it("jsonLanguage can parse unicode strings", () => {
+      const tree = jsonLanguage.parser.parse('{"emoji": "\\u2764\\uFE0F", "cjk": "\\u4e2d\\u6587"}');
+      expect(tree.length).toBeGreaterThan(0);
+    });
   });
 });
