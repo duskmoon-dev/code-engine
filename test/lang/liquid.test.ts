@@ -396,5 +396,11 @@ describe("Liquid language pack", () => {
       expect(state.selection.main.from).toBe(3);
       expect(state.selection.main.to).toBe(12);
     });
+
+    it("liquid() state replacement transaction works", () => {
+      let state = EditorState.create({ doc: "{{ old }}", extensions: [liquid()] });
+      state = state.update({ changes: { from: 3, to: 6, insert: "new" } }).state;
+      expect(state.doc.toString()).toBe("{{ new }}");
+    });
   });
 });

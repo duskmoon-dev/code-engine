@@ -354,5 +354,19 @@ describe("Emacs keymap", () => {
       state = state.update({ changes: { from: 0, to: 9 } }).state;
       expect(state.doc.toString()).toBe("");
     });
+
+    it("emacs() state allows 4 sequential transactions", () => {
+      let state = EditorState.create({ doc: "a", extensions: [emacs()] });
+      state = state.update({ changes: { from: 1, insert: "b" } }).state;
+      state = state.update({ changes: { from: 2, insert: "c" } }).state;
+      state = state.update({ changes: { from: 3, insert: "d" } }).state;
+      expect(state.doc.toString()).toBe("abcd");
+    });
+
+    it("emacs() doc length invariant holds", () => {
+      const doc = "fixed size content";
+      const state = EditorState.create({ doc, extensions: [emacs()] });
+      expect(state.doc.length).toBe(doc.length);
+    });
   });
 });

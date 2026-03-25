@@ -337,4 +337,16 @@ describe("Python language pack", () => {
     state = state.update({ changes: { from: 0, to: 11 } }).state;
     expect(state.doc.toString()).toBe("");
   });
+
+  it("python() state doc length invariant holds", () => {
+    const doc = "def foo():\n    return 42";
+    const state = EditorState.create({ doc, extensions: [python()] });
+    expect(state.doc.length).toBe(doc.length);
+  });
+
+  it("python() state with unicode comment works", () => {
+    const doc = "# こんにちは\nx = 1";
+    const state = EditorState.create({ doc, extensions: [python()] });
+    expect(state.doc.toString()).toBe(doc);
+  });
 });

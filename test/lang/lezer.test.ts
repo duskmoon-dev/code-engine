@@ -365,5 +365,17 @@ describe("Lezer language pack", () => {
       state = state.update({ changes: { from: 0, to: 13 } }).state;
       expect(state.doc.toString()).toBe("");
     });
+
+    it("lezer() state with unicode comment works", () => {
+      const doc = "// こんにちは\n@top P { e* }";
+      const state = EditorState.create({ doc, extensions: [lezer()] });
+      expect(state.doc.toString()).toBe(doc);
+    });
+
+    it("lezer() doc length invariant after creation", () => {
+      const doc = "@top Grammar { decl* }\n@tokens { Id { @asciiLetter+ } }";
+      const state = EditorState.create({ doc, extensions: [lezer()] });
+      expect(state.doc.length).toBe(doc.length);
+    });
   });
 });

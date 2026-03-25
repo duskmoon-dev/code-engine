@@ -454,5 +454,12 @@ describe("Legacy language packs (batch 3)", () => {
       state = state.update({ changes: { from: 6, to: 9, insert: "bar" } }).state;
       expect(state.doc.toString()).toBe("class bar {}");
     });
+
+    it("sparql doc length invariant holds", () => {
+      const lang = StreamLanguage.define(sparql);
+      const doc = "SELECT ?x WHERE { ?x a <type> }";
+      const state = EditorState.create({ doc, extensions: [new LanguageSupport(lang)] });
+      expect(state.doc.length).toBe(doc.length);
+    });
   });
 });

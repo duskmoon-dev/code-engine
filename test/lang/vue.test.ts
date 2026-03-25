@@ -361,5 +361,18 @@ describe("Vue language pack", () => {
       const tree = vueLanguage.parser.parse(code);
       expect(tree.length).toBe(code.length);
     });
+
+    it("vue() state with unicode content works", () => {
+      const doc = "<!-- こんにちは -->\n<template><p/></template>";
+      const state = EditorState.create({ doc, extensions: [vue()] });
+      expect(state.doc.toString()).toBe(doc);
+    });
+
+    it("vue() state multiple sequential transactions build doc correctly", () => {
+      let state = EditorState.create({ doc: "<template>", extensions: [vue()] });
+      state = state.update({ changes: { from: 10, insert: "<p>a</p>" } }).state;
+      state = state.update({ changes: { from: state.doc.length, insert: "<p>b</p>" } }).state;
+      expect(state.doc.toString()).toBe("<template><p>a</p><p>b</p>");
+    });
   });
 });

@@ -323,4 +323,10 @@ describe("JavaScript language pack", () => {
     state = state.update({ changes: { from: 0, insert: "// header\n" } }).state;
     expect(state.doc.line(1).text).toBe("// header");
   });
+
+  it("javascript() state doc length invariant holds", () => {
+    const doc = "function greet() { return 'hello'; }";
+    const state = EditorState.create({ doc, extensions: [javascript()] });
+    expect(state.doc.length).toBe(doc.length);
+  });
 });

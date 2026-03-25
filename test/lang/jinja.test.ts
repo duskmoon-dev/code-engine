@@ -397,5 +397,20 @@ describe("Jinja language pack", () => {
       const state = EditorState.create({ doc, extensions: [jinja()] });
       expect(state.doc.toString()).toBe(doc);
     });
+
+    it("jinja() state allows 4 sequential transactions", () => {
+      let state = EditorState.create({ doc: "{{ a }}", extensions: [jinja()] });
+      state = state.update({ changes: { from: 7, insert: "\n{{ b }}" } }).state;
+      state = state.update({ changes: { from: state.doc.length, insert: "\n{{ c }}" } }).state;
+      state = state.update({ changes: { from: state.doc.length, insert: "\n{{ d }}" } }).state;
+      expect(state.doc.lines).toBe(4);
+    });
+
+    it("jinja() state allows delete-all content", () => {
+      const doc = "{% block body %}Hello{% endblock %}";
+      let state = EditorState.create({ doc, extensions: [jinja()] });
+      state = state.update({ changes: { from: 0, to: doc.length } }).state;
+      expect(state.doc.toString()).toBe("");
+    });
   });
 });

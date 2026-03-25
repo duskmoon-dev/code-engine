@@ -326,4 +326,19 @@ describe("SQL language pack", () => {
     const tree = StandardSQL.language.parser.parse(code);
     expect(tree.length).toBe(code.length);
   });
+
+  it("sql() state allows 4 sequential transactions", () => {
+    let state = EditorState.create({ doc: "SELECT *", extensions: [sql()] });
+    state = state.update({ changes: { from: 8, insert: "\nFROM t" } }).state;
+    state = state.update({ changes: { from: state.doc.length, insert: "\nWHERE id = 1" } }).state;
+    state = state.update({ changes: { from: state.doc.length, insert: "\nLIMIT 10" } }).state;
+    expect(state.doc.lines).toBe(4);
+  });
+
+  it("sql() state allows deletion of entire content", () => {
+    const doc = "SELECT * FROM users;";
+    let state = EditorState.create({ doc, extensions: [sql()] });
+    state = state.update({ changes: { from: 0, to: doc.length } }).state;
+    expect(state.doc.toString()).toBe("");
+  });
 });

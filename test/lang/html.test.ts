@@ -348,4 +348,17 @@ describe("HTML language pack", () => {
     });
     expect(state.doc.line(3).text).toBe("<p>hello</p>");
   });
+
+  it("html() state deletion transaction works", () => {
+    let state = EditorState.create({ doc: "<p>hello</p>\n<p>world</p>", extensions: [html()] });
+    state = state.update({ changes: { from: 12, to: 25 } }).state;
+    expect(state.doc.toString()).toBe("<p>hello</p>");
+  });
+
+  it("html() state allows delete-all content", () => {
+    const doc = "<html><body></body></html>";
+    let state = EditorState.create({ doc, extensions: [html()] });
+    state = state.update({ changes: { from: 0, to: doc.length } }).state;
+    expect(state.doc.toString()).toBe("");
+  });
 });

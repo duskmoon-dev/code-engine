@@ -403,4 +403,12 @@ describe("collab extra behavioral tests", () => {
   it("receiveUpdates is a function", () => {
     expect(typeof receiveUpdates).toBe("function");
   });
+
+  it("collab state line count is correct after multiple insertions", () => {
+    let state = EditorState.create({ doc: "line1", extensions: [collab()] });
+    state = state.update({ changes: { from: 5, insert: "\nline2" } }).state;
+    state = state.update({ changes: { from: state.doc.length, insert: "\nline3" } }).state;
+    expect(state.doc.lines).toBe(3);
+    expect(state.doc.line(3).text).toBe("line3");
+  });
 });

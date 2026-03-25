@@ -371,4 +371,16 @@ describe("XML language pack", () => {
     state = state.update({ changes: { from: 6, insert: "\n  <child/>\n</root>" } }).state;
     expect(state.doc.line(2).text).toBe("  <child/>");
   });
+
+  it("xml() state with unicode content works", () => {
+    const doc = "<!-- こんにちは -->\n<root/>";
+    const state = EditorState.create({ doc, extensions: [xml()] });
+    expect(state.doc.toString()).toBe(doc);
+  });
+
+  it("xml() state doc length invariant holds", () => {
+    const doc = "<root><child attr=\"v\">text</child></root>";
+    const state = EditorState.create({ doc, extensions: [xml()] });
+    expect(state.doc.length).toBe(doc.length);
+  });
 });

@@ -328,4 +328,19 @@ describe("CSS language pack", () => {
     const tree = cssLanguage.parser.parse(code);
     expect(tree.length).toBe(code.length);
   });
+
+  it("css() state allows deletion of entire content", () => {
+    const doc = "p { color: red; }";
+    let state = EditorState.create({ doc, extensions: [css()] });
+    state = state.update({ changes: { from: 0, to: doc.length } }).state;
+    expect(state.doc.toString()).toBe("");
+  });
+
+  it("css() state with nested selectors has correct line count", () => {
+    const state = EditorState.create({
+      doc: ".nav {\n  color: blue;\n  .link {\n    color: red;\n  }\n}",
+      extensions: [css()],
+    });
+    expect(state.doc.lines).toBe(6);
+  });
 });

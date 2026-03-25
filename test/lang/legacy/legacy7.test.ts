@@ -431,5 +431,13 @@ describe("Legacy language packs (batch 7)", () => {
       const state = EditorState.create({ doc, extensions: [new LanguageSupport(lang)] });
       expect(state.doc.length).toBe(doc.length);
     });
+
+    it("haxe doc allows sequential transactions", () => {
+      const lang = StreamLanguage.define(haxe);
+      let state = EditorState.create({ doc: "class Main {", extensions: [new LanguageSupport(lang)] });
+      state = state.update({ changes: { from: 12, insert: "\n  static function main() {}" } }).state;
+      state = state.update({ changes: { from: state.doc.length, insert: "\n}" } }).state;
+      expect(state.doc.lines).toBe(3);
+    });
   });
 });

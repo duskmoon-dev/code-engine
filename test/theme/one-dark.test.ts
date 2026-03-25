@@ -345,5 +345,31 @@ describe("theme/one-dark", () => {
       const state = EditorState.create({ doc, extensions: [oneDark] });
       expect(state.doc.length).toBe(doc.length);
     });
+
+    it("oneDark state deletion transaction works", () => {
+      let state = EditorState.create({ doc: "hello\nworld", extensions: [oneDark] });
+      state = state.update({ changes: { from: 5, to: 11 } }).state;
+      expect(state.doc.toString()).toBe("hello");
+    });
+
+    it("oneDark state allows 4 sequential transactions", () => {
+      let state = EditorState.create({ doc: "a", extensions: [oneDark] });
+      state = state.update({ changes: { from: 1, insert: "b" } }).state;
+      state = state.update({ changes: { from: 2, insert: "c" } }).state;
+      state = state.update({ changes: { from: 3, insert: "d" } }).state;
+      expect(state.doc.toString()).toBe("abcd");
+    });
+
+    it("oneDark state with unicode content works", () => {
+      const doc = "// こんにちは\nconst x = 1;";
+      const state = EditorState.create({ doc, extensions: [oneDark] });
+      expect(state.doc.toString()).toBe(doc);
+    });
+
+    it("oneDark state allows insert at start", () => {
+      let state = EditorState.create({ doc: "let x = 1;", extensions: [oneDark] });
+      state = state.update({ changes: { from: 0, insert: "// header\n" } }).state;
+      expect(state.doc.line(1).text).toBe("// header");
+    });
   });
 });

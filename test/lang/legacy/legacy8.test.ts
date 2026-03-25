@@ -417,5 +417,29 @@ describe("Legacy language packs (batch 8 - coverage completion)", () => {
       });
       expect(state.doc.lines).toBe(3);
     });
+
+    it("legacyGo allows sequential transactions", () => {
+      const lang = StreamLanguage.define(legacyGo);
+      let state = EditorState.create({ doc: "package main", extensions: [new LanguageSupport(lang)] });
+      state = state.update({ changes: { from: 12, insert: "\nfunc main() {}" } }).state;
+      state = state.update({ changes: { from: state.doc.length, insert: "\nvar x = 1" } }).state;
+      expect(state.doc.lines).toBe(3);
+    });
+
+    it("legacyJS doc length invariant holds", () => {
+      const lang = StreamLanguage.define(legacyJS);
+      const doc = "function foo() { return 1; }";
+      const state = EditorState.create({ doc, extensions: [new LanguageSupport(lang)] });
+      expect(state.doc.length).toBe(doc.length);
+    });
+
+    it("ttcn doc line text is accessible", () => {
+      const lang = StreamLanguage.define(ttcn);
+      const state = EditorState.create({
+        doc: "module MyModule {\ntype integer MyInt;\n}",
+        extensions: [new LanguageSupport(lang)],
+      });
+      expect(state.doc.line(1).text).toBe("module MyModule {");
+    });
   });
 });

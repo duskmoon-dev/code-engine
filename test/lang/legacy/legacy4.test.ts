@@ -445,5 +445,12 @@ describe("Legacy language packs (batch 4)", () => {
       const state = EditorState.create({ doc, extensions: [new LanguageSupport(lang)] });
       expect(state.doc.length).toBe(doc.length);
     });
+
+    it("textile doc allows sequential transactions", () => {
+      const lang = StreamLanguage.define(textile);
+      let state = EditorState.create({ doc: "h1. Title", extensions: [new LanguageSupport(lang)] });
+      state = state.update({ changes: { from: 9, insert: "\n\nParagraph text." } }).state;
+      expect(state.doc.lines).toBe(3);
+    });
   });
 });
