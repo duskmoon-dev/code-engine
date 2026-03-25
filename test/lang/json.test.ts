@@ -347,5 +347,31 @@ describe("JSON language pack", () => {
       const state = EditorState.create({ doc, extensions: [json()] });
       expect(state.doc.toString()).toBe(doc);
     });
+
+    it("json() state deletion transaction works", () => {
+      let state = EditorState.create({ doc: "{\"a\": 1}\n{\"b\": 2}", extensions: [json()] });
+      state = state.update({ changes: { from: 8, to: 17 } }).state;
+      expect(state.doc.toString()).toBe("{\"a\": 1}");
+    });
+
+    it("json() state allows 4 sequential transactions", () => {
+      let state = EditorState.create({ doc: "{}", extensions: [json()] });
+      state = state.update({ changes: { from: 1, insert: "\"a\": 1" } }).state;
+      state = state.update({ changes: { from: state.doc.length, insert: "\n{}" } }).state;
+      state = state.update({ changes: { from: state.doc.length, insert: "\n{}" } }).state;
+      expect(state.doc.lines).toBe(3);
+    });
+
+    it("jsonLanguage parser tree has correct length", () => {
+      const code = "{\"name\": \"Alice\", \"age\": 30}";
+      const tree = jsonLanguage.parser.parse(code);
+      expect(tree.length).toBe(code.length);
+    });
+
+    it("json() state allows insert at start", () => {
+      let state = EditorState.create({ doc: "\"value\"", extensions: [json()] });
+      state = state.update({ changes: { from: 0, insert: "[" } }).state;
+      expect(state.doc.line(1).text.startsWith("[")).toBe(true);
+    });
   });
 });

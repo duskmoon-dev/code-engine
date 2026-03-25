@@ -335,4 +335,30 @@ describe("Go language pack", () => {
     expect(state.doc.line(1).text).toBe("package main");
     expect(state.doc.line(2).text).toBe("import \"fmt\"");
   });
+
+  it("go() state deletion transaction works", () => {
+    let state = EditorState.create({ doc: "package main\nfunc main() {}", extensions: [go()] });
+    state = state.update({ changes: { from: 12, to: 27 } }).state;
+    expect(state.doc.toString()).toBe("package main");
+  });
+
+  it("go() state with unicode comment works", () => {
+    const doc = "// こんにちは\npackage main";
+    const state = EditorState.create({ doc, extensions: [go()] });
+    expect(state.doc.toString()).toBe(doc);
+  });
+
+  it("go() state allows 4 sequential transactions", () => {
+    let state = EditorState.create({ doc: "package main", extensions: [go()] });
+    state = state.update({ changes: { from: 12, insert: "\nvar a = 1" } }).state;
+    state = state.update({ changes: { from: state.doc.length, insert: "\nvar b = 2" } }).state;
+    state = state.update({ changes: { from: state.doc.length, insert: "\nvar c = 3" } }).state;
+    expect(state.doc.lines).toBe(4);
+  });
+
+  it("goLanguage parser tree has correct length", () => {
+    const code = "package main\nfunc main() {}";
+    const tree = goLanguage.parser.parse(code);
+    expect(tree.length).toBe(code.length);
+  });
 });

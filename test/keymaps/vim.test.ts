@@ -312,5 +312,32 @@ describe("Vim keymap", () => {
       const state = EditorState.create({ doc, extensions: [vim()] });
       expect(state.doc.length).toBe(doc.length);
     });
+
+    it("vim() state allows 4 sequential transactions", () => {
+      let state = EditorState.create({ doc: "a", extensions: [vim()] });
+      state = state.update({ changes: { from: 1, insert: "b" } }).state;
+      state = state.update({ changes: { from: 2, insert: "c" } }).state;
+      state = state.update({ changes: { from: 3, insert: "d" } }).state;
+      expect(state.doc.toString()).toBe("abcd");
+    });
+
+    it("vim() state allows deletion of entire content", () => {
+      const doc = "let x = 1;";
+      let state = EditorState.create({ doc, extensions: [vim()] });
+      state = state.update({ changes: { from: 0, to: doc.length } }).state;
+      expect(state.doc.toString()).toBe("");
+    });
+
+    it("vim() state allows insert at start", () => {
+      let state = EditorState.create({ doc: "let x = 1;", extensions: [vim()] });
+      state = state.update({ changes: { from: 0, insert: "// comment\n" } }).state;
+      expect(state.doc.line(1).text).toBe("// comment");
+    });
+
+    it("vim() state with unicode content works", () => {
+      const doc = "// こんにちは\nlet x = 1;";
+      const state = EditorState.create({ doc, extensions: [vim()] });
+      expect(state.doc.toString()).toBe(doc);
+    });
   });
 });

@@ -359,5 +359,32 @@ describe("WAST language pack", () => {
       const state = EditorState.create({ doc, extensions: [wast()] });
       expect(state.doc.toString()).toBe(doc);
     });
+
+    it("wast() state allows 4 sequential transactions", () => {
+      let state = EditorState.create({ doc: "(module)", extensions: [wast()] });
+      state = state.update({ changes: { from: 8, insert: "\n(module)" } }).state;
+      state = state.update({ changes: { from: state.doc.length, insert: "\n(module)" } }).state;
+      state = state.update({ changes: { from: state.doc.length, insert: "\n(module)" } }).state;
+      expect(state.doc.lines).toBe(4);
+    });
+
+    it("wast() state allows deletion of entire content", () => {
+      const doc = "(module (func))";
+      let state = EditorState.create({ doc, extensions: [wast()] });
+      state = state.update({ changes: { from: 0, to: doc.length } }).state;
+      expect(state.doc.toString()).toBe("");
+    });
+
+    it("wast() state allows insert at start", () => {
+      let state = EditorState.create({ doc: "(func)", extensions: [wast()] });
+      state = state.update({ changes: { from: 0, insert: "(module " } }).state;
+      expect(state.doc.line(1).text.startsWith("(module")).toBe(true);
+    });
+
+    it("wastLanguage parser tree has correct length", () => {
+      const code = "(module (memory 1))";
+      const tree = wastLanguage.parser.parse(code);
+      expect(tree.length).toBe(code.length);
+    });
   });
 });

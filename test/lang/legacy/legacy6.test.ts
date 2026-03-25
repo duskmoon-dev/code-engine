@@ -423,5 +423,36 @@ describe("Legacy language packs (batch 6)", () => {
       });
       expect(state.doc.lines).toBe(5);
     });
+
+    it("dylan allows sequential transactions", () => {
+      const lang = StreamLanguage.define(dylan);
+      let state = EditorState.create({ doc: "define method foo()", extensions: [new LanguageSupport(lang)] });
+      state = state.update({ changes: { from: 19, insert: "\n  42" } }).state;
+      state = state.update({ changes: { from: state.doc.length, insert: "\nend" } }).state;
+      expect(state.doc.lines).toBe(3);
+    });
+
+    it("eiffel doc length invariant holds", () => {
+      const lang = StreamLanguage.define(eiffel);
+      const doc = "class HELLO\nfeature\n  hello do io.put_string(\"Hello\") end\nend";
+      const state = EditorState.create({ doc, extensions: [new LanguageSupport(lang)] });
+      expect(state.doc.length).toBe(doc.length);
+    });
+
+    it("nsis doc line text is accessible", () => {
+      const lang = StreamLanguage.define(nsis);
+      const state = EditorState.create({
+        doc: "Section \"Main\"\n  MessageBox MB_OK \"Hello\"\nSectionEnd",
+        extensions: [new LanguageSupport(lang)],
+      });
+      expect(state.doc.line(1).text).toBe("Section \"Main\"");
+    });
+
+    it("gas doc deletion transaction works", () => {
+      const lang = StreamLanguage.define(gas);
+      let state = EditorState.create({ doc: ".section .text\n.globl main", extensions: [new LanguageSupport(lang)] });
+      state = state.update({ changes: { from: 14, to: 26 } }).state;
+      expect(state.doc.toString()).toBe(".section .text");
+    });
   });
 });

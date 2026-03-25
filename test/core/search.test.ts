@@ -345,4 +345,20 @@ describe("SearchQuery behavior", () => {
     const q = new SearchQuery({ search: "" });
     expect(q.search).toBe("");
   });
+
+  it("gotoLine is a function", () => {
+    expect(typeof gotoLine).toBe("function");
+  });
+
+  it("selectNextOccurrence is a function", () => {
+    expect(typeof selectNextOccurrence).toBe("function");
+  });
+
+  it("highlightSelectionMatches is a function", () => {
+    expect(typeof highlightSelectionMatches).toBe("function");
+  });
+
+  it("validRegExp is a function", () => {
+    expect(typeof validRegExp).toBe("function");
+  });
 });

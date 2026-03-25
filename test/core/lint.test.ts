@@ -414,4 +414,20 @@ describe("lint additional coverage", () => {
   it("closeLintPanel is a function", () => {
     expect(typeof closeLintPanel).toBe("function");
   });
+
+  it("nextDiagnostic is a function", () => {
+    expect(typeof nextDiagnostic).toBe("function");
+  });
+
+  it("previousDiagnostic is a function", () => {
+    expect(typeof previousDiagnostic).toBe("function");
+  });
+
+  it("forceLinting is a function", () => {
+    expect(typeof forceLinting).toBe("function");
+  });
+
+  it("forEachDiagnostic is a function", () => {
+    expect(typeof forEachDiagnostic).toBe("function");
+  });
 });

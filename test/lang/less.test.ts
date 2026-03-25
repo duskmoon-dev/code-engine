@@ -334,5 +334,31 @@ describe("Less language pack", () => {
       const state = EditorState.create({ doc, extensions: [less()] });
       expect(state.doc.length).toBe(doc.length);
     });
+
+    it("less() state deletion transaction works", () => {
+      let state = EditorState.create({ doc: ".a { color: red; }\n.b { color: blue; }", extensions: [less()] });
+      state = state.update({ changes: { from: 18, to: 38 } }).state;
+      expect(state.doc.toString()).toBe(".a { color: red; }");
+    });
+
+    it("less() state with unicode content works", () => {
+      const doc = "/* こんにちは */\n.a { color: red; }";
+      const state = EditorState.create({ doc, extensions: [less()] });
+      expect(state.doc.toString()).toBe(doc);
+    });
+
+    it("less() state allows 4 sequential transactions", () => {
+      let state = EditorState.create({ doc: ".a { color: red; }", extensions: [less()] });
+      state = state.update({ changes: { from: 18, insert: "\n.b {}" } }).state;
+      state = state.update({ changes: { from: state.doc.length, insert: "\n.c {}" } }).state;
+      state = state.update({ changes: { from: state.doc.length, insert: "\n.d {}" } }).state;
+      expect(state.doc.lines).toBe(4);
+    });
+
+    it("lessLanguage parser tree has correct length", () => {
+      const code = ".nav { color: blue; }";
+      const tree = lessLanguage.parser.parse(code);
+      expect(tree.length).toBe(code.length);
+    });
   });
 });

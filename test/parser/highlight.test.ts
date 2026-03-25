@@ -356,5 +356,21 @@ describe("Parser highlight module", () => {
     it("tags.number is a valid Tag", () => {
       expect(tags.number).toBeDefined();
     });
+
+    it("tags.comment is a valid Tag", () => {
+      expect(tags.comment).toBeDefined();
+    });
+
+    it("tags.operator is a valid Tag", () => {
+      expect(tags.operator).toBeDefined();
+    });
+
+    it("tags.variableName is a valid Tag", () => {
+      expect(tags.variableName).toBeDefined();
+    });
+
+    it("tags.typeName is a valid Tag", () => {
+      expect(tags.typeName).toBeDefined();
+    });
   });
 });

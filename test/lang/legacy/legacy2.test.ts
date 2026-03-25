@@ -425,5 +425,36 @@ describe("Legacy language packs (batch 2)", () => {
       });
       expect(state.doc.lines).toBe(5);
     });
+
+    it("haskell doc line text is accessible", () => {
+      const lang = StreamLanguage.define(haskell);
+      const state = EditorState.create({
+        doc: "module Main where\nmain :: IO ()\nmain = putStrLn \"Hello\"",
+        extensions: [new LanguageSupport(lang)],
+      });
+      expect(state.doc.line(1).text).toBe("module Main where");
+    });
+
+    it("pascal allows sequential transactions", () => {
+      const lang = StreamLanguage.define(pascal);
+      let state = EditorState.create({ doc: "program Hello;", extensions: [new LanguageSupport(lang)] });
+      state = state.update({ changes: { from: 14, insert: "\nbegin" } }).state;
+      state = state.update({ changes: { from: state.doc.length, insert: "\nend." } }).state;
+      expect(state.doc.lines).toBe(3);
+    });
+
+    it("nginx doc length invariant holds", () => {
+      const lang = StreamLanguage.define(nginx);
+      const doc = "server { listen 80; }";
+      const state = EditorState.create({ doc, extensions: [new LanguageSupport(lang)] });
+      expect(state.doc.length).toBe(doc.length);
+    });
+
+    it("groovy doc deletion transaction works", () => {
+      const lang = StreamLanguage.define(groovy);
+      let state = EditorState.create({ doc: "def x = 1\ndef y = 2", extensions: [new LanguageSupport(lang)] });
+      state = state.update({ changes: { from: 9, to: 19 } }).state;
+      expect(state.doc.toString()).toBe("def x = 1");
+    });
   });
 });

@@ -294,4 +294,20 @@ describe("LSP factory functions", () => {
   it("renameKeymap is an array", () => {
     expect(Array.isArray(renameKeymap)).toBe(true);
   });
+
+  it("signatureHelp is defined", () => {
+    expect(signatureHelp).toBeDefined();
+  });
+
+  it("jumpToDefinition is a function", () => {
+    expect(typeof jumpToDefinition).toBe("function");
+  });
+
+  it("findReferences is a function", () => {
+    expect(typeof findReferences).toBe("function");
+  });
+
+  it("serverDiagnostics is defined", () => {
+    expect(serverDiagnostics).toBeDefined();
+  });
 });

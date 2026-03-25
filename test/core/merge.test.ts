@@ -355,4 +355,20 @@ describe("diff behavioral tests", () => {
   it("rejectChunk is a function", () => {
     expect(typeof rejectChunk).toBe("function");
   });
+
+  it("presentableDiff is a function", () => {
+    expect(typeof presentableDiff).toBe("function");
+  });
+
+  it("getOriginalDoc is a function", () => {
+    expect(typeof getOriginalDoc).toBe("function");
+  });
+
+  it("uncollapseUnchanged is defined", () => {
+    expect(uncollapseUnchanged).toBeDefined();
+  });
+
+  it("mergeViewSiblings is defined", () => {
+    expect(mergeViewSiblings).toBeDefined();
+  });
 });

@@ -328,4 +328,30 @@ describe("Rust language pack", () => {
     expect(state.doc.line(1).text).toBe("fn main() {}");
     expect(state.doc.line(2).text).toBe("fn helper() {}");
   });
+
+  it("rust() state deletion transaction works", () => {
+    let state = EditorState.create({ doc: "fn main() {}\nfn foo() {}", extensions: [rust()] });
+    state = state.update({ changes: { from: 12, to: 24 } }).state;
+    expect(state.doc.toString()).toBe("fn main() {}");
+  });
+
+  it("rust() state with unicode comment works", () => {
+    const doc = "// こんにちは\nfn main() {}";
+    const state = EditorState.create({ doc, extensions: [rust()] });
+    expect(state.doc.toString()).toBe(doc);
+  });
+
+  it("rust() state allows 4 sequential transactions", () => {
+    let state = EditorState.create({ doc: "fn a() {}", extensions: [rust()] });
+    state = state.update({ changes: { from: 9, insert: "\nfn b() {}" } }).state;
+    state = state.update({ changes: { from: state.doc.length, insert: "\nfn c() {}" } }).state;
+    state = state.update({ changes: { from: state.doc.length, insert: "\nfn d() {}" } }).state;
+    expect(state.doc.lines).toBe(4);
+  });
+
+  it("rustLanguage parser tree has correct length", () => {
+    const code = "fn main() { let x = 42; }";
+    const tree = rustLanguage.parser.parse(code);
+    expect(tree.length).toBe(code.length);
+  });
 });
