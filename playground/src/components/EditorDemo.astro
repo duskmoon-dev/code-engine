@@ -489,6 +489,7 @@ BinaryExpression { expression !add "+" expression }
     }
     if (update.docChanged) {
       updateDocStats(update.state.doc)
+      autoSave()
     }
   })
 
@@ -571,7 +572,7 @@ BinaryExpression { expression !add "+" expression }
     view.dispatch({ effects: extensionCompartment.reconfigure(getActiveExtensions()) })
   }
 
-  langSelect.addEventListener('change', () => switchLanguage(langSelect.value))
+  langSelect.addEventListener('change', () => { switchLanguage(langSelect.value); autoSave() })
 
   themeSelect.addEventListener('change', () => {
     const t = themes[themeSelect.value]
@@ -818,10 +819,43 @@ BinaryExpression { expression !add "+" expression }
     view.dispatch({ effects: themeCompartment.reconfigure(themes['one-dark']) })
     reconfigureExtensions()
     history.replaceState(null, '', location.pathname)
+    try { localStorage.removeItem(STORAGE_KEY) } catch { /* */ }
   })
 
   // Restore state from URL hash on load
   if (location.hash.length > 1) restoreState()
+
+  // Auto-save editor content to localStorage (debounced)
+  const STORAGE_KEY = 'code-engine-playground'
+  let saveTimeout: ReturnType<typeof setTimeout>
+
+  function autoSave() {
+    clearTimeout(saveTimeout)
+    saveTimeout = setTimeout(() => {
+      try {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify({
+          lang: langSelect.value,
+          doc: view.state.doc.toString(),
+        }))
+      } catch { /* quota exceeded or unavailable */ }
+    }, 1000)
+  }
+
+  // Restore from localStorage only if no URL hash present
+  if (location.hash.length <= 1) {
+    try {
+      const saved = localStorage.getItem(STORAGE_KEY)
+      if (saved) {
+        const { lang, doc } = JSON.parse(saved)
+        if (lang && languageLoaders[lang] && doc) {
+          langSelect.value = lang
+          switchLanguage(lang).then(() => {
+            view.dispatch({ changes: { from: 0, to: view.state.doc.length, insert: doc } })
+          })
+        }
+      }
+    } catch { /* corrupted or unavailable */ }
+  }
 
   // Prefetch popular languages on idle to improve switching speed
   if ('requestIdleCallback' in window) {

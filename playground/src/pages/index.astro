@@ -33,6 +33,7 @@ new EditorView({
   }),
   parent: document.getElementById("editor"),
 })`}</code></pre>
+    <a href={`${import.meta.env.BASE_URL}playground#lang=javascript`} class="try-btn">Try in Playground →</a>
   </section>
 
   <nav class="page-links">
@@ -136,6 +137,24 @@ new EditorView({
   .link-card p {
     color: var(--color-text-muted);
     font-size: 0.9rem;
+  }
+  .try-btn {
+    display: inline-block;
+    margin-top: var(--space-sm);
+    padding: 0.4rem 1rem;
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius);
+    font-size: 0.9rem;
+    transition: border-color 0.15s, color 0.15s;
+  }
+  .try-btn:hover {
+    border-color: var(--color-accent);
+    text-decoration: none;
+  }
+  .try-btn:focus-visible {
+    outline: 2px solid var(--color-accent);
+    outline-offset: 2px;
   }
   :global(.copy-btn) {
     position: absolute;
