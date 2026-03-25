@@ -31,7 +31,7 @@ import {
   clearSnippet,
   snippetKeymap,
 } from "../../src/core/autocomplete/index";
-import { EditorState, Text } from "../../src/core/state/index";
+import { EditorState, EditorSelection, Text, Transaction } from "../../src/core/state/index";
 import { FuzzyMatcher, StrictMatcher } from "../../src/core/autocomplete/filter";
 
 describe("autocomplete module exports", () => {
@@ -449,19 +449,192 @@ describe("insertCompletionText", () => {
   });
 });
 
-describe("snippet and snippetKeymap", () => {
+describe("snippet behavioral tests", () => {
   it("snippetKeymap is defined", () => {
     expect(snippetKeymap).toBeDefined();
   });
 
-  it("snippet with no fields returns a function that inserts text", () => {
-    const applyFn = snippet("console.log()");
-    expect(typeof applyFn).toBe("function");
+  it("snippet with no fields inserts text at the given position", () => {
+    const apply = snippet("console.log()");
+    const state = EditorState.create({ doc: "let x = 1;" });
+    let result: EditorState | null = null;
+    apply({ state, dispatch: (tr: Transaction) => { result = tr.state; } }, null, 0, 0);
+    expect(result).not.toBeNull();
+    expect(result!.doc.toString()).toContain("console.log()");
   });
 
-  it("snippet with fields creates field placeholders", () => {
-    const applyFn = snippet("function ${name}(${args}) { ${} }");
-    expect(typeof applyFn).toBe("function");
+  it("snippet inserts text replacing selected range", () => {
+    const apply = snippet("hello");
+    const state = EditorState.create({ doc: "foo bar", selection: EditorSelection.range(4, 7) });
+    let result: EditorState | null = null;
+    apply({ state, dispatch: (tr: Transaction) => { result = tr.state; } }, null, 4, 7);
+    expect(result).not.toBeNull();
+    expect(result!.doc.toString()).toBe("foo hello");
+  });
+
+  it("snippet with named field expands default field text", () => {
+    const apply = snippet("for (let ${i} = 0; ${i} < ${n}; ${i}++) {}");
+    const state = EditorState.create({ doc: "" });
+    let result: EditorState | null = null;
+    apply({ state, dispatch: (tr: Transaction) => { result = tr.state; } }, null, 0, 0);
+    expect(result).not.toBeNull();
+    const doc = result!.doc.toString();
+    expect(doc).toContain("for (let i = 0; i < n; i++) {}");
+    // First field "i" should be selected
+    expect(result!.selection.main.from).not.toBe(result!.selection.main.to);
+  });
+
+  it("snippet with empty field (${}) creates cursor position", () => {
+    const apply = snippet("if (true) {\n\t${}\n}");
+    const state = EditorState.create({ doc: "" });
+    let result: EditorState | null = null;
+    apply({ state, dispatch: (tr: Transaction) => { result = tr.state; } }, null, 0, 0);
+    expect(result).not.toBeNull();
+    expect(result!.doc.toString()).toContain("if (true) {");
+  });
+
+  it("snippet with numbered fields respects ordering (${1} before ${2})", () => {
+    const apply = snippet("${2:second} ${1:first}");
+    const state = EditorState.create({ doc: "" });
+    let result: EditorState | null = null;
+    apply({ state, dispatch: (tr: Transaction) => { result = tr.state; } }, null, 0, 0);
+    expect(result).not.toBeNull();
+    const doc = result!.doc.toString();
+    expect(doc).toBe("second first");
+    // Selection should be on the first-ordered field "first" (seq 1)
+    expect(result!.selection.main.from).not.toBe(result!.selection.main.to);
+  });
+
+  it("snippet with escaped braces inserts literal braces", () => {
+    const apply = snippet("obj\\{key\\}");
+    const state = EditorState.create({ doc: "" });
+    let result: EditorState | null = null;
+    apply({ state, dispatch: (tr: Transaction) => { result = tr.state; } }, null, 0, 0);
+    expect(result).not.toBeNull();
+    expect(result!.doc.toString()).toContain("{key}");
+  });
+
+  it("snippet with multi-line template indents correctly", () => {
+    const apply = snippet("function ${name}() {\n\t${}\n}");
+    // Start at indented position
+    const state = EditorState.create({ doc: "  " });
+    let result: EditorState | null = null;
+    apply({ state, dispatch: (tr: Transaction) => { result = tr.state; } }, null, 2, 2);
+    expect(result).not.toBeNull();
+    // Should have proper indentation
+    const lines = result!.doc.toString().split("\n");
+    expect(lines.length).toBe(3); // function, body, }
+  });
+
+  it("snippet function creates apply function that is reusable", () => {
+    const apply = snippet("hello ${world}");
+    // Apply twice to different states
+    const state1 = EditorState.create({ doc: "a" });
+    const state2 = EditorState.create({ doc: "b" });
+    let r1: EditorState | null = null, r2: EditorState | null = null;
+    apply({ state: state1, dispatch: (tr: Transaction) => { r1 = tr.state; } }, null, 0, 0);
+    apply({ state: state2, dispatch: (tr: Transaction) => { r2 = tr.state; } }, null, 0, 0);
+    expect(r1!.doc.toString()).toContain("hello world");
+    expect(r2!.doc.toString()).toContain("hello world");
+  });
+});
+
+describe("snippet field navigation", () => {
+  function applySnippet(template: string, doc: string = ""): EditorState {
+    const apply = snippet(template);
+    const state = EditorState.create({ doc });
+    let result: EditorState | null = null;
+    apply({ state, dispatch: (tr: Transaction) => { result = tr.state; } }, null, 0, 0);
+    return result!;
+  }
+
+  function runCmd(cmd: (target: {state: EditorState, dispatch: (tr: Transaction) => void}) => boolean, state: EditorState): EditorState | null {
+    let result: EditorState | null = null;
+    const ok = cmd({ state, dispatch: (tr: Transaction) => { result = tr.state; } });
+    return ok ? result : null;
+  }
+
+  it("hasNextSnippetField returns false when no snippet is active", () => {
+    const state = EditorState.create({ doc: "hello" });
+    expect(hasNextSnippetField(state)).toBe(false);
+  });
+
+  it("hasPrevSnippetField returns false when no snippet is active", () => {
+    const state = EditorState.create({ doc: "hello" });
+    expect(hasPrevSnippetField(state)).toBe(false);
+  });
+
+  it("hasNextSnippetField returns true after applying multi-field snippet", () => {
+    const state = applySnippet("${first} ${second}");
+    // Active snippet with fields — should have next field available
+    expect(hasNextSnippetField(state)).toBe(true);
+  });
+
+  it("nextSnippetField moves to next field", () => {
+    const state = applySnippet("${first} ${second}");
+    // First field is active — move to next
+    const moved = runCmd(nextSnippetField, state);
+    expect(moved).not.toBeNull();
+    // Selection should now be on "second"
+    const selectedText = moved!.sliceDoc(moved!.selection.main.from, moved!.selection.main.to);
+    expect(selectedText).toBe("second");
+  });
+
+  it("nextSnippetField returns false when no snippet is active", () => {
+    const state = EditorState.create({ doc: "hello" });
+    const result = runCmd(nextSnippetField, state);
+    expect(result).toBeNull();
+  });
+
+  it("prevSnippetField returns false on first field", () => {
+    const state = applySnippet("${first} ${second}");
+    // On first field — prevSnippetField should return false
+    const result = runCmd(prevSnippetField, state);
+    expect(result).toBeNull();
+  });
+
+  it("prevSnippetField moves back after nextSnippetField (3-field snippet)", () => {
+    // Need 3 fields: after moving to field 2 (middle), we can still go back
+    const s0 = applySnippet("${first} ${second} ${third}");
+    const s1 = runCmd(nextSnippetField, s0)!;  // move to "second"
+    expect(s1).not.toBeNull();
+    // Now on field 1 (second), not the last — prevSnippetField should work
+    const s2 = runCmd(prevSnippetField, s1);
+    expect(s2).not.toBeNull();
+    const selectedText = s2!.sliceDoc(s2!.selection.main.from, s2!.selection.main.to);
+    expect(selectedText).toBe("first");
+  });
+
+  it("clearSnippet deactivates active snippet", () => {
+    const state = applySnippet("${first} ${second}");
+    expect(hasNextSnippetField(state)).toBe(true);
+    const cleared = runCmd(clearSnippet, state);
+    expect(cleared).not.toBeNull();
+    expect(hasNextSnippetField(cleared!)).toBe(false);
+  });
+
+  it("moving selection outside snippet field deactivates snippet", () => {
+    // Use a 2-field snippet so snippetState is active
+    const s0 = applySnippet("${first} ${second}");
+    expect(hasNextSnippetField(s0)).toBe(true);
+    // Dispatch a selection change that moves cursor outside the active field
+    const s1 = s0.update({
+      selection: { anchor: s0.doc.length },
+    }).state;
+    // Snippet should be cleared since selection moved outside field
+    expect(hasNextSnippetField(s1)).toBe(false);
+  });
+
+  it("doc change while snippet is active remaps snippet fields", () => {
+    // Apply 2-field snippet to trigger ActiveSnippet.map when doc changes
+    const s0 = applySnippet("${first} ${second}");
+    expect(hasNextSnippetField(s0)).toBe(true);
+    // Insert text at start of doc — this remaps field positions via ActiveSnippet.map
+    const s1 = s0.update({
+      changes: { from: 0, to: 0, insert: "PREFIX " },
+    }).state;
+    // Snippet should still be active after doc change (positions remapped)
+    expect(hasNextSnippetField(s1)).toBe(true);
   });
 });
 
