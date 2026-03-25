@@ -91,7 +91,8 @@
     </div>
   </div>
   <p id="load-error" class="load-error" role="alert" hidden>
-    Failed to load language pack. Check your network connection.
+    Failed to load <span id="failed-lang-name"></span> language pack.
+    <button id="btn-retry-lang" class="toolbar-btn" style="margin-left: 0.5rem; font-size: 0.8rem;">Retry</button>
   </p>
   <div id="editor" role="region" aria-label="Code editor">
     <div class="editor-loading" aria-label="Loading editor">
@@ -557,7 +558,10 @@ BinaryExpression { expression !add "+" expression }
   }
 
   const loadError = document.getElementById('load-error') as HTMLElement
+  const failedLangName = document.getElementById('failed-lang-name') as HTMLElement
+  const retryLangBtn = document.getElementById('btn-retry-lang') as HTMLButtonElement
   const langLoading = document.getElementById('lang-loading') as HTMLElement
+  let lastFailedLang = ''
 
   async function switchLanguage(key: string) {
     langSelect.disabled = true
@@ -571,6 +575,8 @@ BinaryExpression { expression !add "+" expression }
       })
       statusLang.textContent = languageLabels[key] ?? key
     } catch {
+      lastFailedLang = key
+      failedLangName.textContent = languageLabels[key] ?? key
       loadError.hidden = false
       // Revert select to previous value
       langSelect.value = [...langSelect.options].find(o =>
@@ -581,6 +587,13 @@ BinaryExpression { expression !add "+" expression }
       langLoading.hidden = true
     }
   }
+
+  retryLangBtn.addEventListener('click', () => {
+    if (lastFailedLang) {
+      langSelect.value = lastFailedLang
+      switchLanguage(lastFailedLang)
+    }
+  })
 
   function reconfigureExtensions() {
     view.dispatch({ effects: extensionCompartment.reconfigure(getActiveExtensions()) })
@@ -737,8 +750,9 @@ BinaryExpression { expression !add "+" expression }
     updateHash()
     const url = location.href
     if (url.length > MAX_SHARE_URL_LENGTH) {
-      shareBtn.textContent = 'Use Copy ↑'
-      shareBtn.title = 'Code is too large for a share URL. Use the Copy button to copy the code instead.'
+      const sizeKB = Math.ceil(url.length / 1024)
+      shareBtn.textContent = `Too large (${sizeKB}KB)`
+      shareBtn.title = `URL is ${sizeKB}KB (limit 8KB). Use the Copy button to copy the code instead.`
       setTimeout(() => { shareBtn.textContent = 'Share'; shareBtn.title = '' }, 3000)
       return
     }
@@ -857,7 +871,7 @@ BinaryExpression { expression !add "+" expression }
     view.dispatch({ effects: themeCompartment.reconfigure(themes['one-dark']) })
     reconfigureExtensions()
     history.replaceState(null, '', location.pathname)
-    try { localStorage.removeItem(STORAGE_KEY) } catch { /* */ }
+    try { localStorage.removeItem(STORAGE_KEY) } catch (e) { console.warn('localStorage unavailable:', e) }
   })
 
   // Restore state from URL hash on load
@@ -875,7 +889,7 @@ BinaryExpression { expression !add "+" expression }
           lang: langSelect.value,
           doc: view.state.doc.toString(),
         }))
-      } catch { /* quota exceeded or unavailable */ }
+      } catch (e) { console.warn('Failed to save editor state:', e) }
     }, 1000)
   }
 
@@ -892,14 +906,21 @@ BinaryExpression { expression !add "+" expression }
           })
         }
       }
-    } catch { /* corrupted or unavailable */ }
+    } catch (e) { console.warn('Failed to restore editor state:', e) }
   }
 
   // Prefetch popular languages on idle to improve switching speed
   if ('requestIdleCallback' in window) {
     requestIdleCallback(() => {
       const popular = ['python', 'typescript', 'html', 'css', 'json', 'rust', 'go']
-      for (const lang of popular) loadLanguage(lang)
+      // Prioritize the initially selected language from URL hash
+      const initialLang = new URLSearchParams(location.hash.slice(1)).get('lang')
+      const prefetchOrder = initialLang && !popular.includes(initialLang)
+        ? [initialLang, ...popular]
+        : popular
+      for (const lang of prefetchOrder) {
+        if (lang in languageLoaders) loadLanguage(lang)
+      }
     })
   }
 </script>
