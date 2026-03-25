@@ -149,3 +149,47 @@ describe("EditorSelection", () => {
     expect(range.to).toBe(8);
   });
 });
+
+describe("Transaction", () => {
+  it("state.update() returns a transaction", () => {
+    const state = EditorState.create({ doc: "hello" });
+    const tr = state.update({ changes: { from: 5, insert: "!" } });
+    expect(tr).toBeDefined();
+    expect(tr.state.doc.toString()).toBe("hello!");
+  });
+
+  it("transaction has newDoc", () => {
+    const state = EditorState.create({ doc: "hello" });
+    const tr = state.update({ changes: { from: 0, to: 5, insert: "world" } });
+    expect(tr.newDoc.toString()).toBe("world");
+  });
+
+  it("transaction docChanged is true after change", () => {
+    const state = EditorState.create({ doc: "hello" });
+    const tr = state.update({ changes: { from: 5, insert: "!" } });
+    expect(tr.docChanged).toBe(true);
+  });
+
+  it("transaction docChanged is false without changes", () => {
+    const state = EditorState.create({ doc: "hello" });
+    const tr = state.update({});
+    expect(tr.docChanged).toBe(false);
+  });
+});
+
+describe("Annotation", () => {
+  it("defines an annotation type", () => {
+    const myAnnotation = Annotation.define<string>();
+    expect(myAnnotation).toBeDefined();
+    expect(typeof myAnnotation.of).toBe("function");
+  });
+
+  it("annotates a transaction", () => {
+    const myAnnotation = Annotation.define<string>();
+    const state = EditorState.create({ doc: "hello" });
+    const tr = state.update({
+      annotations: myAnnotation.of("test-value"),
+    });
+    expect(tr.annotation(myAnnotation)).toBe("test-value");
+  });
+});
