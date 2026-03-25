@@ -16,6 +16,10 @@ import { yaml as legacyYaml } from "../../../src/lang/legacy/yaml";
 import { wast as legacyWast } from "../../../src/lang/legacy/wast";
 import { fcl } from "../../../src/lang/legacy/fcl";
 import { tiki } from "../../../src/lang/legacy/tiki";
+import { jinja2 } from "../../../src/lang/legacy/jinja2";
+import { q } from "../../../src/lang/legacy/q";
+import { rpmSpec } from "../../../src/lang/legacy/rpm";
+import { ttcnCfg } from "../../../src/lang/legacy/ttcn-cfg";
 
 describe("Legacy language packs (batch 8 - coverage completion)", () => {
   describe("StreamParser exports", () => {
@@ -87,6 +91,26 @@ describe("Legacy language packs (batch 8 - coverage completion)", () => {
     it("tiki is a StreamParser object", () => {
       expect(tiki).toBeDefined();
       expect(typeof tiki).toBe("object");
+    });
+
+    it("jinja2 is a StreamParser object", () => {
+      expect(jinja2).toBeDefined();
+      expect(typeof jinja2).toBe("object");
+    });
+
+    it("q is a StreamParser object", () => {
+      expect(q).toBeDefined();
+      expect(typeof q).toBe("object");
+    });
+
+    it("rpmSpec is a StreamParser object", () => {
+      expect(rpmSpec).toBeDefined();
+      expect(typeof rpmSpec).toBe("object");
+    });
+
+    it("ttcnCfg is a StreamParser object", () => {
+      expect(ttcnCfg).toBeDefined();
+      expect(typeof ttcnCfg).toBe("object");
     });
   });
 
