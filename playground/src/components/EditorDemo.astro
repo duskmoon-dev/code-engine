@@ -673,11 +673,13 @@ BinaryExpression { expression !add "+" expression }
     if (currentFontSize !== 14) params.set('fs', String(currentFontSize))
     if (tabSizeSelect.value !== '2') params.set('tab', tabSizeSelect.value)
     if (indentTabsCheckbox.checked) params.set('tabs', '1')
-    // Encode editor content in share URL
+    // Encode editor content in share URL (base64url-encoded UTF-8)
     const doc = view.state.doc.toString()
     const defaultDoc = sampleCode[langSelect.value] ?? ''
     if (doc !== defaultDoc) {
-      params.set('code', btoa(unescape(encodeURIComponent(doc))))
+      const bytes = new TextEncoder().encode(doc)
+      const b64 = btoa(String.fromCharCode(...bytes))
+      params.set('code', b64)
     }
     return params.toString()
   }
@@ -717,7 +719,8 @@ BinaryExpression { expression !add "+" expression }
     const code = params.get('code')
     if (code) {
       try {
-        const decoded = decodeURIComponent(escape(atob(code)))
+        const bytes = Uint8Array.from(atob(code), c => c.charCodeAt(0))
+        const decoded = new TextDecoder().decode(bytes)
         setTimeout(() => {
           view.dispatch({ changes: { from: 0, to: view.state.doc.length, insert: decoded } })
         }, 100)
