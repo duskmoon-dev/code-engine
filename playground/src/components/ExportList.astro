@@ -94,7 +94,15 @@ const categories = categoryOrder
         {cat.exports.map(exp => (
           <tr>
             <td><code>{exp.path === '.' ? pkgName : `${pkgName}/${exp.path}`}</code></td>
-            <td class="desc">{exp.description ?? ''}</td>
+            <td class="desc">
+              {exp.description ?? ''}
+              {exp.path === 'lang/legacy/*' && (
+                <span class="legacy-note">
+                  Uses <code>StreamLanguage.define(mode)</code> instead of native Lezer parsers.
+                  Import the mode and wrap it: <code>StreamLanguage.define(yourMode)</code>.
+                </span>
+              )}
+            </td>
           </tr>
         ))}
       </tbody>
@@ -142,5 +150,12 @@ const categories = categoryOrder
   }
   .desc {
     color: var(--color-text-muted);
+  }
+  .legacy-note {
+    display: block;
+    margin-top: 0.25rem;
+    font-size: 0.85em;
+    color: var(--color-text-muted);
+    font-style: italic;
   }
 </style>

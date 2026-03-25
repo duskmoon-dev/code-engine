@@ -17,6 +17,9 @@
   --color-bracket-match: rgba(88, 166, 255, 0.25);
   --color-highlight: rgba(255, 215, 0, 0.3);
   --color-highlight-active: rgba(255, 150, 50, 0.4);
+  --color-fold: transparent;
+  --color-fold-text: #8b949e;
+  --color-primary-text: #ffffff;
   --font-mono: 'JetBrains Mono', 'Fira Code', monospace;
   --font-sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
   --font-size-sm: 14px;
