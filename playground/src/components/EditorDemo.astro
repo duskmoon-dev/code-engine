@@ -399,10 +399,16 @@ BinaryExpression { expression !add "+" expression }
 
   const statusBarUpdater = EditorView.updateListener.of((update) => {
     if (update.selectionSet || update.docChanged) {
-      const pos = update.state.selection.main.head
+      const sel = update.state.selection.main
+      const pos = sel.head
       const line = update.state.doc.lineAt(pos)
       const col = pos - line.from + 1
-      statusPos.textContent = `Ln ${line.number}, Col ${col}`
+      if (sel.empty) {
+        statusPos.textContent = `Ln ${line.number}, Col ${col}`
+      } else {
+        const len = Math.abs(sel.to - sel.from)
+        statusPos.textContent = `Ln ${line.number}, Col ${col} (${len} selected)`
+      }
     }
     if (update.docChanged) {
       updateDocStats(update.state.doc)
