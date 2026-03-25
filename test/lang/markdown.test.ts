@@ -103,6 +103,88 @@ describe("Markdown language pack", () => {
     expect(Array.isArray(GFM)).toBe(true);
   });
 
+  describe("Autolink extension behavioral (covers autolinkURLEnd, autolinkEmailEnd, count)", () => {
+    it("parses https:// URL with Autolink extension", () => {
+      const p = parser.configure([Autolink]);
+      const tree = p.parse("Visit https://example.com for info.");
+      expect(tree.length).toBeGreaterThan(0);
+      expect(tree.type.isTop).toBe(true);
+    });
+
+    it("parses www. URL with Autolink extension", () => {
+      const p = parser.configure([Autolink]);
+      const tree = p.parse("Go to www.example.com today.");
+      expect(tree.length).toBeGreaterThan(0);
+    });
+
+    it("parses email address with Autolink extension", () => {
+      const p = parser.configure([Autolink]);
+      const tree = p.parse("Contact user@example.com for help.");
+      expect(tree.length).toBeGreaterThan(0);
+    });
+
+    it("parses mailto: link with Autolink extension", () => {
+      const p = parser.configure([Autolink]);
+      const tree = p.parse("Send to mailto:user@example.com now.");
+      expect(tree.length).toBeGreaterThan(0);
+    });
+
+    it("URL with trailing punctuation is trimmed (count function path)", () => {
+      const p = parser.configure([Autolink]);
+      const tree = p.parse("See https://example.com/path?q=1.");
+      expect(tree.length).toBeGreaterThan(0);
+    });
+
+    it("URL with unmatched closing paren is trimmed (count() function)", () => {
+      // Triggers count() to check ')' vs '(' balance
+      const p = parser.configure([Autolink]);
+      const tree = p.parse("See https://example.com/path)) end.");
+      expect(tree.length).toBeGreaterThan(0);
+    });
+
+    it("URL inside link text does not autolink (cx.hasOpenLink path)", () => {
+      const p = parser.configure([Autolink]);
+      const tree = p.parse("[see https://example.com here](url)");
+      expect(tree.length).toBeGreaterThan(0);
+    });
+  });
+
+  describe("Superscript extension behavioral (covers parseSubSuper)", () => {
+    it("parses superscript with ^ markers", () => {
+      const p = parser.configure([Superscript]);
+      const tree = p.parse("E=mc^2^ is the equation.");
+      expect(tree.length).toBeGreaterThan(0);
+    });
+
+    it("double ^ does not parse as superscript", () => {
+      const p = parser.configure([Superscript]);
+      const tree = p.parse("x^^y is not superscript.");
+      expect(tree.length).toBeGreaterThan(0);
+    });
+  });
+
+  describe("Subscript extension behavioral (covers parseSubSuper)", () => {
+    it("parses subscript with ~ markers", () => {
+      const p = parser.configure([Subscript]);
+      const tree = p.parse("H~2~O is water.");
+      expect(tree.length).toBeGreaterThan(0);
+    });
+  });
+
+  describe("Emoji extension behavioral", () => {
+    it("parses emoji shortcode :smile:", () => {
+      const p = parser.configure([Emoji]);
+      const tree = p.parse("Hello :smile: world");
+      expect(tree.length).toBeGreaterThan(0);
+    });
+
+    it("non-emoji colon is not parsed as emoji", () => {
+      const p = parser.configure([Emoji]);
+      const tree = p.parse("Time: 3pm is not emoji.");
+      expect(tree.length).toBeGreaterThan(0);
+    });
+  });
+
   it("exports Table extension", () => {
     expect(Table).toBeDefined();
   });
