@@ -6,6 +6,8 @@ import {
   localCompletionSource, completionPath, scopeCompletionSource,
   esLint
 } from "../../src/lang/javascript/index";
+import { EditorState } from "../../src/core/state/index";
+import { syntaxTree } from "../../src/core/language/index";
 
 describe("JavaScript language pack", () => {
   it("exports javascript function", () => {
@@ -97,5 +99,38 @@ describe("JavaScript language pack", () => {
   it("scopeCompletionSource returns a CompletionSource", () => {
     const source = scopeCompletionSource(javascriptLanguage);
     expect(typeof source).toBe("function");
+  });
+
+  it("javascriptLanguage parser produces a non-empty tree", () => {
+    const tree = javascriptLanguage.parser.parse("const x = 42;");
+    expect(tree.length).toBeGreaterThan(0);
+  });
+
+  it("typescriptLanguage parser produces a non-empty tree", () => {
+    const tree = typescriptLanguage.parser.parse("const x: number = 42;");
+    expect(tree.length).toBeGreaterThan(0);
+  });
+
+  it("javascriptLanguage parser tree has a top-level type", () => {
+    const tree = javascriptLanguage.parser.parse("function foo() {}");
+    expect(tree.type.isTop).toBe(true);
+  });
+
+  it("syntaxTree from EditorState with javascript() is non-empty", () => {
+    const state = EditorState.create({
+      doc: "const greet = (name) => `Hello, ${name}!`;",
+      extensions: [javascript()],
+    });
+    const tree = syntaxTree(state);
+    expect(tree.length).toBeGreaterThan(0);
+  });
+
+  it("syntaxTree from EditorState with typescript mode is non-empty", () => {
+    const state = EditorState.create({
+      doc: "interface Foo { bar: string; }",
+      extensions: [javascript({ typescript: true })],
+    });
+    const tree = syntaxTree(state);
+    expect(tree.length).toBeGreaterThan(0);
   });
 });

@@ -3,6 +3,8 @@ import {
   css, cssLanguage,
   cssCompletionSource, defineCSSCompletionSource
 } from "../../src/lang/css/index";
+import { EditorState } from "../../src/core/state/index";
+import { syntaxTree } from "../../src/core/language/index";
 
 describe("CSS language pack", () => {
   it("exports css function", () => {
@@ -42,5 +44,24 @@ describe("CSS language pack", () => {
     const lang = css();
     expect(lang.language).toBe(cssLanguage);
     expect(lang.language.name).toBe("css");
+  });
+
+  it("cssLanguage parser produces a non-empty tree", () => {
+    const tree = cssLanguage.parser.parse("body { color: red; }");
+    expect(tree.length).toBeGreaterThan(0);
+  });
+
+  it("cssLanguage parser tree has a top-level type", () => {
+    const tree = cssLanguage.parser.parse(".foo { display: flex; }");
+    expect(tree.type.isTop).toBe(true);
+  });
+
+  it("syntaxTree from EditorState with css() is non-empty", () => {
+    const state = EditorState.create({
+      doc: "h1 { font-size: 2em; margin: 0; }",
+      extensions: [css()],
+    });
+    const tree = syntaxTree(state);
+    expect(tree.length).toBeGreaterThan(0);
   });
 });

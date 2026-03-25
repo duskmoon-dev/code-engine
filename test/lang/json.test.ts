@@ -1,7 +1,7 @@
 import { describe, it, expect } from "bun:test";
 import { json, jsonLanguage, jsonParseLinter } from "../../src/lang/json/index";
 import { EditorState } from "../../src/core/state/index";
-import { LanguageSupport } from "../../src/core/language/index";
+import { LanguageSupport, syntaxTree } from "../../src/core/language/index";
 
 describe("JSON language pack", () => {
   describe("exports", () => {
@@ -69,6 +69,27 @@ describe("JSON language pack", () => {
         extensions: [json()],
       });
       expect(state.doc.length).toBe(0);
+    });
+  });
+
+  describe("parse tree", () => {
+    it("jsonLanguage parser produces a non-empty tree", () => {
+      const tree = jsonLanguage.parser.parse('{"key": "value"}');
+      expect(tree.length).toBeGreaterThan(0);
+    });
+
+    it("jsonLanguage parser tree has a top-level type", () => {
+      const tree = jsonLanguage.parser.parse('[1, 2, 3]');
+      expect(tree.type.isTop).toBe(true);
+    });
+
+    it("syntaxTree from EditorState with json() is non-empty", () => {
+      const state = EditorState.create({
+        doc: '{"hello": "world"}',
+        extensions: [json()],
+      });
+      const tree = syntaxTree(state);
+      expect(tree.length).toBeGreaterThan(0);
     });
   });
 });

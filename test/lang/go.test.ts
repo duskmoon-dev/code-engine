@@ -1,6 +1,7 @@
 import { describe, it, expect } from "bun:test";
 import { go, goLanguage, snippets, localCompletionSource } from "../../src/lang/go/index";
 import { EditorState } from "../../src/core/state/index";
+import { syntaxTree } from "../../src/core/language/index";
 
 describe("Go language pack", () => {
   it("exports go function", () => {
@@ -38,6 +39,25 @@ describe("Go language pack", () => {
     const labels = snippets.map((s: any) => s.label)
     expect(labels).toContain("func")
     expect(labels).toContain("for")
+  });
+
+  it("goLanguage parser produces a non-empty tree", () => {
+    const tree = goLanguage.parser.parse("package main\nfunc main() {}");
+    expect(tree.length).toBeGreaterThan(0);
+  });
+
+  it("goLanguage parser tree has a top-level type", () => {
+    const tree = goLanguage.parser.parse("var x int = 1");
+    expect(tree.type.isTop).toBe(true);
+  });
+
+  it("syntaxTree from EditorState with go() is non-empty", () => {
+    const state = EditorState.create({
+      doc: "package main\n\nimport \"fmt\"\n\nfunc main() {\n  fmt.Println(\"hello\")\n}",
+      extensions: [go()],
+    });
+    const tree = syntaxTree(state);
+    expect(tree.length).toBeGreaterThan(0);
   });
 
   it("localCompletionSource returns null for non-word context", () => {

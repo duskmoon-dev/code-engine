@@ -3,6 +3,8 @@ import {
   xml, xmlLanguage, completeFromSchema, autoCloseTags,
   type ElementSpec, type AttrSpec
 } from "../../src/lang/xml/index";
+import { EditorState } from "../../src/core/state/index";
+import { syntaxTree } from "../../src/core/language/index";
 
 describe("XML language pack", () => {
   it("exports xml function", () => {
@@ -100,5 +102,24 @@ describe("XML language pack", () => {
     ];
     const support = xml({ elements });
     expect(support).toBeDefined();
+  });
+
+  it("xmlLanguage parser produces a non-empty tree", () => {
+    const tree = xmlLanguage.parser.parse("<root><child attr=\"val\">text</child></root>");
+    expect(tree.length).toBeGreaterThan(0);
+  });
+
+  it("xmlLanguage parser tree has a top-level type", () => {
+    const tree = xmlLanguage.parser.parse("<?xml version=\"1.0\"?><doc/>");
+    expect(tree.type.isTop).toBe(true);
+  });
+
+  it("syntaxTree from EditorState with xml() is non-empty", () => {
+    const state = EditorState.create({
+      doc: "<items><item id=\"1\">first</item><item id=\"2\">second</item></items>",
+      extensions: [xml()],
+    });
+    const tree = syntaxTree(state);
+    expect(tree.length).toBeGreaterThan(0);
   });
 });

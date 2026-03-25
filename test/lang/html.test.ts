@@ -5,6 +5,8 @@ import {
   Schema, elementName, eventAttributes,
   type TagSpec
 } from "../../src/lang/html/index";
+import { EditorState } from "../../src/core/state/index";
+import { syntaxTree } from "../../src/core/language/index";
 
 describe("HTML language pack", () => {
   it("exports html function", () => {
@@ -76,5 +78,24 @@ describe("HTML language pack", () => {
     };
     const source = htmlCompletionSourceWith({ extraTags });
     expect(typeof source).toBe("function");
+  });
+
+  it("htmlLanguage parser produces a non-empty tree", () => {
+    const tree = htmlLanguage.parser.parse("<div class=\"foo\">hello</div>");
+    expect(tree.length).toBeGreaterThan(0);
+  });
+
+  it("htmlLanguage parser tree has a top-level type", () => {
+    const tree = htmlLanguage.parser.parse("<!DOCTYPE html><html><body></body></html>");
+    expect(tree.type.isTop).toBe(true);
+  });
+
+  it("syntaxTree from EditorState with html() is non-empty", () => {
+    const state = EditorState.create({
+      doc: "<p>Hello <strong>world</strong></p>",
+      extensions: [html()],
+    });
+    const tree = syntaxTree(state);
+    expect(tree.length).toBeGreaterThan(0);
   });
 });

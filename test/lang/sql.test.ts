@@ -5,6 +5,8 @@ import {
   keywordCompletionSource, schemaCompletionSource,
   type SQLConfig
 } from "../../src/lang/sql/index";
+import { EditorState } from "../../src/core/state/index";
+import { syntaxTree } from "../../src/core/language/index";
 
 describe("SQL language pack", () => {
   it("exports sql function", () => {
@@ -88,5 +90,29 @@ describe("SQL language pack", () => {
     expect(MySQL).not.toBe(PostgreSQL);
     expect(MySQL).not.toBe(SQLite);
     expect(PostgreSQL).not.toBe(SQLite);
+  });
+
+  it("StandardSQL language parser produces a non-empty tree", () => {
+    const tree = StandardSQL.language.parser.parse("SELECT id, name FROM users WHERE id = 1;");
+    expect(tree.length).toBeGreaterThan(0);
+  });
+
+  it("StandardSQL language parser tree has a top-level type", () => {
+    const tree = StandardSQL.language.parser.parse("INSERT INTO t (a, b) VALUES (1, 2);");
+    expect(tree.type.isTop).toBe(true);
+  });
+
+  it("syntaxTree from EditorState with sql() is non-empty", () => {
+    const state = EditorState.create({
+      doc: "SELECT * FROM users;",
+      extensions: [sql()],
+    });
+    const tree = syntaxTree(state);
+    expect(tree.length).toBeGreaterThan(0);
+  });
+
+  it("MySQL dialect parses MySQL-specific syntax", () => {
+    const tree = MySQL.language.parser.parse("SELECT `name` FROM `users` LIMIT 10;");
+    expect(tree.length).toBeGreaterThan(0);
   });
 });
