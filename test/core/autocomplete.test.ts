@@ -33,6 +33,7 @@ import {
 } from "../../src/core/autocomplete/index";
 import { EditorState, EditorSelection, Text, Transaction } from "../../src/core/state/index";
 import { FuzzyMatcher, StrictMatcher } from "../../src/core/autocomplete/filter";
+import { completionConfig } from "../../src/core/autocomplete/config";
 
 describe("autocomplete module exports", () => {
   it("exports autocompletion as a function", () => {
@@ -1001,5 +1002,59 @@ describe("deleteBracketPair()", () => {
     deleteBracketPair({ state, dispatch: (tr) => { newState = state.update(tr).state } } as any);
     expect(newState!.doc.toString()).toBe("xy");
     expect(newState!.selection.main.head).toBe(1);
+  });
+});
+
+describe("completionConfig joinClass combiner", () => {
+  it("joinClass combines two non-empty tooltip classes with a space", () => {
+    // Two completionConfig facet values each providing tooltipClass
+    const state = EditorState.create({
+      doc: "hello",
+      extensions: [
+        completionConfig.of({ tooltipClass: () => "cls-a" }),
+        completionConfig.of({ tooltipClass: () => "cls-b" }),
+      ],
+    });
+    const config = state.facet(completionConfig);
+    // The combiner creates: c => joinClass(a(c), b(c))
+    // Calling it exercises joinClass("cls-a", "cls-b") → "cls-a cls-b"
+    expect(config.tooltipClass(state)).toBe("cls-a cls-b");
+  });
+
+  it("joinClass returns first class when second is empty", () => {
+    const state = EditorState.create({
+      doc: "hello",
+      extensions: [
+        completionConfig.of({ tooltipClass: () => "cls-a" }),
+        completionConfig.of({ tooltipClass: () => "" }),
+      ],
+    });
+    const config = state.facet(completionConfig);
+    expect(config.tooltipClass(state)).toBe("cls-a");
+  });
+
+  it("joinClass returns second class when first is empty", () => {
+    const state = EditorState.create({
+      doc: "hello",
+      extensions: [
+        completionConfig.of({ tooltipClass: () => "" }),
+        completionConfig.of({ tooltipClass: () => "cls-b" }),
+      ],
+    });
+    const config = state.facet(completionConfig);
+    expect(config.tooltipClass(state)).toBe("cls-b");
+  });
+
+  it("optionClass combiner joins classes for completion options", () => {
+    const state = EditorState.create({
+      doc: "hello",
+      extensions: [
+        completionConfig.of({ optionClass: () => "opt-a" }),
+        completionConfig.of({ optionClass: () => "opt-b" }),
+      ],
+    });
+    const config = state.facet(completionConfig);
+    const fakeCompletion = { label: "foo" };
+    expect(config.optionClass(fakeCompletion as any)).toBe("opt-a opt-b");
   });
 });
