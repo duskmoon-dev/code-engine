@@ -457,6 +457,52 @@ BinaryExpression { expression !add "+" expression }
     reconfigureExtensions()
   })
 
+  // URL hash state: persist settings in the URL for shareability
+  function serializeState(): string {
+    const params = new URLSearchParams()
+    params.set('lang', langSelect.value)
+    params.set('theme', themeSelect.value)
+    if (!lineNumbersCheckbox.checked) params.set('ln', '0')
+    if (!autocompleteCheckbox.checked) params.set('ac', '0')
+    if (vimCheckbox.checked) params.set('vim', '1')
+    if (emacsCheckbox.checked) params.set('emacs', '1')
+    return params.toString()
+  }
+
+  function restoreState() {
+    const params = new URLSearchParams(location.hash.slice(1))
+    const lang = params.get('lang')
+    const theme = params.get('theme')
+    if (lang && languageLoaders[lang]) {
+      langSelect.value = lang
+      switchLanguage(lang)
+    }
+    if (theme && themes[theme]) {
+      themeSelect.value = theme
+      view.dispatch({ effects: themeCompartment.reconfigure(themes[theme]) })
+    }
+    if (params.get('ln') === '0') lineNumbersCheckbox.checked = false
+    if (params.get('ac') === '0') autocompleteCheckbox.checked = false
+    if (params.get('vim') === '1') { vimCheckbox.checked = true; emacsCheckbox.checked = false }
+    if (params.get('emacs') === '1') { emacsCheckbox.checked = true; vimCheckbox.checked = false }
+    reconfigureExtensions()
+  }
+
+  function updateHash() {
+    history.replaceState(null, '', '#' + serializeState())
+  }
+
+  // Update hash on any control change
+  langSelect.addEventListener('change', updateHash)
+  themeSelect.addEventListener('change', updateHash)
+  lineNumbersCheckbox.addEventListener('change', updateHash)
+  autocompleteCheckbox.addEventListener('change', updateHash)
+  vimCheckbox.addEventListener('change', updateHash)
+  emacsCheckbox.addEventListener('change', updateHash)
+
+  // Restore state from URL hash on load
+  if (location.hash.length > 1) restoreState()
+
   // Prefetch popular languages on idle to improve switching speed
   if ('requestIdleCallback' in window) {
     requestIdleCallback(() => {
