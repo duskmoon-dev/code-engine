@@ -55,5 +55,12 @@ describe("Emacs keymap", () => {
       });
       expect(state.doc.toString()).toBe("hello world");
     });
+
+    it("emacs() can be used with multiple EditorState instances", () => {
+      const s1 = EditorState.create({ doc: "buffer 1", extensions: [emacs()] });
+      const s2 = EditorState.create({ doc: "buffer 2", extensions: [emacs()] });
+      expect(s1.doc.toString()).toBe("buffer 1");
+      expect(s2.doc.toString()).toBe("buffer 2");
+    });
   });
 });

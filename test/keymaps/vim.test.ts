@@ -55,5 +55,16 @@ describe("Vim keymap", () => {
       // getCM requires an EditorView, not EditorState — just test it's callable
       expect(typeof getCM).toBe("function");
     });
+
+    it("vim() can be used with multiple EditorState instances", () => {
+      const s1 = EditorState.create({ doc: "first", extensions: [vim()] });
+      const s2 = EditorState.create({ doc: "second", extensions: [vim()] });
+      expect(s1.doc.toString()).toBe("first");
+      expect(s2.doc.toString()).toBe("second");
+    });
+
+    it("Vim.defineEx is a function for registering commands", () => {
+      expect(typeof Vim.defineEx).toBe("function");
+    });
   });
 });
