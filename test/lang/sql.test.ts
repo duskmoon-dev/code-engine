@@ -115,4 +115,27 @@ describe("SQL language pack", () => {
     const tree = MySQL.language.parser.parse("SELECT `name` FROM `users` LIMIT 10;");
     expect(tree.length).toBeGreaterThan(0);
   });
+
+  it("sql parse tree cursor traversal works", () => {
+    const tree = StandardSQL.language.parser.parse("SELECT id, name FROM users WHERE id = 1;");
+    const cursor = tree.cursor();
+    let nodeCount = 0;
+    do { nodeCount++; } while (cursor.next() && nodeCount < 100);
+    expect(nodeCount).toBeGreaterThan(1);
+  });
+
+  it("PostgreSQL dialect is defined", () => {
+    expect(PostgreSQL).toBeDefined();
+    expect(PostgreSQL.language).toBeDefined();
+  });
+
+  it("SQLite dialect is defined", () => {
+    expect(SQLite).toBeDefined();
+    expect(SQLite.language).toBeDefined();
+  });
+
+  it("MSSQL dialect is defined", () => {
+    expect(MSSQL).toBeDefined();
+    expect(MSSQL.language).toBeDefined();
+  });
 });

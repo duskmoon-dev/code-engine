@@ -122,4 +122,20 @@ describe("XML language pack", () => {
     const tree = syntaxTree(state);
     expect(tree.length).toBeGreaterThan(0);
   });
+
+  it("xml parse tree cursor traversal works", () => {
+    const tree = xmlLanguage.parser.parse("<root><child attr=\"val\">text</child></root>");
+    const cursor = tree.cursor();
+    let nodeCount = 0;
+    do { nodeCount++; } while (cursor.next() && nodeCount < 100);
+    expect(nodeCount).toBeGreaterThan(1);
+  });
+
+  it("xml parse tree resolve() at position finds a node", () => {
+    const code = "<div class=\"main\">hello</div>";
+    const tree = xmlLanguage.parser.parse(code);
+    const node = tree.resolve(1);
+    expect(node).toBeDefined();
+    expect(node.type).toBeDefined();
+  });
 });
