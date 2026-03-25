@@ -1,7 +1,7 @@
 import { describe, it, expect } from "bun:test";
 import { sass, sassLanguage, sassCompletionSource } from "../../src/lang/sass/index";
 import { EditorState } from "../../src/core/state/index";
-import { LanguageSupport } from "../../src/core/language/index";
+import { LanguageSupport, syntaxTree } from "../../src/core/language/index";
 
 describe("Sass language pack", () => {
   describe("exports", () => {
@@ -69,6 +69,25 @@ describe("Sass language pack", () => {
         extensions: [sass()],
       });
       expect(state.doc.length).toBe(0);
+    });
+
+    it("sassLanguage parser produces a non-empty tree", () => {
+      const tree = sassLanguage.parser.parse("$color: red;\n.box { background: $color; }");
+      expect(tree.length).toBeGreaterThan(0);
+    });
+
+    it("sassLanguage parser tree has a top-level type", () => {
+      const tree = sassLanguage.parser.parse(".nav { a { color: #333; } }");
+      expect(tree.type.isTop).toBe(true);
+    });
+
+    it("syntaxTree from EditorState with sass() is non-empty", () => {
+      const state = EditorState.create({
+        doc: "@mixin flex { display: flex; }\n.box { @include flex; }",
+        extensions: [sass()],
+      });
+      const tree = syntaxTree(state);
+      expect(tree.length).toBeGreaterThan(0);
     });
   });
 });

@@ -1,7 +1,7 @@
 import { describe, it, expect } from "bun:test";
 import { less, lessLanguage, lessCompletionSource } from "../../src/lang/less/index";
 import { EditorState } from "../../src/core/state/index";
-import { LanguageSupport } from "../../src/core/language/index";
+import { LanguageSupport, syntaxTree } from "../../src/core/language/index";
 
 describe("Less language pack", () => {
   describe("exports", () => {
@@ -59,6 +59,25 @@ describe("Less language pack", () => {
         extensions: [less()],
       });
       expect(state.doc.length).toBe(0);
+    });
+
+    it("lessLanguage parser produces a non-empty tree", () => {
+      const tree = lessLanguage.parser.parse(".button { color: @primary; }");
+      expect(tree.length).toBeGreaterThan(0);
+    });
+
+    it("lessLanguage parser tree has a top-level type", () => {
+      const tree = lessLanguage.parser.parse("@base: #f938ab; .box { background: @base; }");
+      expect(tree.type.isTop).toBe(true);
+    });
+
+    it("syntaxTree from EditorState with less() is non-empty", () => {
+      const state = EditorState.create({
+        doc: ".nav { a { color: #333; &:hover { color: #000; } } }",
+        extensions: [less()],
+      });
+      const tree = syntaxTree(state);
+      expect(tree.length).toBeGreaterThan(0);
     });
   });
 });
