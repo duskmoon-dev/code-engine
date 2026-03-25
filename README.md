@@ -8,6 +8,8 @@ Deep fork of CodeMirror 6 + Lezer ecosystem — single package, zero dependencie
 
 Collapses 44 upstream repositories into one npm package with 43 tree-shakeable subpath exports.
 
+**[Live Playground](https://duskmoon-dev.github.io/code-engine/playground)** · **[API Reference](https://duskmoon-dev.github.io/code-engine/docs)**
+
 ## Install
 
 ```bash
@@ -61,7 +63,7 @@ new EditorView({
 
 ```bash
 bun install                           # install dependencies
-bun test                              # run tests (1200+ tests across 50 files)
+bun test                              # run tests (2900+ tests across 51 files)
 bun test test/core/state.test.ts      # run a single test file
 bun run typecheck                     # type check
 bun run build                         # full build pipeline
