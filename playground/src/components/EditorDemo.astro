@@ -564,7 +564,7 @@ BinaryExpression { expression !add "+" expression }
 
   // Share button — copy current URL with hash state
   const shareBtn = document.getElementById('btn-share')!
-  shareBtn.addEventListener('click', async () => {
+  async function shareLink() {
     updateHash()
     try {
       await navigator.clipboard.writeText(location.href)
@@ -573,6 +573,15 @@ BinaryExpression { expression !add "+" expression }
       shareBtn.textContent = 'Failed'
     }
     setTimeout(() => { shareBtn.textContent = 'Share' }, 1500)
+  }
+  shareBtn.addEventListener('click', shareLink)
+
+  // Ctrl/Cmd+S to share (prevent useless save-page dialog)
+  document.addEventListener('keydown', (e) => {
+    if ((e.metaKey || e.ctrlKey) && e.key === 's') {
+      e.preventDefault()
+      shareLink()
+    }
   })
 
   // Reset button — restore all defaults
