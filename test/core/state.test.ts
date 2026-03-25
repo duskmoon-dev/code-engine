@@ -19,6 +19,11 @@ import {
   codePointAt,
   countColumn,
   findColumn,
+  MapMode,
+  CharCategory,
+  codePointSize,
+  fromCodePoint,
+  combineConfig,
 } from "../../src/core/state/index";
 
 describe("EditorState", () => {
@@ -320,5 +325,84 @@ describe("SelectionRange properties", () => {
   it("empty property is false for non-empty range", () => {
     const range = EditorSelection.range(3, 8);
     expect(range.empty).toBe(false);
+  });
+});
+
+describe("MapMode", () => {
+  it("has Simple, TrackDel, TrackBefore, TrackAfter values", () => {
+    expect(MapMode.Simple).toBeDefined();
+    expect(MapMode.TrackDel).toBeDefined();
+    expect(MapMode.TrackBefore).toBeDefined();
+    expect(MapMode.TrackAfter).toBeDefined();
+  });
+
+  it("MapMode values are numbers", () => {
+    expect(typeof MapMode.Simple).toBe("number");
+    expect(typeof MapMode.TrackDel).toBe("number");
+  });
+});
+
+describe("CharCategory", () => {
+  it("has Word, Space, Other values", () => {
+    expect(CharCategory.Word).toBeDefined();
+    expect(CharCategory.Space).toBeDefined();
+    expect(CharCategory.Other).toBeDefined();
+  });
+});
+
+describe("codePointSize and fromCodePoint", () => {
+  it("codePointSize returns 1 for ASCII", () => {
+    expect(codePointSize(65)).toBe(1); // 'A'
+  });
+
+  it("fromCodePoint converts code point to string", () => {
+    expect(fromCodePoint(65)).toBe("A");
+    expect(fromCodePoint(0x1f600)).toBe("\uD83D\uDE00");
+  });
+});
+
+describe("EditorState.readOnly facet", () => {
+  it("readOnly can be set via extension", () => {
+    const state = EditorState.create({
+      doc: "hello",
+      extensions: [EditorState.readOnly.of(true)],
+    });
+    expect(state.readOnly).toBe(true);
+  });
+});
+
+describe("EditorSelection multi-range", () => {
+  it("create() builds a selection with multiple ranges", () => {
+    const sel = EditorSelection.create([
+      EditorSelection.range(0, 3),
+      EditorSelection.cursor(7),
+    ]);
+    expect(sel.ranges.length).toBe(2);
+  });
+
+  it("main range is the primary selection", () => {
+    const state = EditorState.create({
+      doc: "hello world",
+      selection: EditorSelection.range(0, 5),
+    });
+    expect(state.selection.main.from).toBe(0);
+    expect(state.selection.main.to).toBe(5);
+  });
+});
+
+describe("RangeSet iteration", () => {
+  it("can iterate over ranges in a set", () => {
+    class TestRange extends RangeValue {}
+    const builder = new RangeSetBuilder<TestRange>();
+    builder.add(0, 3, new TestRange());
+    builder.add(5, 8, new TestRange());
+    const set = builder.finish();
+    const iter = set.iter();
+    // iter starts at first range immediately
+    expect(iter.from).toBe(0);
+    expect(iter.to).toBe(3);
+    iter.next();
+    expect(iter.from).toBe(5);
+    expect(iter.to).toBe(8);
   });
 });
