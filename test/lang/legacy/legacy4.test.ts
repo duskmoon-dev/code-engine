@@ -1,0 +1,136 @@
+import { describe, it, expect } from "bun:test";
+import { StreamLanguage, LanguageSupport } from "../../../src/core/language/index";
+import { EditorState } from "../../../src/core/state/index";
+
+import { textile } from "../../../src/lang/legacy/textile";
+import { stex } from "../../../src/lang/legacy/stex";
+import { verilog } from "../../../src/lang/legacy/verilog";
+import { xQuery } from "../../../src/lang/legacy/xquery";
+import { solr } from "../../../src/lang/legacy/solr";
+import { pig } from "../../../src/lang/legacy/pig";
+import { apl } from "../../../src/lang/legacy/apl";
+import { cobol } from "../../../src/lang/legacy/cobol";
+import { liveScript } from "../../../src/lang/legacy/livescript";
+import { yacas } from "../../../src/lang/legacy/yacas";
+import { ebnf } from "../../../src/lang/legacy/ebnf";
+import { forth } from "../../../src/lang/legacy/forth";
+
+describe("Legacy language packs (batch 4)", () => {
+  describe("StreamParser exports", () => {
+    it("textile is a StreamParser object", () => {
+      expect(textile).toBeDefined();
+      expect(typeof textile).toBe("object");
+    });
+
+    it("stex is a StreamParser object", () => {
+      expect(stex).toBeDefined();
+      expect(typeof stex).toBe("object");
+    });
+
+    it("verilog is a StreamParser object", () => {
+      expect(verilog).toBeDefined();
+      expect(typeof verilog).toBe("object");
+    });
+
+    it("xQuery is a StreamParser object", () => {
+      expect(xQuery).toBeDefined();
+      expect(typeof xQuery).toBe("object");
+    });
+
+    it("solr is a StreamParser object", () => {
+      expect(solr).toBeDefined();
+      expect(typeof solr).toBe("object");
+    });
+
+    it("pig is a StreamParser object", () => {
+      expect(pig).toBeDefined();
+      expect(typeof pig).toBe("object");
+    });
+
+    it("apl is a StreamParser object", () => {
+      expect(apl).toBeDefined();
+      expect(typeof apl).toBe("object");
+    });
+
+    it("cobol is a StreamParser object", () => {
+      expect(cobol).toBeDefined();
+      expect(typeof cobol).toBe("object");
+    });
+
+    it("liveScript is a StreamParser object", () => {
+      expect(liveScript).toBeDefined();
+      expect(typeof liveScript).toBe("object");
+    });
+
+    it("yacas is a StreamParser object", () => {
+      expect(yacas).toBeDefined();
+      expect(typeof yacas).toBe("object");
+    });
+
+    it("ebnf is a StreamParser object", () => {
+      expect(ebnf).toBeDefined();
+      expect(typeof ebnf).toBe("object");
+    });
+
+    it("forth is a StreamParser object", () => {
+      expect(forth).toBeDefined();
+      expect(typeof forth).toBe("object");
+    });
+  });
+
+  describe("EditorState integration", () => {
+    it("stex integrates with EditorState (LaTeX)", () => {
+      const lang = StreamLanguage.define(stex);
+      const state = EditorState.create({
+        doc: "\\documentclass{article}\n\\begin{document}\nHello, World!\n\\end{document}",
+        extensions: [new LanguageSupport(lang)],
+      });
+      expect(state.doc.toString()).toContain("\\documentclass");
+    });
+
+    it("verilog integrates with EditorState", () => {
+      const lang = StreamLanguage.define(verilog);
+      const state = EditorState.create({
+        doc: "module counter(clk, reset, count);\n  input clk, reset;\n  output [3:0] count;\nendmodule",
+        extensions: [new LanguageSupport(lang)],
+      });
+      expect(state.doc.toString()).toContain("module counter");
+    });
+
+    it("cobol integrates with EditorState", () => {
+      const lang = StreamLanguage.define(cobol);
+      const state = EditorState.create({
+        doc: "IDENTIFICATION DIVISION.\nPROGRAM-ID. HELLO-WORLD.\nPROCEDURE DIVISION.\n    DISPLAY 'Hello, World!'.",
+        extensions: [new LanguageSupport(lang)],
+      });
+      expect(state.doc.toString()).toContain("IDENTIFICATION DIVISION");
+    });
+
+    it("textile integrates with EditorState", () => {
+      const lang = StreamLanguage.define(textile);
+      const state = EditorState.create({
+        doc: "h1. Heading\n\np. This is a paragraph with *bold* and _italic_ text.",
+        extensions: [new LanguageSupport(lang)],
+      });
+      expect(state.doc.toString()).toContain("h1. Heading");
+    });
+
+    it("ebnf integrates with EditorState", () => {
+      const lang = StreamLanguage.define(ebnf);
+      const state = EditorState.create({
+        doc: "digit = '0' | '1' | '2' | '3' | '4' | '5' | '6' | '7' | '8' | '9' ;",
+        extensions: [new LanguageSupport(lang)],
+      });
+      expect(state.doc.toString()).toContain("digit");
+    });
+
+    it("forth integrates with EditorState", () => {
+      const lang = StreamLanguage.define(forth);
+      const state = EditorState.create({
+        doc: ": SQUARE DUP * ;\n5 SQUARE .",
+        extensions: [new LanguageSupport(lang)],
+      });
+      expect(state.doc.toString()).toContain("SQUARE");
+    });
+  });
+});
