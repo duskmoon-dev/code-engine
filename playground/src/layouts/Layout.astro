@@ -8,6 +8,7 @@ interface Props {
 const { title, wide = false, description = 'Deep fork of CodeMirror 6 + Lezer — single package, zero dependencies' } = Astro.props
 const base = import.meta.env.BASE_URL
 const fullTitle = `${title} — @duskmoon-dev/code-engine`
+const path = Astro.url.pathname
 ---
 <!DOCTYPE html>
 <html lang="en">
@@ -29,8 +30,8 @@ const fullTitle = `${title} — @duskmoon-dev/code-engine`
   <nav>
     <a href={base} class="nav-brand">code-engine</a>
     <div class="nav-links">
-      <a href={`${base}docs`}>Docs</a>
-      <a href={`${base}playground`}>Playground</a>
+      <a href={`${base}docs`} aria-current={path.includes('/docs') ? 'page' : undefined}>Docs</a>
+      <a href={`${base}playground`} aria-current={path.includes('/playground') ? 'page' : undefined}>Playground</a>
       <a href="https://github.com/duskmoon-dev/code-engine" target="_blank" rel="noopener">GitHub</a>
     </div>
   </nav>
@@ -89,6 +90,10 @@ const fullTitle = `${title} — @duskmoon-dev/code-engine`
   .nav-links a:hover {
     color: var(--color-text);
     text-decoration: none;
+  }
+  .nav-links a[aria-current="page"] {
+    color: var(--color-text);
+    font-weight: 600;
   }
 
   main {
