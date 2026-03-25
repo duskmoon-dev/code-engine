@@ -40,9 +40,11 @@
 
 <script>
   import { EditorState, Compartment } from '@duskmoon-dev/code-engine/state'
-  import { EditorView, lineNumbers as lineNumbersExt } from '@duskmoon-dev/code-engine/view'
-  import { basicSetup, minimalSetup } from '@duskmoon-dev/code-engine/setup'
-  import { autocompletion } from '@duskmoon-dev/code-engine/autocomplete'
+  import { EditorView, lineNumbers as lineNumbersExt, highlightActiveLine, highlightActiveLineGutter, keymap } from '@duskmoon-dev/code-engine/view'
+  import { minimalSetup } from '@duskmoon-dev/code-engine/setup'
+  import { autocompletion, closeBrackets, closeBracketsKeymap } from '@duskmoon-dev/code-engine/autocomplete'
+  import { bracketMatching, indentOnInput, foldGutter, foldKeymap } from '@duskmoon-dev/code-engine/language'
+  import { highlightSelectionMatches, searchKeymap } from '@duskmoon-dev/code-engine/search'
   import { oneDark } from '@duskmoon-dev/code-engine/theme/one-dark'
   import { duskMoon } from '@duskmoon-dev/code-engine/theme/duskmoon'
   import { vim } from '@duskmoon-dev/code-engine/keymaps/vim'
@@ -380,6 +382,14 @@ BinaryExpression { expression !add "+" expression }
       doc: sampleCode['javascript'],
       extensions: [
         minimalSetup,
+        bracketMatching(),
+        closeBrackets(),
+        indentOnInput(),
+        foldGutter(),
+        highlightActiveLine(),
+        highlightActiveLineGutter(),
+        highlightSelectionMatches(),
+        keymap.of([...closeBracketsKeymap, ...searchKeymap, ...foldKeymap]),
         languageCompartment.of(javascript()),
         themeCompartment.of(oneDark),
         extensionCompartment.of(getActiveExtensions()),
