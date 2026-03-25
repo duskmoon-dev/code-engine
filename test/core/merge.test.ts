@@ -1,5 +1,10 @@
 import { describe, it, expect } from "bun:test";
-import { Change, diff, presentableDiff } from "../../src/core/merge/index";
+import {
+  Change, diff, presentableDiff,
+  MergeView, unifiedMergeView, acceptChunk, rejectChunk, getOriginalDoc,
+  getChunks, goToNextChunk, goToPreviousChunk,
+  Chunk,
+} from "../../src/core/merge/index";
 
 describe("Change", () => {
   it("stores fromA, toA, fromB, toB properties", () => {
@@ -119,5 +124,43 @@ describe("presentableDiff", () => {
     // The change should cover at least the inserted word
     const inserted = b.slice(changes[0].fromB, changes[0].toB);
     expect(inserted).toContain("brave");
+  });
+});
+
+describe("Merge module exports", () => {
+  it("exports MergeView as a class", () => {
+    expect(typeof MergeView).toBe("function");
+  });
+
+  it("exports unifiedMergeView as a function", () => {
+    expect(typeof unifiedMergeView).toBe("function");
+  });
+
+  it("exports acceptChunk as a function", () => {
+    expect(typeof acceptChunk).toBe("function");
+  });
+
+  it("exports rejectChunk as a function", () => {
+    expect(typeof rejectChunk).toBe("function");
+  });
+
+  it("exports getOriginalDoc as a function", () => {
+    expect(typeof getOriginalDoc).toBe("function");
+  });
+
+  it("exports getChunks as a function", () => {
+    expect(typeof getChunks).toBe("function");
+  });
+
+  it("exports goToNextChunk as a function", () => {
+    expect(typeof goToNextChunk).toBe("function");
+  });
+
+  it("exports goToPreviousChunk as a function", () => {
+    expect(typeof goToPreviousChunk).toBe("function");
+  });
+
+  it("exports Chunk as a class", () => {
+    expect(typeof Chunk).toBe("function");
   });
 });
