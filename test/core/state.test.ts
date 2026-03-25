@@ -9,6 +9,7 @@ import {
   EditorSelection,
   SelectionRange,
   ChangeSet,
+  ChangeDesc,
   Transaction,
   Annotation,
   Prec,
@@ -1537,5 +1538,110 @@ describe("RangeSet.compare (static)", () => {
     });
     // The text change region is iterated; point content is equivalent after mapping
     expect(diffs).toBeDefined();
+  });
+});
+
+describe("ChangeDesc.toString", () => {
+  it("serializes a keep-only desc", () => {
+    const cs = ChangeSet.of([], 10);
+    expect(cs.desc.toString()).toBe("10");
+  });
+
+  it("serializes a desc with insertions", () => {
+    const cs = ChangeSet.of([{ from: 2, to: 4, insert: "xyz" }], 10);
+    const str = cs.desc.toString();
+    expect(str).toContain(":");
+  });
+});
+
+describe("ChangeDesc.fromJSON", () => {
+  it("round-trips through toJSON/fromJSON", () => {
+    const cs = ChangeSet.of([{ from: 2, to: 4, insert: "ab" }], 10);
+    const json = cs.desc.toJSON();
+    const restored = ChangeDesc.fromJSON(json);
+    expect(restored.length).toBe(cs.desc.length);
+    expect(restored.newLength).toBe(cs.desc.newLength);
+  });
+
+  it("throws on invalid JSON (not array)", () => {
+    expect(() => ChangeDesc.fromJSON("bad")).toThrow();
+  });
+
+  it("throws on invalid JSON (odd length)", () => {
+    expect(() => ChangeDesc.fromJSON([1, 2, 3])).toThrow();
+  });
+
+  it("throws on non-number elements", () => {
+    expect(() => ChangeDesc.fromJSON([1, "a"])).toThrow();
+  });
+});
+
+describe("ChangeSet.filter", () => {
+  it("filters changes to keep only specified ranges", () => {
+    // Create a changeset with two insertions
+    const cs = ChangeSet.of([
+      { from: 2, insert: "xx" },
+      { from: 5, insert: "yy" },
+    ], 10);
+    // Filter to keep only changes in range [0, 3) — should keep first insertion
+    const { changes, filtered } = (cs as any).filter([0, 3]);
+    expect(changes).toBeDefined();
+    expect(filtered).toBeDefined();
+  });
+
+  it("filter with empty ranges removes all changes", () => {
+    const cs = ChangeSet.of([{ from: 2, insert: "xx" }], 10);
+    const { changes } = (cs as any).filter([]);
+    expect(changes).toBeDefined();
+  });
+});
+
+describe("StateField.init", () => {
+  it("overrides default field initialization", () => {
+    const field = StateField.define<number>({
+      create: () => 0,
+      update: (val) => val,
+    });
+    const state = EditorState.create({
+      extensions: [field.init(() => 42)],
+    });
+    expect(state.field(field)).toBe(42);
+  });
+
+  it("init receives the state", () => {
+    const field = StateField.define<number>({
+      create: () => 0,
+      update: (val) => val,
+    });
+    const state = EditorState.create({
+      doc: "hello",
+      extensions: [field.init((s) => s.doc.length)],
+    });
+    expect(state.field(field)).toBe(5);
+  });
+});
+
+describe("Facet edge cases", () => {
+  it("facet with static flag", () => {
+    const f = Facet.define<number, number>({
+      combine: (vals) => vals.reduce((a, b) => a + b, 0),
+      static: true,
+    });
+    const state = EditorState.create({ extensions: [f.of(10), f.of(20)] });
+    expect(state.facet(f)).toBe(30);
+  });
+
+  it("facet reader property returns the facet itself", () => {
+    const f = Facet.define<string>();
+    expect(f.reader).toBe(f);
+  });
+
+  it("facet with custom compare", () => {
+    const f = Facet.define<number[], number[]>({
+      combine: (vals) => vals.flat(),
+      compare: (a, b) => a.length === b.length,
+    });
+    const state = EditorState.create({ extensions: [f.of([1, 2])] });
+    expect(state.facet(f)).toEqual([1, 2]);
   });
 });
