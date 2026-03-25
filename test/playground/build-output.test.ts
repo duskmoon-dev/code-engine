@@ -4,6 +4,9 @@ import { join } from 'node:path'
 
 const distDir = join(import.meta.dir, '../../playground/dist')
 const hasBuilt = existsSync(join(distDir, 'index.html'))
+if (!hasBuilt) {
+  console.warn('⚠ playground/dist not found — skipping build-output tests (run: cd playground && bun run build)')
+}
 const pkgPath = join(import.meta.dir, '../../package.json')
 const pkg = JSON.parse(readFileSync(pkgPath, 'utf-8'))
 const exportKeys = Object.keys(pkg.exports)
