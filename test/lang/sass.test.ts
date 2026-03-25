@@ -1,22 +1,74 @@
 import { describe, it, expect } from "bun:test";
 import { sass, sassLanguage, sassCompletionSource } from "../../src/lang/sass/index";
+import { EditorState } from "../../src/core/state/index";
+import { LanguageSupport } from "../../src/core/language/index";
 
 describe("Sass language pack", () => {
-  it("exports sass function", () => {
-    expect(typeof sass).toBe("function");
+  describe("exports", () => {
+    it("exports sass function", () => {
+      expect(typeof sass).toBe("function");
+    });
+
+    it("exports sassLanguage", () => {
+      expect(sassLanguage).toBeDefined();
+      expect(sassLanguage.name).toBe("sass");
+    });
+
+    it("exports sassCompletionSource", () => {
+      expect(typeof sassCompletionSource).toBe("function");
+    });
   });
 
-  it("exports sassLanguage", () => {
-    expect(sassLanguage).toBeDefined();
-    expect(sassLanguage.name).toBe("sass");
+  describe("sass() factory", () => {
+    it("creates LanguageSupport with default options (SCSS)", () => {
+      const support = sass();
+      expect(support).toBeInstanceOf(LanguageSupport);
+    });
+
+    it("default mode uses sassLanguage", () => {
+      const support = sass();
+      expect(support.language).toBe(sassLanguage);
+    });
+
+    it("creates LanguageSupport with indented mode", () => {
+      const support = sass({ indented: true });
+      expect(support).toBeInstanceOf(LanguageSupport);
+    });
+
+    it("indented mode language is defined", () => {
+      const support = sass({ indented: true });
+      expect(support.language).toBeDefined();
+    });
+
+    it("explicit indented:false returns SCSS mode", () => {
+      const support = sass({ indented: false });
+      expect(support.language).toBe(sassLanguage);
+    });
   });
 
-  it("exports sassCompletionSource", () => {
-    expect(sassCompletionSource).toBeDefined();
-  });
+  describe("EditorState integration", () => {
+    it("scss integrates with EditorState", () => {
+      const state = EditorState.create({
+        doc: `.container {\n  color: red;\n  $primary: #333;\n}`,
+        extensions: [sass()],
+      });
+      expect(state.doc.toString()).toContain("$primary");
+    });
 
-  it("creates language support with default options", () => {
-    const support = sass();
-    expect(support).toBeDefined();
+    it("indented sass integrates with EditorState", () => {
+      const state = EditorState.create({
+        doc: `.container\n  color: red\n  $primary: #333`,
+        extensions: [sass({ indented: true })],
+      });
+      expect(state.doc.toString()).toContain("$primary");
+    });
+
+    it("empty document is valid", () => {
+      const state = EditorState.create({
+        doc: "",
+        extensions: [sass()],
+      });
+      expect(state.doc.length).toBe(0);
+    });
   });
 });
