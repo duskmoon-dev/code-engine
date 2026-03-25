@@ -333,5 +333,50 @@ describe("Legacy language packs (batch 8 - coverage completion)", () => {
       });
       expect(syntaxTree(state).length).toBeGreaterThan(0);
     });
+
+    it("legacyCss doc line count is correct", () => {
+      const lang = StreamLanguage.define(legacyCss);
+      const state = EditorState.create({
+        doc: "body { margin: 0; }\n.container { display: flex; }\nh1 { font-size: 2em; }",
+        extensions: [new LanguageSupport(lang)],
+      });
+      expect(state.doc.lines).toBe(3);
+    });
+
+    it("legacyJS doc mutation via transaction works", () => {
+      const lang = StreamLanguage.define(legacyJS);
+      let state = EditorState.create({
+        doc: "var x = 1;",
+        extensions: [new LanguageSupport(lang)],
+      });
+      state = state.update({ changes: { from: 10, insert: "\nvar y = 2;" } }).state;
+      expect(state.doc.lines).toBe(2);
+    });
+
+    it("legacyGo doc length is correct", () => {
+      const lang = StreamLanguage.define(legacyGo);
+      const doc = "package main\nfunc main() {}";
+      const state = EditorState.create({ doc, extensions: [new LanguageSupport(lang)] });
+      expect(state.doc.length).toBe(doc.length);
+    });
+
+    it("legacyYaml doc line count is correct", () => {
+      const lang = StreamLanguage.define(legacyYaml);
+      const state = EditorState.create({
+        doc: "name: test\nversion: 1.0\ndescription: example",
+        extensions: [new LanguageSupport(lang)],
+      });
+      expect(state.doc.lines).toBe(3);
+    });
+
+    it("mbox doc mutation via transaction works", () => {
+      const lang = StreamLanguage.define(mbox);
+      let state = EditorState.create({
+        doc: "From foo@example.com Mon Jan  1 00:00:00 2024",
+        extensions: [new LanguageSupport(lang)],
+      });
+      state = state.update({ changes: { from: state.doc.length, insert: "\nSubject: test" } }).state;
+      expect(state.doc.lines).toBe(2);
+    });
   });
 });

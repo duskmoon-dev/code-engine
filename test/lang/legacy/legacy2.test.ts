@@ -341,5 +341,50 @@ describe("Legacy language packs (batch 2)", () => {
       const state = EditorState.create({ doc, extensions: [new LanguageSupport(lang)] });
       expect(state.doc.length).toBe(doc.length);
     });
+
+    it("haskell doc line count is correct", () => {
+      const lang = StreamLanguage.define(haskell);
+      const state = EditorState.create({
+        doc: "module Main where\nimport Data.List\nmain = putStrLn \"Hello\"",
+        extensions: [new LanguageSupport(lang)],
+      });
+      expect(state.doc.lines).toBe(3);
+    });
+
+    it("groovy doc mutation via transaction works", () => {
+      const lang = StreamLanguage.define(groovy);
+      let state = EditorState.create({
+        doc: "println \"hello\"",
+        extensions: [new LanguageSupport(lang)],
+      });
+      state = state.update({ changes: { from: 15, insert: "\nprintln \"world\"" } }).state;
+      expect(state.doc.lines).toBe(2);
+    });
+
+    it("scheme doc length is correct", () => {
+      const lang = StreamLanguage.define(scheme);
+      const doc = "(define (fact n) (if (= n 0) 1 (* n (fact (- n 1)))))";
+      const state = EditorState.create({ doc, extensions: [new LanguageSupport(lang)] });
+      expect(state.doc.length).toBe(doc.length);
+    });
+
+    it("julia doc line count is correct", () => {
+      const lang = StreamLanguage.define(julia);
+      const state = EditorState.create({
+        doc: "function greet(name)\n  println(\"Hello, $name!\")\nend",
+        extensions: [new LanguageSupport(lang)],
+      });
+      expect(state.doc.lines).toBe(3);
+    });
+
+    it("tcl doc mutation via transaction works", () => {
+      const lang = StreamLanguage.define(tcl);
+      let state = EditorState.create({
+        doc: "puts \"hello\"",
+        extensions: [new LanguageSupport(lang)],
+      });
+      state = state.update({ changes: { from: 12, insert: "\nputs \"world\"" } }).state;
+      expect(state.doc.lines).toBe(2);
+    });
   });
 });

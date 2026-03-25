@@ -261,4 +261,31 @@ describe("YAML language pack", () => {
     expect(state.selection.main.from).toBe(0);
     expect(state.selection.main.to).toBe(11);
   });
+
+  it("yaml() state doc line text is accessible", () => {
+    const state = EditorState.create({
+      doc: "first: 1\nsecond: 2",
+      extensions: [yaml()],
+    });
+    expect(state.doc.line(1).text).toBe("first: 1");
+    expect(state.doc.line(2).text).toBe("second: 2");
+  });
+
+  it("yaml() state deletion transaction works", () => {
+    let state = EditorState.create({ doc: "a: 1\nb: 2\nc: 3", extensions: [yaml()] });
+    state = state.update({ changes: { from: 9, to: 14 } }).state;
+    expect(state.doc.lines).toBe(2);
+  });
+
+  it("yaml() state replacement transaction works", () => {
+    let state = EditorState.create({ doc: "key: old", extensions: [yaml()] });
+    state = state.update({ changes: { from: 5, to: 8, insert: "new" } }).state;
+    expect(state.doc.toString()).toBe("key: new");
+  });
+
+  it("yaml() state with unicode content works", () => {
+    const doc = "greeting: こんにちは";
+    const state = EditorState.create({ doc, extensions: [yaml()] });
+    expect(state.doc.toString()).toBe(doc);
+  });
 });

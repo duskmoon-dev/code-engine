@@ -258,5 +258,32 @@ describe("LR Parser module", () => {
       expect(node.from).toBeLessThanOrEqual(7);
       expect(node.to).toBeGreaterThanOrEqual(7);
     });
+
+    it("python tree has correct length for multi-line code", () => {
+      const code = "def foo():\n    return 42\n\ndef bar():\n    return 0";
+      const tree = pythonLanguage.parser.parse(code);
+      expect(tree.length).toBe(code.length);
+    });
+
+    it("rust tree toString() returns non-empty string", () => {
+      const tree = rustLanguage.parser.parse("fn main() { println!(\"hello\"); }");
+      expect(typeof tree.toString()).toBe("string");
+      expect(tree.toString().length).toBeGreaterThan(0);
+    });
+
+    it("javascript tree iterate visits at least 5 nodes for function", () => {
+      const tree = javascriptLanguage.parser.parse("function greet(name) { return 'Hello ' + name; }");
+      let count = 0;
+      tree.iterate({ enter: () => { count++; } });
+      expect(count).toBeGreaterThan(5);
+    });
+
+    it("python tree resolveInner at last position", () => {
+      const code = "x = 1";
+      const tree = pythonLanguage.parser.parse(code);
+      const node = tree.resolveInner(code.length - 1);
+      expect(node).toBeDefined();
+      expect(node.from).toBeLessThanOrEqual(code.length - 1);
+    });
   });
 });

@@ -339,5 +339,50 @@ describe("Legacy language packs (batch 6)", () => {
       state = state.update({ changes: { from: 14, insert: "\n.globl main" } }).state;
       expect(state.doc.lines).toBe(2);
     });
+
+    it("ecl doc line count is correct", () => {
+      const lang = StreamLanguage.define(ecl);
+      const state = EditorState.create({
+        doc: "IMPORT Std;\nds := DATASET([{1,'Alice'},{2,'Bob'}], {INTEGER id; STRING name;});\nOUTPUT(ds);",
+        extensions: [new LanguageSupport(lang)],
+      });
+      expect(state.doc.lines).toBe(3);
+    });
+
+    it("oz doc mutation via transaction works", () => {
+      const lang = StreamLanguage.define(oz);
+      let state = EditorState.create({
+        doc: "declare X = 42",
+        extensions: [new LanguageSupport(lang)],
+      });
+      state = state.update({ changes: { from: 14, insert: "\n{Browse X}" } }).state;
+      expect(state.doc.lines).toBe(2);
+    });
+
+    it("mumps doc length is correct", () => {
+      const lang = StreamLanguage.define(mumps);
+      const doc = "SET X=42\nWRITE X";
+      const state = EditorState.create({ doc, extensions: [new LanguageSupport(lang)] });
+      expect(state.doc.length).toBe(doc.length);
+    });
+
+    it("sieve doc line count is correct", () => {
+      const lang = StreamLanguage.define(sieve);
+      const state = EditorState.create({
+        doc: "require [\"fileinto\"];\nif header :contains \"Subject\" \"SPAM\" {\n  fileinto \"Junk\";\n}",
+        extensions: [new LanguageSupport(lang)],
+      });
+      expect(state.doc.lines).toBe(4);
+    });
+
+    it("fSharp doc mutation via transaction works", () => {
+      const lang = StreamLanguage.define(fSharp);
+      let state = EditorState.create({
+        doc: "let x = 1",
+        extensions: [new LanguageSupport(lang)],
+      });
+      state = state.update({ changes: { from: 9, insert: "\nlet y = 2" } }).state;
+      expect(state.doc.lines).toBe(2);
+    });
   });
 });

@@ -248,5 +248,37 @@ describe("Vim keymap", () => {
       const state = EditorState.create({ doc, extensions: [vim()] });
       expect(state.doc.length).toBe(doc.length);
     });
+
+    it("vim() state doc line text is accessible", () => {
+      const state = EditorState.create({
+        doc: "first line\nsecond line",
+        extensions: [vim()],
+      });
+      expect(state.doc.line(1).text).toBe("first line");
+      expect(state.doc.line(2).text).toBe("second line");
+    });
+
+    it("vim() state sequential transactions update document correctly", () => {
+      let state = EditorState.create({ doc: "a", extensions: [vim()] });
+      state = state.update({ changes: { from: 1, insert: "b" } }).state;
+      state = state.update({ changes: { from: 2, insert: "c" } }).state;
+      expect(state.doc.toString()).toBe("abc");
+    });
+
+    it("vim() state selection within single line", () => {
+      const state = EditorState.create({
+        doc: "normal mode text",
+        selection: { anchor: 7, head: 11 },
+        extensions: [vim()],
+      });
+      expect(state.selection.main.from).toBe(7);
+      expect(state.selection.main.to).toBe(11);
+    });
+
+    it("vim() state allows insertion at end of document", () => {
+      let state = EditorState.create({ doc: "hello", extensions: [vim()] });
+      state = state.update({ changes: { from: 5, insert: "!" } }).state;
+      expect(state.doc.toString()).toBe("hello!");
+    });
   });
 });

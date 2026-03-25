@@ -286,5 +286,32 @@ describe("Angular language pack", () => {
       const state = EditorState.create({ doc, extensions: [angular()] });
       expect(state.doc.length).toBe(doc.length);
     });
+
+    it("angular() state doc line text is accessible", () => {
+      const state = EditorState.create({
+        doc: "<div>\n  <p>hello</p>\n</div>",
+        extensions: [angular()],
+      });
+      expect(state.doc.line(1).text).toBe("<div>");
+      expect(state.doc.line(3).text).toBe("</div>");
+    });
+
+    it("angular() state deletion transaction works", () => {
+      let state = EditorState.create({ doc: "<div></div>\n<span></span>", extensions: [angular()] });
+      state = state.update({ changes: { from: 11, to: 25 } }).state;
+      expect(state.doc.toString()).toBe("<div></div>");
+    });
+
+    it("angular() state replacement transaction works", () => {
+      let state = EditorState.create({ doc: "<p>old</p>", extensions: [angular()] });
+      state = state.update({ changes: { from: 3, to: 6, insert: "new" } }).state;
+      expect(state.doc.toString()).toBe("<p>new</p>");
+    });
+
+    it("angular() state with unicode content works", () => {
+      const doc = "<p>こんにちは</p>";
+      const state = EditorState.create({ doc, extensions: [angular()] });
+      expect(state.doc.toString()).toBe(doc);
+    });
   });
 });

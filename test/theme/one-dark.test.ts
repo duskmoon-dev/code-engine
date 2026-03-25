@@ -281,5 +281,34 @@ describe("theme/one-dark", () => {
       });
       expect(state.doc.line(2).text).toBe("beta");
     });
+
+    it("oneDark state sequential transactions update doc correctly", () => {
+      let state = EditorState.create({ doc: "a", extensions: [oneDark] });
+      state = state.update({ changes: { from: 1, insert: "b" } }).state;
+      state = state.update({ changes: { from: 2, insert: "c" } }).state;
+      expect(state.doc.toString()).toBe("abc");
+    });
+
+    it("oneDark state doc length invariant holds", () => {
+      const doc = "exact length string";
+      const state = EditorState.create({ doc, extensions: [oneDark] });
+      expect(state.doc.length).toBe(doc.length);
+    });
+
+    it("oneDark state replacement transaction works", () => {
+      let state = EditorState.create({ doc: "foo bar", extensions: [oneDark] });
+      state = state.update({ changes: { from: 4, to: 7, insert: "baz" } }).state;
+      expect(state.doc.toString()).toBe("foo baz");
+    });
+
+    it("oneDark state selection within line works", () => {
+      const state = EditorState.create({
+        doc: "hello world",
+        selection: { anchor: 6, head: 11 },
+        extensions: [oneDark],
+      });
+      expect(state.selection.main.from).toBe(6);
+      expect(state.selection.main.to).toBe(11);
+    });
   });
 });
