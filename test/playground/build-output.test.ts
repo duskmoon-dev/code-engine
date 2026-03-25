@@ -101,4 +101,27 @@ describe('playground build output', () => {
       expect(html).toContain('theme-color')
     }
   }))
+
+  it('sitemap is generated', requireBuild(() => {
+    expect(existsSync(join(distDir, 'sitemap-index.xml'))).toBe(true)
+    const sitemap = readFileSync(join(distDir, 'sitemap-index.xml'), 'utf-8')
+    expect(sitemap).toContain('duskmoon-dev.github.io')
+  }))
+
+  it('playground page has share and reset buttons', requireBuild(() => {
+    const html = readFileSync(join(distDir, 'playground/index.html'), 'utf-8')
+    expect(html).toContain('btn-share')
+    expect(html).toContain('btn-reset')
+  }))
+
+  it('docs page has legacy language note', requireBuild(() => {
+    const html = readFileSync(join(distDir, 'docs/index.html'), 'utf-8')
+    expect(html).toContain('StreamLanguage.define')
+  }))
+
+  it('homepage has correct export count', requireBuild(() => {
+    const html = readFileSync(join(distDir, 'index.html'), 'utf-8')
+    expect(html).toContain('22 languages')
+    expect(html).toContain('43 exports')
+  }))
 })
