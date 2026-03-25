@@ -157,6 +157,20 @@ describe('playground source validation', () => {
         expect(css).toContain(token)
       }
     })
+
+    it('has DuskMoon theme --syntax-* custom properties', () => {
+      const css = readFileSync(join(playgroundSrc, 'styles', 'global.css'), 'utf-8')
+      const syntaxTokens = [
+        '--syntax-keyword', '--syntax-name', '--syntax-function',
+        '--syntax-constant', '--syntax-definition', '--syntax-type',
+        '--syntax-operator', '--syntax-comment', '--syntax-link',
+        '--syntax-heading', '--syntax-atom', '--syntax-string',
+        '--syntax-invalid', '--syntax-invalid-bg',
+      ]
+      for (const token of syntaxTokens) {
+        expect(css).toContain(token)
+      }
+    })
   })
 
   describe('404 page', () => {
@@ -165,6 +179,67 @@ describe('playground source validation', () => {
       expect(page).toContain('Home')
       expect(page).toContain('docs')
       expect(page).toContain('playground')
+    })
+  })
+
+  describe('EditorDemo keyboard shortcuts', () => {
+    it('has Ctrl+S shortcut for copy/share', () => {
+      const editor = readComponent('EditorDemo.astro')
+      expect(editor).toContain('Ctrl')
+      expect(editor).toContain('S')
+      expect(editor).toContain('serializeState')
+    })
+
+    it('has F11 shortcut for fullscreen toggle', () => {
+      const editor = readComponent('EditorDemo.astro')
+      expect(editor).toContain('F11')
+      expect(editor).toContain('fullscreen')
+    })
+
+    it('has font size shortcut bindings', () => {
+      const editor = readComponent('EditorDemo.astro')
+      expect(editor).toContain('updateFontSize')
+      expect(editor).toContain('font-size-controls')
+      expect(editor).toContain('btn-font-decrease')
+      expect(editor).toContain('btn-font-increase')
+    })
+  })
+
+  describe('EditorDemo state serialization', () => {
+    it('defines serializeState function', () => {
+      const editor = readComponent('EditorDemo.astro')
+      expect(editor).toContain('function serializeState')
+    })
+
+    it('defines restoreState function', () => {
+      const editor = readComponent('EditorDemo.astro')
+      expect(editor).toContain('function restoreState')
+    })
+  })
+
+  describe('EditorDemo localStorage persistence', () => {
+    it('references localStorage for state persistence', () => {
+      const editor = readComponent('EditorDemo.astro')
+      expect(editor).toContain('localStorage.setItem')
+      expect(editor).toContain('localStorage.getItem')
+      expect(editor).toContain('localStorage.removeItem')
+    })
+
+    it('has a storage key constant', () => {
+      const editor = readComponent('EditorDemo.astro')
+      expect(editor).toContain('STORAGE_KEY')
+    })
+  })
+
+  describe('Homepage copy button', () => {
+    it('has navigator.clipboard for copy functionality', () => {
+      const index = readPage('index.astro')
+      expect(index).toContain('navigator.clipboard')
+    })
+
+    it('has copy-btn class for styling', () => {
+      const index = readPage('index.astro')
+      expect(index).toContain('copy-btn')
     })
   })
 
