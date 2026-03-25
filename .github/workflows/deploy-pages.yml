@@ -43,6 +43,9 @@ jobs:
       - name: Build package
         run: bun run build
 
+      - name: Update playground dependency
+        run: bun install --force
+
       - name: Build playground
         run: cd playground && bun run build
 
