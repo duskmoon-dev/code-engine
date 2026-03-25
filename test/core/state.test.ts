@@ -597,6 +597,84 @@ describe("Text advanced methods", () => {
   it("Text.empty.eq(Text.empty) is true", () => {
     expect(Text.empty.eq(Text.empty)).toBe(true);
   });
+
+  it("large text creates a tree structure", () => {
+    const lines = Array.from({ length: 500 }, (_, i) => `line ${i}`);
+    const text = Text.of(lines);
+    expect(text.lines).toBe(500);
+    expect(text.lineAt(1).text).toBe("line 0");
+    expect(text.lineAt(text.length).text).toBe("line 499");
+  });
+
+  it("iter() walks through all content", () => {
+    const text = Text.of(["abc", "def", "ghi"]);
+    let result = "";
+    for (const chunk of text) {
+      result += chunk;
+    }
+    expect(result).toContain("abc");
+    expect(result).toContain("def");
+    expect(result).toContain("ghi");
+  });
+
+  it("iterRange covers a partial range", () => {
+    const text = Text.of(["abc", "def", "ghi"]);
+    const iter = text.iterRange(4, 7);
+    let result = "";
+    while (!iter.done) {
+      iter.next();
+      if (!iter.done) result += iter.value;
+    }
+    // "def" starts at pos 4
+    expect(result).toContain("def");
+  });
+
+  it("iterLines iterates line by line", () => {
+    const text = Text.of(["alpha", "beta", "gamma"]);
+    const iter = text.iterLines();
+    const lines: string[] = [];
+    while (!iter.done) {
+      iter.next();
+      if (!iter.done) lines.push(iter.value);
+    }
+    expect(lines).toEqual(["alpha", "beta", "gamma"]);
+  });
+
+  it("replace() on large text works correctly", () => {
+    const lines = Array.from({ length: 200 }, (_, i) => `line ${i}`);
+    const text = Text.of(lines);
+    const replaced = text.replace(0, 6, Text.of(["REPLACED"]));
+    expect(replaced.lineAt(1).text).toBe("REPLACED");
+    expect(replaced.lines).toBe(200);
+  });
+
+  it("append joins two texts", () => {
+    const a = Text.of(["hello"]);
+    const b = Text.of(["world"]);
+    const joined = a.append(b);
+    // append replaces at the end, so single-line texts are concatenated on the same line
+    expect(joined.toString()).toBe("helloworld");
+  });
+
+  it("append with multiline preserves structure", () => {
+    const a = Text.of(["hello", ""]);
+    const b = Text.of(["world"]);
+    const joined = a.append(b);
+    expect(joined.toString()).toBe("hello\nworld");
+  });
+
+  it("slice returns a sub-document", () => {
+    const text = Text.of(["abc", "def", "ghi"]);
+    const sliced = text.slice(4, 7);
+    expect(sliced.toString()).toBe("def");
+  });
+
+  it("line() retrieves by line number", () => {
+    const text = Text.of(["one", "two", "three"]);
+    expect(text.line(1).text).toBe("one");
+    expect(text.line(2).text).toBe("two");
+    expect(text.line(3).text).toBe("three");
+  });
 });
 
 describe("ChangeSet advanced", () => {

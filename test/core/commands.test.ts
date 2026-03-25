@@ -819,3 +819,92 @@ describe("comment commands with JavaScript", () => {
     expect(run(blockComment, state)).toBe(null);
   });
 });
+
+describe("history undo/redo functional", () => {
+  it("undo reverses a change", () => {
+    let state = EditorState.create({ doc: "abc", extensions: [history()] });
+    state = state.update({ changes: { from: 3, insert: "d" } }).state;
+    expect(state.doc.toString()).toBe("abcd");
+    const result = run(undo, state)!;
+    expect(result.doc.toString()).toBe("abc");
+  });
+
+  it("redo re-applies an undone change", () => {
+    let state = EditorState.create({ doc: "abc", extensions: [history()] });
+    state = state.update({ changes: { from: 3, insert: "d" } }).state;
+    state = run(undo, state)!;
+    expect(state.doc.toString()).toBe("abc");
+    const result = run(redo, state)!;
+    expect(result.doc.toString()).toBe("abcd");
+  });
+
+  it("undo returns null when nothing to undo", () => {
+    const state = EditorState.create({ doc: "abc", extensions: [history()] });
+    expect(run(undo, state)).toBe(null);
+  });
+
+  it("redo returns null when nothing to redo", () => {
+    const state = EditorState.create({ doc: "abc", extensions: [history()] });
+    expect(run(redo, state)).toBe(null);
+  });
+
+  it("undo returns null without history extension", () => {
+    const state = EditorState.create({ doc: "abc" });
+    expect(run(undo, state)).toBe(null);
+  });
+
+  it("undoDepth tracks number of undo steps", () => {
+    let state = EditorState.create({ doc: "abc", extensions: [history()] });
+    expect(undoDepth(state)).toBe(0);
+    state = state.update({
+      changes: { from: 3, insert: "d" },
+      annotations: isolateHistory.of("full"),
+    }).state;
+    state = state.update({
+      changes: { from: 4, insert: "e" },
+      annotations: isolateHistory.of("full"),
+    }).state;
+    expect(undoDepth(state)).toBe(2);
+  });
+
+  it("redoDepth increases after undo", () => {
+    let state = EditorState.create({ doc: "abc", extensions: [history()] });
+    state = state.update({ changes: { from: 3, insert: "d" } }).state;
+    expect(redoDepth(state)).toBe(0);
+    state = run(undo, state)!;
+    expect(redoDepth(state)).toBe(1);
+  });
+
+  it("undoSelection undoes selection changes", () => {
+    let state = EditorState.create({ doc: "abcdef", extensions: [history()] });
+    state = state.update({ selection: { anchor: 3 } }).state;
+    expect(state.selection.main.anchor).toBe(3);
+    const result = run(undoSelection, state)!;
+    expect(result.selection.main.anchor).toBe(0);
+  });
+
+  it("multiple undos work in sequence", () => {
+    let state = EditorState.create({ doc: "", extensions: [history()] });
+    state = state.update({
+      changes: { from: 0, insert: "a" },
+      annotations: isolateHistory.of("full"),
+    }).state;
+    state = state.update({
+      changes: { from: 1, insert: "b" },
+      annotations: isolateHistory.of("full"),
+    }).state;
+    expect(state.doc.toString()).toBe("ab");
+    state = run(undo, state)!;
+    expect(state.doc.toString()).toBe("a");
+    state = run(undo, state)!;
+    expect(state.doc.toString()).toBe("");
+  });
+
+  it("undo on readOnly state returns null", () => {
+    let state = EditorState.create({
+      doc: "abc",
+      extensions: [history(), EditorState.readOnly.of(true)],
+    });
+    expect(run(undo, state)).toBe(null);
+  });
+});
