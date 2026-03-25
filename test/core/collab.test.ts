@@ -103,4 +103,28 @@ describe("Collab extension", () => {
       expect(result.length).toBe(0);
     });
   });
+
+  describe("sendableUpdates after a transaction", () => {
+    it("returns pending updates after a local change", () => {
+      let state = EditorState.create({
+        doc: "hello",
+        extensions: [collab()],
+      });
+      state = state.update({ changes: { from: 5, insert: " world" } }).state;
+      const updates = sendableUpdates(state);
+      expect(Array.isArray(updates)).toBe(true);
+      expect(updates.length).toBe(1);
+    });
+  });
+
+  describe("receiveUpdates", () => {
+    it("applies an empty update list without error", () => {
+      const state = EditorState.create({
+        doc: "hello",
+        extensions: [collab({ startVersion: 0 })],
+      });
+      const newState = receiveUpdates(state, []);
+      expect(newState).toBeDefined();
+    });
+  });
 });
