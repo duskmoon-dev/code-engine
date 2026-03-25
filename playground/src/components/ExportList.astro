@@ -7,8 +7,48 @@ const exportKeys = Object.keys(pkgJson.exports).map(k => k === '.' ? '.' : k.sli
 // Categorize exports dynamically from package.json
 const descriptions: Record<string, string> = {
   '.': 'Barrel re-export of core modules',
-  'setup': 'basicSetup, minimalSetup extension arrays',
+  'state': 'EditorState, StateField, Transaction, Text, ChangeSet',
+  'view': 'EditorView, Decoration, ViewPlugin, keymap',
+  'language': 'Language, LanguageSupport, syntaxTree, foldable',
+  'commands': 'Standard editing commands and default keymap',
+  'search': 'Search / replace panel and query API',
+  'autocomplete': 'Completion framework and snippets',
+  'lint': 'Inline diagnostics / linter framework',
+  'collab': 'Operational-transform collaborative editing',
+  'merge': 'Two-panel unified diff merge view',
+  'lsp': 'Language Server Protocol client utilities',
+  'language-data': 'Language descriptions registry',
+  'parser/common': 'Lezer Tree, SyntaxNode, NodeType interfaces',
+  'parser/lr': 'LRParser, Stack, parseMixed',
+  'parser/highlight': 'tags, styleTags, classHighlighter',
+  'lang/javascript': 'javascript(), javascriptLanguage, tsxLanguage',
+  'lang/python': 'python(), pythonLanguage',
+  'lang/html': 'html(), htmlLanguage',
+  'lang/css': 'css(), cssLanguage',
+  'lang/json': 'json(), jsonLanguage',
+  'lang/markdown': 'markdown(), markdownLanguage',
+  'lang/xml': 'xml(), xmlLanguage',
+  'lang/sql': 'sql(), MySQL, PostgreSQL, SQLite dialects',
+  'lang/rust': 'rust(), rustLanguage',
+  'lang/go': 'go(), goLanguage',
+  'lang/java': 'java(), javaLanguage',
+  'lang/cpp': 'cpp(), cppLanguage',
+  'lang/php': 'php(), phpLanguage',
+  'lang/sass': 'sass(), sassLanguage',
+  'lang/less': 'less(), lessLanguage',
+  'lang/yaml': 'yaml(), yamlLanguage',
+  'lang/angular': 'angular(), angularLanguage',
+  'lang/vue': 'vue(), vueLanguage',
+  'lang/liquid': 'liquid(), liquidLanguage',
+  'lang/wast': 'wast(), wastLanguage',
+  'lang/jinja': 'jinja(), jinjaLanguage',
+  'lang/lezer': 'lezer(), lezerLanguage',
   'lang/legacy/*': 'StreamLanguage.define() based legacy modes',
+  'theme/one-dark': 'oneDark — Atom One Dark theme extension',
+  'theme/duskmoon': 'duskMoon() — DuskMoon CSS-var-based theme',
+  'keymaps/vim': 'vim() — Vim modal editing keymap',
+  'keymaps/emacs': 'emacs() — Emacs keybindings',
+  'setup': 'basicSetup, minimalSetup extension arrays',
 }
 
 const coreModules = ['state', 'view', 'language', 'commands', 'search', 'autocomplete', 'lint', 'collab', 'merge', 'lsp', 'language-data']
@@ -47,8 +87,8 @@ const categories = categoryOrder
       <tbody>
         {cat.exports.map(exp => (
           <tr>
-            <td><code>{pkgName}/{exp.path}</code></td>
-            {exp.description && <td class="desc">{exp.description}</td>}
+            <td><code>{exp.path === '.' ? pkgName : `${pkgName}/${exp.path}`}</code></td>
+            <td class="desc">{exp.description ?? ''}</td>
           </tr>
         ))}
       </tbody>
