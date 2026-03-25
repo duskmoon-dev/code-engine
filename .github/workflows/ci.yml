@@ -55,3 +55,6 @@ jobs:
 
       - name: Build
         run: bun run build
+
+      - name: Build playground
+        run: bun install --force && cd playground && bun run build
