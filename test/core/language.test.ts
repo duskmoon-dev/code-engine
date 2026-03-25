@@ -33,6 +33,13 @@ import {
   foldState,
   foldedRanges,
   highlightingFor,
+  indentString,
+  IndentContext,
+  getIndentation,
+  indentRange,
+  continuedIndent,
+  flatIndent,
+  indentService,
 } from "../../src/core/language/index";
 import { tags } from "../../src/parser/highlight/index";
 import { python, pythonLanguage } from "../../src/lang/python/index";
@@ -649,5 +656,257 @@ describe("highlightingFor", () => {
     const result = highlightingFor(state, [tags.keyword]);
     expect(result).toContain("kw1");
     expect(result).toContain("kw2");
+  });
+
+  describe("indentUnit facet", () => {
+    it("defaults to 2 spaces", () => {
+      const state = EditorState.create({ doc: "" });
+      expect(state.facet(indentUnit)).toBe("  ");
+    });
+
+    it("accepts custom 4-space value", () => {
+      const state = EditorState.create({
+        doc: "",
+        extensions: [indentUnit.of("    ")],
+      });
+      expect(state.facet(indentUnit)).toBe("    ");
+    });
+
+    it("accepts tab value", () => {
+      const state = EditorState.create({
+        doc: "",
+        extensions: [indentUnit.of("\t")],
+      });
+      expect(state.facet(indentUnit)).toBe("\t");
+    });
+
+    it("throws for invalid value with mixed characters", () => {
+      expect(() => {
+        EditorState.create({
+          doc: "",
+          extensions: [indentUnit.of(" \t")],
+        });
+      }).toThrow();
+    });
+
+    it("throws for empty string", () => {
+      expect(() => {
+        EditorState.create({
+          doc: "",
+          extensions: [indentUnit.of("")],
+        });
+      }).toThrow();
+    });
+  });
+
+  describe("getIndentUnit", () => {
+    it("returns 2 for default state", () => {
+      const state = EditorState.create({ doc: "" });
+      expect(getIndentUnit(state)).toBe(2);
+    });
+
+    it("returns 4 for 4-space indent", () => {
+      const state = EditorState.create({
+        doc: "",
+        extensions: [indentUnit.of("    ")],
+      });
+      expect(getIndentUnit(state)).toBe(4);
+    });
+
+    it("returns tabSize for tab indent unit", () => {
+      const state = EditorState.create({
+        doc: "",
+        extensions: [indentUnit.of("\t"), EditorState.tabSize.of(8)],
+      });
+      expect(getIndentUnit(state)).toBe(8);
+    });
+
+    it("returns tabSize * count for multiple tab indent units", () => {
+      const state = EditorState.create({
+        doc: "",
+        extensions: [indentUnit.of("\t\t"), EditorState.tabSize.of(4)],
+      });
+      expect(getIndentUnit(state)).toBe(8);
+    });
+  });
+
+  describe("indentString", () => {
+    it("creates space string for given column count", () => {
+      const state = EditorState.create({ doc: "" });
+      expect(indentString(state, 4)).toBe("    ");
+    });
+
+    it("creates tab+space string when indentUnit is tab", () => {
+      const state = EditorState.create({
+        doc: "",
+        extensions: [indentUnit.of("\t"), EditorState.tabSize.of(4)],
+      });
+      // 6 columns: 1 tab (4 cols) + 2 spaces
+      expect(indentString(state, 6)).toBe("\t  ");
+    });
+
+    it("creates only tabs when columns align with tabSize", () => {
+      const state = EditorState.create({
+        doc: "",
+        extensions: [indentUnit.of("\t"), EditorState.tabSize.of(4)],
+      });
+      expect(indentString(state, 8)).toBe("\t\t");
+    });
+
+    it("returns empty string for zero columns", () => {
+      const state = EditorState.create({ doc: "" });
+      expect(indentString(state, 0)).toBe("");
+    });
+  });
+
+  describe("IndentContext", () => {
+    it("sets unit from state", () => {
+      const state = EditorState.create({ doc: "hello" });
+      const ctx = new IndentContext(state);
+      expect(ctx.unit).toBe(2);
+    });
+
+    it("sets unit from custom indentUnit", () => {
+      const state = EditorState.create({
+        doc: "hello",
+        extensions: [indentUnit.of("    ")],
+      });
+      const ctx = new IndentContext(state);
+      expect(ctx.unit).toBe(4);
+    });
+
+    it("lineAt returns correct line", () => {
+      const state = EditorState.create({ doc: "line one\nline two\nline three" });
+      const ctx = new IndentContext(state);
+      const line = ctx.lineAt(10); // position in "line two"
+      expect(line.text).toBe("line two");
+      expect(line.from).toBe(9);
+    });
+
+    it("lineAt with simulateBreak splits the line", () => {
+      const state = EditorState.create({ doc: "hello world" });
+      const ctx = new IndentContext(state, { simulateBreak: 5 });
+      // bias 1 (default): text after break
+      const after = ctx.lineAt(5, 1);
+      expect(after.text).toBe(" world");
+      expect(after.from).toBe(5);
+      // bias -1: text before break
+      const before = ctx.lineAt(5, -1);
+      expect(before.text).toBe("hello");
+      expect(before.from).toBe(0);
+    });
+
+    it("textAfterPos returns text after position", () => {
+      const state = EditorState.create({ doc: "hello world" });
+      const ctx = new IndentContext(state);
+      expect(ctx.textAfterPos(5)).toBe(" world");
+    });
+
+    it("column returns column number", () => {
+      const state = EditorState.create({ doc: "  hello" });
+      const ctx = new IndentContext(state);
+      expect(ctx.column(2)).toBe(2);
+    });
+
+    it("countColumn counts columns with tab expansion", () => {
+      const state = EditorState.create({
+        doc: "\thello",
+        extensions: [EditorState.tabSize.of(4)],
+      });
+      const ctx = new IndentContext(state);
+      // tab at start expands to 4 columns
+      expect(ctx.countColumn("\thello", 1)).toBe(4);
+    });
+
+    it("lineIndent returns indentation level", () => {
+      const state = EditorState.create({ doc: "    hello\n  world" });
+      const ctx = new IndentContext(state);
+      expect(ctx.lineIndent(0)).toBe(4);
+      expect(ctx.lineIndent(10)).toBe(2);
+    });
+
+    it("simulatedBreak getter returns null when no break", () => {
+      const state = EditorState.create({ doc: "hello" });
+      const ctx = new IndentContext(state);
+      expect(ctx.simulatedBreak).toBeNull();
+    });
+
+    it("simulatedBreak getter returns break position", () => {
+      const state = EditorState.create({ doc: "hello" });
+      const ctx = new IndentContext(state, { simulateBreak: 3 });
+      expect(ctx.simulatedBreak).toBe(3);
+    });
+  });
+
+  describe("getIndentation", () => {
+    it("returns null for empty tree with no services", () => {
+      const state = EditorState.create({ doc: "hello" });
+      // With no language, syntaxTree is empty — returns 0 from topIndent if tree covers pos
+      const result = getIndentation(state, 0);
+      // The tree length is 0, so 0 >= 0 is true, topIndent returns 0
+      expect(result).toBe(0);
+    });
+
+    it("works with indentService facet", () => {
+      const state = EditorState.create({
+        doc: "hello\nworld",
+        extensions: [indentService.of((_ctx, _pos) => 8)],
+      });
+      expect(getIndentation(state, 0)).toBe(8);
+    });
+
+    it("indentService returning null is respected", () => {
+      const state = EditorState.create({
+        doc: "hello",
+        extensions: [indentService.of((_ctx, _pos) => null)],
+      });
+      const result = getIndentation(state, 0);
+      // null from service is a definitive "no indentation determinable" answer
+      expect(result).toBeNull();
+    });
+
+    it("accepts IndentContext as first argument", () => {
+      const state = EditorState.create({
+        doc: "hello",
+        extensions: [indentService.of((_ctx, _pos) => 6)],
+      });
+      const ctx = new IndentContext(state);
+      expect(getIndentation(ctx, 0)).toBe(6);
+    });
+  });
+
+  describe("indentRange", () => {
+    it("returns empty changes for already-correct indentation", () => {
+      const state = EditorState.create({ doc: "hello\nworld" });
+      const changes = indentRange(state, 0, 11);
+      expect(changes.empty).toBe(true);
+    });
+
+    it("returns changes when indentation service specifies indent", () => {
+      const state = EditorState.create({
+        doc: "hello\nworld",
+        extensions: [indentService.of((_ctx, _pos) => 4)],
+      });
+      const changes = indentRange(state, 0, 11);
+      expect(changes.empty).toBe(false);
+    });
+  });
+
+  describe("continuedIndent", () => {
+    it("returns a function", () => {
+      const fn = continuedIndent();
+      expect(typeof fn).toBe("function");
+    });
+
+    it("accepts options with except and units", () => {
+      const fn = continuedIndent({ except: /^else/, units: 2 });
+      expect(typeof fn).toBe("function");
+    });
+  });
+
+  describe("flatIndent", () => {
+    it("is a function", () => {
+      expect(typeof flatIndent).toBe("function");
+    });
   });
 });

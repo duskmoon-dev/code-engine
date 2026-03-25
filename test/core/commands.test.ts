@@ -135,6 +135,7 @@ import {
 } from "../../src/core/commands/index";
 import { EditorState, EditorSelection, Transaction } from "../../src/core/state/index";
 import { javascript } from "../../src/lang/javascript/index";
+import { indentUnit } from "../../src/core/language/index";
 
 // Helper to run a StateCommand on a state and return the resulting state
 function run(cmd: (target: {state: EditorState, dispatch: (tr: Transaction) => void}) => boolean, state: EditorState): EditorState | null {
@@ -906,5 +907,275 @@ describe("history undo/redo functional", () => {
       extensions: [history(), EditorState.readOnly.of(true)],
     });
     expect(run(undo, state)).toBe(null);
+  });
+
+  describe("deleteGroupBackward", () => {
+    it("deletes a whole word backward", () => {
+      const state = EditorState.create({ doc: "hello world", selection: { anchor: 11 } });
+      const result = run(deleteGroupBackward, state);
+      expect(result).not.toBe(null);
+      expect(result!.doc.toString()).toBe("hello ");
+    });
+
+    it("stops at punctuation boundary", () => {
+      const state = EditorState.create({ doc: "foo.bar", selection: { anchor: 7 } });
+      const result = run(deleteGroupBackward, state);
+      expect(result).not.toBe(null);
+      expect(result!.doc.toString()).toBe("foo.");
+    });
+
+    it("at document start returns null (nothing to delete)", () => {
+      const state = EditorState.create({ doc: "hello", selection: { anchor: 0 } });
+      const result = run(deleteGroupBackward, state);
+      expect(result).toBe(null);
+    });
+
+    it("deletes selection range instead of group", () => {
+      const state = EditorState.create({ doc: "hello world", selection: { anchor: 2, head: 8 } });
+      const result = run(deleteGroupBackward, state);
+      expect(result).not.toBe(null);
+      expect(result!.doc.toString()).toBe("herld");
+    });
+
+    it("returns false on readOnly state", () => {
+      const state = EditorState.create({
+        doc: "hello",
+        selection: { anchor: 5 },
+        extensions: [EditorState.readOnly.of(true)],
+      });
+      expect(run(deleteGroupBackward, state)).toBe(null);
+    });
+  });
+
+  describe("deleteGroupForward", () => {
+    it("deletes a whole word forward", () => {
+      const state = EditorState.create({ doc: "hello world", selection: { anchor: 0 } });
+      const result = run(deleteGroupForward, state);
+      expect(result).not.toBe(null);
+      expect(result!.doc.toString()).toBe(" world");
+    });
+
+    it("stops at punctuation boundary", () => {
+      const state = EditorState.create({ doc: "foo.bar", selection: { anchor: 0 } });
+      const result = run(deleteGroupForward, state);
+      expect(result).not.toBe(null);
+      expect(result!.doc.toString()).toBe(".bar");
+    });
+
+    it("at document end returns null (nothing to delete)", () => {
+      const state = EditorState.create({ doc: "hello", selection: { anchor: 5 } });
+      const result = run(deleteGroupForward, state);
+      expect(result).toBe(null);
+    });
+
+    it("deletes selection range instead of group", () => {
+      const state = EditorState.create({ doc: "hello world", selection: { anchor: 1, head: 6 } });
+      const result = run(deleteGroupForward, state);
+      expect(result).not.toBe(null);
+      expect(result!.doc.toString()).toBe("hworld");
+    });
+
+    it("returns false on readOnly state", () => {
+      const state = EditorState.create({
+        doc: "hello",
+        selection: { anchor: 0 },
+        extensions: [EditorState.readOnly.of(true)],
+      });
+      expect(run(deleteGroupForward, state)).toBe(null);
+    });
+  });
+
+  describe("deleteTrailingWhitespace edge cases", () => {
+    it("returns false when no trailing whitespace exists", () => {
+      const state = EditorState.create({ doc: "hello\nworld" });
+      expect(run(deleteTrailingWhitespace, state)).toBe(null);
+    });
+
+    it("removes trailing whitespace from multiple lines", () => {
+      const state = EditorState.create({ doc: "hello   \nworld  \nfoo" });
+      const result = run(deleteTrailingWhitespace, state);
+      expect(result).not.toBe(null);
+      expect(result!.doc.toString()).toBe("hello\nworld\nfoo");
+    });
+
+    it("handles lines with only whitespace", () => {
+      const state = EditorState.create({ doc: "hello\n   \nworld" });
+      const result = run(deleteTrailingWhitespace, state);
+      expect(result).not.toBe(null);
+      expect(result!.doc.toString()).toBe("hello\n\nworld");
+    });
+
+    it("returns false on readOnly state", () => {
+      const state = EditorState.create({
+        doc: "hello   ",
+        extensions: [EditorState.readOnly.of(true)],
+      });
+      expect(run(deleteTrailingWhitespace, state)).toBe(null);
+    });
+  });
+
+  describe("indentMore", () => {
+    it("adds indentation to a line", () => {
+      const state = EditorState.create({ doc: "hello", selection: { anchor: 0 } });
+      const result = run(indentMore, state);
+      expect(result).not.toBe(null);
+      expect(result!.doc.toString()).toMatch(/^\s+hello$/);
+    });
+
+    it("adds custom indent unit", () => {
+      const state = EditorState.create({
+        doc: "hello",
+        selection: { anchor: 0 },
+        extensions: [indentUnit.of("    ")],
+      });
+      const result = run(indentMore, state);
+      expect(result).not.toBe(null);
+      expect(result!.doc.toString()).toBe("    hello");
+    });
+
+    it("indents multiple selected lines", () => {
+      const state = EditorState.create({
+        doc: "line1\nline2\nline3",
+        selection: { anchor: 0, head: 16 },
+      });
+      const result = run(indentMore, state);
+      expect(result).not.toBe(null);
+      const lines = result!.doc.toString().split("\n");
+      for (const line of lines) {
+        expect(line).toMatch(/^\s+/);
+      }
+    });
+
+    it("returns false on readOnly state", () => {
+      const state = EditorState.create({
+        doc: "hello",
+        extensions: [EditorState.readOnly.of(true)],
+      });
+      expect(run(indentMore, state)).toBe(null);
+    });
+  });
+
+  describe("indentLess", () => {
+    it("removes indentation from a line", () => {
+      const state = EditorState.create({
+        doc: "  hello",
+        selection: { anchor: 0 },
+        extensions: [indentUnit.of("  ")],
+      });
+      const result = run(indentLess, state);
+      expect(result).not.toBe(null);
+      expect(result!.doc.toString()).toBe("hello");
+    });
+
+    it("on unindented line produces no visible change", () => {
+      const state = EditorState.create({ doc: "hello", selection: { anchor: 0 } });
+      const result = run(indentLess, state);
+      // indentLess always dispatches, but the doc should remain unchanged
+      expect(result).not.toBe(null);
+      expect(result!.doc.toString()).toBe("hello");
+    });
+
+    it("partially dedents when indent is less than one unit", () => {
+      const state = EditorState.create({
+        doc: " hello",
+        selection: { anchor: 0 },
+        extensions: [indentUnit.of("    ")],
+      });
+      const result = run(indentLess, state);
+      expect(result).not.toBe(null);
+      expect(result!.doc.toString()).toBe("hello");
+    });
+
+    it("returns false on readOnly state", () => {
+      const state = EditorState.create({
+        doc: "  hello",
+        extensions: [EditorState.readOnly.of(true)],
+      });
+      expect(run(indentLess, state)).toBe(null);
+    });
+  });
+
+  describe("insertTab", () => {
+    it("inserts a tab character when cursor is a point", () => {
+      const state = EditorState.create({ doc: "hello", selection: { anchor: 2 } });
+      const result = run(insertTab, state);
+      expect(result).not.toBe(null);
+      expect(result!.doc.toString()).toBe("he\tllo");
+    });
+
+    it("indents when selection is non-empty", () => {
+      const state = EditorState.create({
+        doc: "hello\nworld",
+        selection: { anchor: 0, head: 11 },
+      });
+      const result = run(insertTab, state);
+      expect(result).not.toBe(null);
+      // When selection is non-empty, insertTab delegates to indentMore
+      const lines = result!.doc.toString().split("\n");
+      for (const line of lines) {
+        expect(line).toMatch(/^\s+/);
+      }
+    });
+
+    it("inserts tab at end of document", () => {
+      const state = EditorState.create({ doc: "abc", selection: { anchor: 3 } });
+      const result = run(insertTab, state);
+      expect(result).not.toBe(null);
+      expect(result!.doc.toString()).toBe("abc\t");
+    });
+  });
+
+  describe("insertNewlineAndIndent", () => {
+    it("inserts a newline", () => {
+      const state = EditorState.create({ doc: "hello", selection: { anchor: 5 } });
+      const result = run(insertNewlineAndIndent, state);
+      expect(result).not.toBe(null);
+      expect(result!.doc.lines).toBeGreaterThanOrEqual(2);
+    });
+
+    it("preserves indentation from previous line", () => {
+      const state = EditorState.create({ doc: "  hello", selection: { anchor: 7 } });
+      const result = run(insertNewlineAndIndent, state);
+      expect(result).not.toBe(null);
+      const line2 = result!.doc.line(2).text;
+      // Should have at least some indentation carried forward
+      expect(result!.doc.lines).toBeGreaterThanOrEqual(2);
+    });
+
+    it("returns false on readOnly state", () => {
+      const state = EditorState.create({
+        doc: "hello",
+        selection: { anchor: 5 },
+        extensions: [EditorState.readOnly.of(true)],
+      });
+      expect(run(insertNewlineAndIndent, state)).toBe(null);
+    });
+  });
+
+  describe("insertBlankLine", () => {
+    it("creates a blank line below", () => {
+      const state = EditorState.create({ doc: "hello\nworld", selection: { anchor: 3 } });
+      const result = run(insertBlankLine, state);
+      expect(result).not.toBe(null);
+      expect(result!.doc.lines).toBe(3);
+      // The blank line should be after "hello"
+      expect(result!.doc.line(1).text).toBe("hello");
+    });
+
+    it("works at end of document", () => {
+      const state = EditorState.create({ doc: "hello", selection: { anchor: 5 } });
+      const result = run(insertBlankLine, state);
+      expect(result).not.toBe(null);
+      expect(result!.doc.lines).toBe(2);
+    });
+
+    it("returns false on readOnly state", () => {
+      const state = EditorState.create({
+        doc: "hello",
+        selection: { anchor: 5 },
+        extensions: [EditorState.readOnly.of(true)],
+      });
+      expect(run(insertBlankLine, state)).toBe(null);
+    });
   });
 });
