@@ -8,6 +8,9 @@
     "type": "git",
     "url": "https://github.com/duskmoon-dev/code-engine.git"
   },
+  "homepage": "https://duskmoon-dev.github.io/code-engine/",
+  "bugs": "https://github.com/duskmoon-dev/code-engine/issues",
+  "keywords": ["codemirror", "editor", "code-editor", "lezer", "syntax-highlighting", "language-support"],
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
