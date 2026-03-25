@@ -32,6 +32,14 @@
       Read-only
     </label>
     <label class="checkbox">
+      <input type="checkbox" id="ext-highlight-line" checked aria-label="Toggle active line highlight">
+      Active Line
+    </label>
+    <label class="checkbox">
+      <input type="checkbox" id="ext-brackets" checked aria-label="Toggle bracket matching">
+      Brackets
+    </label>
+    <label class="checkbox">
       <input type="checkbox" id="ext-whitespace" aria-label="Toggle whitespace visibility">
       Whitespace
     </label>
@@ -380,6 +388,8 @@ BinaryExpression { expression !add "+" expression }
   const autocompleteCheckbox = document.getElementById('ext-autocomplete') as HTMLInputElement
   const wordWrapCheckbox = document.getElementById('ext-wordwrap') as HTMLInputElement
   const readOnlyCheckbox = document.getElementById('ext-readonly') as HTMLInputElement
+  const highlightLineCheckbox = document.getElementById('ext-highlight-line') as HTMLInputElement
+  const bracketsCheckbox = document.getElementById('ext-brackets') as HTMLInputElement
   const whitespaceCheckbox = document.getElementById('ext-whitespace') as HTMLInputElement
   const tabSizeSelect = document.getElementById('tab-size') as HTMLSelectElement
   const vimCheckbox = document.getElementById('ext-vim') as HTMLInputElement
@@ -460,6 +470,8 @@ BinaryExpression { expression !add "+" expression }
     if (autocompleteCheckbox.checked) exts.push(autocompletion())
     if (wordWrapCheckbox.checked) exts.push(EditorView.lineWrapping)
     if (readOnlyCheckbox.checked) exts.push(EditorState.readOnly.of(true))
+    if (highlightLineCheckbox.checked) exts.push(highlightActiveLine(), highlightActiveLineGutter())
+    if (bracketsCheckbox.checked) exts.push(bracketMatching())
     if (whitespaceCheckbox.checked) exts.push(highlightWhitespace())
     if (vimCheckbox.checked) exts.push(vim())
     if (emacsCheckbox.checked) exts.push(emacs())
@@ -471,12 +483,9 @@ BinaryExpression { expression !add "+" expression }
       doc: sampleCode['javascript'],
       extensions: [
         minimalSetup,
-        bracketMatching(),
         closeBrackets(),
         indentOnInput(),
         foldGutter(),
-        highlightActiveLine(),
-        highlightActiveLineGutter(),
         highlightSelectionMatches(),
         keymap.of([...closeBracketsKeymap, ...searchKeymap, ...foldKeymap]),
         languageCompartment.of(javascript()),
@@ -544,6 +553,8 @@ BinaryExpression { expression !add "+" expression }
   autocompleteCheckbox.addEventListener('change', reconfigureExtensions)
   wordWrapCheckbox.addEventListener('change', reconfigureExtensions)
   readOnlyCheckbox.addEventListener('change', reconfigureExtensions)
+  highlightLineCheckbox.addEventListener('change', reconfigureExtensions)
+  bracketsCheckbox.addEventListener('change', reconfigureExtensions)
   whitespaceCheckbox.addEventListener('change', reconfigureExtensions)
 
   vimCheckbox.addEventListener('change', () => {
@@ -578,6 +589,8 @@ BinaryExpression { expression !add "+" expression }
     if (!autocompleteCheckbox.checked) params.set('ac', '0')
     if (wordWrapCheckbox.checked) params.set('wrap', '1')
     if (readOnlyCheckbox.checked) params.set('ro', '1')
+    if (!highlightLineCheckbox.checked) params.set('hl', '0')
+    if (!bracketsCheckbox.checked) params.set('bm', '0')
     if (whitespaceCheckbox.checked) params.set('ws', '1')
     if (vimCheckbox.checked) params.set('vim', '1')
     if (emacsCheckbox.checked) params.set('emacs', '1')
@@ -602,6 +615,8 @@ BinaryExpression { expression !add "+" expression }
     if (params.get('ac') === '0') autocompleteCheckbox.checked = false
     if (params.get('wrap') === '1') wordWrapCheckbox.checked = true
     if (params.get('ro') === '1') readOnlyCheckbox.checked = true
+    if (params.get('hl') === '0') highlightLineCheckbox.checked = false
+    if (params.get('bm') === '0') bracketsCheckbox.checked = false
     if (params.get('ws') === '1') whitespaceCheckbox.checked = true
     if (params.get('vim') === '1') { vimCheckbox.checked = true; emacsCheckbox.checked = false }
     if (params.get('emacs') === '1') { emacsCheckbox.checked = true; vimCheckbox.checked = false }
@@ -626,6 +641,8 @@ BinaryExpression { expression !add "+" expression }
   autocompleteCheckbox.addEventListener('change', updateHash)
   wordWrapCheckbox.addEventListener('change', updateHash)
   readOnlyCheckbox.addEventListener('change', updateHash)
+  highlightLineCheckbox.addEventListener('change', updateHash)
+  bracketsCheckbox.addEventListener('change', updateHash)
   whitespaceCheckbox.addEventListener('change', updateHash)
   vimCheckbox.addEventListener('change', updateHash)
   emacsCheckbox.addEventListener('change', updateHash)
@@ -698,6 +715,8 @@ BinaryExpression { expression !add "+" expression }
     autocompleteCheckbox.checked = true
     wordWrapCheckbox.checked = false
     readOnlyCheckbox.checked = false
+    highlightLineCheckbox.checked = true
+    bracketsCheckbox.checked = true
     whitespaceCheckbox.checked = false
     vimCheckbox.checked = false
     emacsCheckbox.checked = false
