@@ -157,3 +157,73 @@ describe("search function", () => {
     expect(ext).toBeDefined();
   });
 });
+
+describe("SearchQuery", () => {
+  it("constructs with search string", () => {
+    const q = new SearchQuery({ search: "hello" });
+    expect(q).toBeDefined();
+    expect(q.search).toBe("hello");
+  });
+
+  it("caseSensitive defaults to false", () => {
+    const q = new SearchQuery({ search: "hello" });
+    expect(q.caseSensitive).toBe(false);
+  });
+
+  it("caseSensitive can be set to true", () => {
+    const q = new SearchQuery({ search: "hello", caseSensitive: true });
+    expect(q.caseSensitive).toBe(true);
+  });
+
+  it("regexp defaults to false", () => {
+    const q = new SearchQuery({ search: "hello" });
+    expect(q.regexp).toBe(false);
+  });
+
+  it("wholeWord defaults to false", () => {
+    const q = new SearchQuery({ search: "hello" });
+    expect(q.wholeWord).toBe(false);
+  });
+
+  it("replace defaults to empty string", () => {
+    const q = new SearchQuery({ search: "hello" });
+    expect(q.replace).toBe("");
+  });
+
+  it("accepts a replace string", () => {
+    const q = new SearchQuery({ search: "hello", replace: "world" });
+    expect(q.replace).toBe("world");
+  });
+
+  it("eq() returns true for identical queries", () => {
+    const q1 = new SearchQuery({ search: "abc", caseSensitive: true });
+    const q2 = new SearchQuery({ search: "abc", caseSensitive: true });
+    expect(q1.eq(q2)).toBe(true);
+  });
+
+  it("eq() returns false for different queries", () => {
+    const q1 = new SearchQuery({ search: "abc" });
+    const q2 = new SearchQuery({ search: "xyz" });
+    expect(q1.eq(q2)).toBe(false);
+  });
+});
+
+describe("SearchCursor", () => {
+  it("can iterate matches in a text", () => {
+    const { Text } = require("../../src/core/state/index");
+    const text = Text.of(["hello world hello"]);
+    const cursor = new SearchCursor(text, "hello");
+    const first = cursor.next();
+    expect(first.value).toBeDefined();
+    expect(first.value!.from).toBe(0);
+    expect(first.value!.to).toBe(5);
+  });
+
+  it("returns done when no more matches", () => {
+    const { Text } = require("../../src/core/state/index");
+    const text = Text.of(["no match here"]);
+    const cursor = new SearchCursor(text, "xyz");
+    const result = cursor.next();
+    expect(result.done).toBe(true);
+  });
+});

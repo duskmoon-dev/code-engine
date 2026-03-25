@@ -36,4 +36,14 @@ describe("PHP language pack", () => {
     const lang = php();
     expect(lang.language).toBeDefined();
   });
+
+  it("phpLanguage parser produces a non-empty tree from plain PHP", () => {
+    const tree = phpLanguage.parser.parse("<?php echo 'hello'; ?>");
+    expect(tree.length).toBeGreaterThan(0);
+  });
+
+  it("phpLanguage parser tree has a top-level type", () => {
+    const tree = phpLanguage.parser.parse("<?php $x = 1; ?>");
+    expect(tree.type.isTop).toBe(true);
+  });
 });

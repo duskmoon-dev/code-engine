@@ -42,4 +42,14 @@ describe("YAML language pack", () => {
     const support = yaml();
     expect(support.language).toBe(yamlLanguage);
   });
+
+  it("yamlLanguage parser produces a non-empty tree", () => {
+    const tree = yamlLanguage.parser.parse("key: value\nlist:\n  - item1\n  - item2");
+    expect(tree.length).toBeGreaterThan(0);
+  });
+
+  it("yamlLanguage parser tree has a top-level type", () => {
+    const tree = yamlLanguage.parser.parse("a: 1\nb: 2");
+    expect(tree.type.isTop).toBe(true);
+  });
 });

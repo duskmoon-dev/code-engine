@@ -1,6 +1,7 @@
 import { describe, it, expect } from "bun:test";
 import { java, javaLanguage } from "../../src/lang/java/index";
 import { EditorState } from "../../src/core/state/index";
+import { syntaxTree, LanguageSupport } from "../../src/core/language/index";
 
 describe("Java language pack", () => {
   it("exports java function", () => {
@@ -18,11 +19,34 @@ describe("Java language pack", () => {
     expect(support.language).toBe(javaLanguage);
   });
 
+  it("java() returns a LanguageSupport instance", () => {
+    expect(java()).toBeInstanceOf(LanguageSupport);
+  });
+
   it("java() integrates with EditorState", () => {
     const state = EditorState.create({
       doc: `public class Hello {\n    public static void main(String[] args) {\n        System.out.println("Hello!");\n    }\n}`,
       extensions: [java()],
     });
     expect(state.doc.toString()).toContain("public class Hello");
+  });
+
+  it("javaLanguage parser produces a non-empty tree", () => {
+    const tree = javaLanguage.parser.parse("int x = 42;");
+    expect(tree.length).toBeGreaterThan(0);
+  });
+
+  it("javaLanguage parser tree has a top-level type", () => {
+    const tree = javaLanguage.parser.parse("class Foo {}");
+    expect(tree.type.isTop).toBe(true);
+  });
+
+  it("syntaxTree from EditorState with java() is non-empty", () => {
+    const state = EditorState.create({
+      doc: "public class Main { public static void main(String[] args) {} }",
+      extensions: [java()],
+    });
+    const tree = syntaxTree(state);
+    expect(tree.length).toBeGreaterThan(0);
   });
 });
