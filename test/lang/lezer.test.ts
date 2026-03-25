@@ -1,7 +1,7 @@
 import { describe, it, expect } from "bun:test";
 import { lezer, lezerLanguage } from "../../src/lang/lezer/index";
 import { EditorState } from "../../src/core/state/index";
-import { LanguageSupport } from "../../src/core/language/index";
+import { LanguageSupport, syntaxTree } from "../../src/core/language/index";
 
 describe("Lezer language pack", () => {
   describe("exports", () => {
@@ -131,6 +131,25 @@ describe("Lezer language pack", () => {
         extensions: [support],
       });
       expect(state).toBeDefined();
+    });
+
+    it("lezerLanguage parser produces a non-empty tree", () => {
+      const tree = lezerLanguage.parser.parse("@top Program { expr+ }\nexpr { @specialize[@name=Add]<expr, \"+\"> }");
+      expect(tree.length).toBeGreaterThan(0);
+    });
+
+    it("lezerLanguage parser tree has a top-level type", () => {
+      const tree = lezerLanguage.parser.parse("@tokens { Number { @digit+ } }\n@top Expr { Number }");
+      expect(tree.type.isTop).toBe(true);
+    });
+
+    it("syntaxTree from EditorState with lezer() is non-empty", () => {
+      const state = EditorState.create({
+        doc: "@top Program { statement* }\nstatement { identifier \";\" }",
+        extensions: [lezer()],
+      });
+      const tree = syntaxTree(state);
+      expect(tree.length).toBeGreaterThan(0);
     });
   });
 });
