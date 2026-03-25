@@ -460,4 +460,61 @@ describe('playground build output', () => {
     const html = readFileSync(join(distDir, 'playground/index.html'), 'utf-8')
     expect(html).toContain('aria-label="Code editor"')
   }))
+
+  it('all HTML pages have valid structure (doctype, html, head, body)', requireBuild(() => {
+    const pages = ['index.html', '404.html', 'docs/index.html', 'playground/index.html']
+    for (const page of pages) {
+      const html = readFileSync(join(distDir, page), 'utf-8')
+      expect(html).toMatch(/^<!DOCTYPE html>/i)
+      expect(html).toContain('<html')
+      expect(html).toContain('<head>')
+      expect(html).toContain('</head>')
+      expect(html).toContain('<body')
+      expect(html).toContain('</body>')
+      expect(html).toContain('</html>')
+    }
+  }))
+
+  it('no unclosed script tags in built pages', requireBuild(() => {
+    const pages = ['index.html', 'docs/index.html', 'playground/index.html']
+    for (const page of pages) {
+      const html = readFileSync(join(distDir, page), 'utf-8')
+      const openScripts = (html.match(/<script/g) ?? []).length
+      const closeScripts = (html.match(/<\/script>/g) ?? []).length
+      expect(openScripts).toBe(closeScripts)
+    }
+  }))
+
+  it('bundle size is within acceptable limits', requireBuild(() => {
+    const astroDir = join(distDir, '_astro')
+    if (!existsSync(astroDir)) return
+    const files = readdirSync(astroDir)
+    const jsFiles = files.filter(f => f.endsWith('.js'))
+    const cssFiles = files.filter(f => f.endsWith('.css'))
+
+    // Total JS bundle should be under 2MB (languages are large)
+    let totalJs = 0
+    for (const f of jsFiles) {
+      totalJs += readFileSync(join(astroDir, f)).length
+    }
+    expect(totalJs).toBeLessThan(2 * 1024 * 1024) // 2MB
+
+    // CSS should be under 50KB
+    let totalCss = 0
+    for (const f of cssFiles) {
+      totalCss += readFileSync(join(astroDir, f)).length
+    }
+    expect(totalCss).toBeLessThan(50 * 1024) // 50KB
+
+    // No individual JS chunk should exceed 500KB (would indicate bundling issue)
+    for (const f of jsFiles) {
+      const size = readFileSync(join(astroDir, f)).length
+      expect(size).toBeLessThan(500 * 1024)
+    }
+  }))
+
+  it('docs page description mentions correct export count', requireBuild(() => {
+    const html = readFileSync(join(distDir, 'docs/index.html'), 'utf-8')
+    expect(html).toContain('43 subpath exports')
+  }))
 })
