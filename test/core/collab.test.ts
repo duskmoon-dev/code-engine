@@ -102,6 +102,39 @@ describe("Collab extension", () => {
       expect(Array.isArray(result)).toBe(true);
       expect(result.length).toBe(0);
     });
+
+    it("skips updates that match over entries with the same clientID", () => {
+      const state = EditorState.create({ doc: "hello" });
+      const changes = state.changes([{ from: 0, to: 0, insert: "x" }]);
+      // Same clientID in both updates and over — the update is a duplicate, skip it
+      const updates = [{ changes, clientID: "c1" }];
+      const over = [{ changes, clientID: "c1" }];
+      const result = rebaseUpdates(updates, over);
+      expect(result.length).toBe(0);
+    });
+
+    it("maps updates over non-matching over changes (different clientID)", () => {
+      const state = EditorState.create({ doc: "hello" });
+      const c1Changes = state.changes([{ from: 0, to: 0, insert: "x" }]);
+      const c2Changes = state.changes([{ from: 5, to: 5, insert: "y" }]);
+      // Different clientIDs: c2 is accepted 'over', c1's changes get rebased
+      const updates = [{ changes: c1Changes, clientID: "c1" }];
+      const over = [{ changes: c2Changes, clientID: "c2" }];
+      const result = rebaseUpdates(updates, over);
+      expect(result.length).toBe(1);
+      expect(result[0].clientID).toBe("c1");
+      // The rebased changes should be a valid ChangeSet
+      expect(result[0].changes).toBeDefined();
+    });
+
+    it("returns updates unchanged when over is empty", () => {
+      const state = EditorState.create({ doc: "hello" });
+      const changes = state.changes([{ from: 0, to: 0, insert: "x" }]);
+      const updates = [{ changes, clientID: "c1" }];
+      const result = rebaseUpdates(updates, []);
+      // No over entries: early return (neither skip nor changes set)
+      expect(result).toBe(updates);
+    });
   });
 
   describe("sendableUpdates after a transaction", () => {
