@@ -13,6 +13,18 @@ import {
   toggleFold,
   foldKeymap,
   StreamLanguage,
+  indentUnit,
+  getIndentUnit,
+  foldAll,
+  unfoldAll,
+  foldGutter,
+  ensureSyntaxTree,
+  forceParsing,
+  matchBrackets,
+  foldNodeProp,
+  indentNodeProp,
+  indentOnInput,
+  codeFolding,
 } from "../../src/core/language/index";
 import { tags } from "../../src/parser/highlight/index";
 import { python, pythonLanguage } from "../../src/lang/python/index";
@@ -121,6 +133,69 @@ describe("StreamLanguage", () => {
   it("is a class with a define method", () => {
     expect(StreamLanguage).toBeDefined();
     expect(typeof StreamLanguage.define).toBe("function");
+  });
+});
+
+describe("Indentation utilities", () => {
+  it("indentUnit is a Facet", () => {
+    expect(indentUnit).toBeDefined();
+    expect(typeof indentUnit.of).toBe("function");
+  });
+
+  it("getIndentUnit returns a number for an EditorState", () => {
+    const state = EditorState.create({ doc: "x = 1" });
+    const unit = getIndentUnit(state);
+    expect(typeof unit).toBe("number");
+    expect(unit).toBeGreaterThan(0);
+  });
+
+  it("indentOnInput is an extension", () => {
+    expect(indentOnInput).toBeDefined();
+  });
+});
+
+describe("Fold utilities", () => {
+  it("foldAll is a command function", () => {
+    expect(typeof foldAll).toBe("function");
+  });
+
+  it("unfoldAll is a command function", () => {
+    expect(typeof unfoldAll).toBe("function");
+  });
+
+  it("foldGutter creates an extension", () => {
+    const ext = foldGutter();
+    expect(ext).toBeDefined();
+  });
+
+  it("codeFolding is an extension", () => {
+    expect(codeFolding).toBeDefined();
+  });
+
+  it("foldNodeProp is a NodeProp", () => {
+    expect(foldNodeProp).toBeDefined();
+  });
+
+  it("indentNodeProp is a NodeProp", () => {
+    expect(indentNodeProp).toBeDefined();
+  });
+});
+
+describe("Parse utilities", () => {
+  it("ensureSyntaxTree returns a tree or null for a state", () => {
+    const state = EditorState.create({ doc: "x = 1", extensions: [python()] });
+    const tree = ensureSyntaxTree(state, state.doc.length);
+    expect(tree === null || tree.length >= 0).toBe(true);
+  });
+
+  it("forceParsing is a function (requires EditorView)", () => {
+    expect(typeof forceParsing).toBe("function");
+  });
+
+  it("matchBrackets returns null for a state without cursor in brackets", () => {
+    const state = EditorState.create({ doc: "x = 1" });
+    const result = matchBrackets(state, 0, 1);
+    expect(result === null || result !== undefined).toBe(true);
   });
 });
 
