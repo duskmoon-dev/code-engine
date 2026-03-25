@@ -1,7 +1,9 @@
 ---
 import Layout from '../layouts/Layout.astro'
 import EditorDemo from '../components/EditorDemo.astro'
+import pkg from '../../../package.json'
+const langCount = Object.keys(pkg.exports).filter(k => k.startsWith('./lang/') && !k.includes('*')).length
 ---
-<Layout title="Playground" wide description="Interactive code editor playground with 23 languages, themes, and extensions powered by @duskmoon-dev/code-engine.">
+<Layout title="Playground" wide description={`Interactive code editor playground with ${langCount} languages, themes, and customizable extensions powered by @duskmoon-dev/code-engine.`}>
   <EditorDemo />
 </Layout>
