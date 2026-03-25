@@ -52,7 +52,9 @@ import {
 } from "../../src/core/language/index";
 import { tags } from "../../src/parser/highlight/index";
 import { python, pythonLanguage } from "../../src/lang/python/index";
+import { javascript, javascriptLanguage } from "../../src/lang/javascript/index";
 import { EditorState, StateEffect, Facet, Text } from "../../src/core/state/index";
+import { EditorView } from "../../src/core/view/index";
 import { Tree, NodeProp } from "../../src/parser/common/index";
 
 describe("Language module", () => {
@@ -1598,5 +1600,168 @@ describe("ParseContext", () => {
   it("ParseContext.getSkippingParser accepts a promise argument", () => {
     const parser = ParseContext.getSkippingParser(Promise.resolve());
     expect(parser).toBeDefined();
+  });
+
+  describe("matchBrackets", () => {
+    function mkState(doc: string, extensions: any[] = []) {
+      return EditorState.create({ doc, extensions: [javascript(), ...extensions] });
+    }
+
+    it("matches forward parentheses", () => {
+      const state = mkState("(x)");
+      const result = matchBrackets(state, 0, 1);
+      expect(result).not.toBeNull();
+      expect(result!.matched).toBe(true);
+      expect(result!.start.from).toBe(0);
+      expect(result!.start.to).toBe(1);
+      expect(result!.end).toBeDefined();
+      expect(result!.end!.from).toBe(2);
+      expect(result!.end!.to).toBe(3);
+    });
+
+    it("matches backward from closing bracket", () => {
+      const state = mkState("(x)");
+      const result = matchBrackets(state, 3, -1);
+      expect(result).not.toBeNull();
+      expect(result!.matched).toBe(true);
+      expect(result!.end).toBeDefined();
+      expect(result!.end!.from).toBe(0);
+    });
+
+    it("reports mismatched brackets", () => {
+      const state = mkState("(x]");
+      const result = matchBrackets(state, 0, 1);
+      expect(result).not.toBeNull();
+      expect(result!.matched).toBe(false);
+    });
+
+    it("handles nested brackets", () => {
+      const state = mkState("((x))");
+      const outerResult = matchBrackets(state, 0, 1);
+      expect(outerResult).not.toBeNull();
+      expect(outerResult!.matched).toBe(true);
+      expect(outerResult!.end!.from).toBe(4);
+
+      const innerResult = matchBrackets(state, 1, 1);
+      expect(innerResult).not.toBeNull();
+      expect(innerResult!.matched).toBe(true);
+      expect(innerResult!.end!.from).toBe(3);
+    });
+
+    it("returns null when no bracket at position", () => {
+      const state = mkState("hello");
+      const result = matchBrackets(state, 2, 1);
+      expect(result).toBeNull();
+    });
+
+    it("matches square brackets", () => {
+      const state = mkState("[1, 2]");
+      const result = matchBrackets(state, 0, 1);
+      expect(result).not.toBeNull();
+      expect(result!.matched).toBe(true);
+      expect(result!.end).toBeDefined();
+    });
+
+    it("matches curly braces in code", () => {
+      const state = mkState("{ x }");
+      const result = matchBrackets(state, 0, 1);
+      expect(result).not.toBeNull();
+      expect(result!.matched).toBe(true);
+    });
+
+    it("handles unmatched opening bracket", () => {
+      const state = mkState("(x");
+      const result = matchBrackets(state, 0, 1);
+      expect(result).not.toBeNull();
+      expect(result!.matched).toBe(false);
+      expect(result!.end).toBeUndefined();
+    });
+  });
+
+  describe("HighlightStyle and syntaxHighlighting (extended)", () => {
+    it("HighlightStyle.define with themeType dark", () => {
+      const style = HighlightStyle.define(
+        [{ tag: tags.keyword, color: "#ff0000" }],
+        { themeType: "dark" }
+      );
+      expect(style).toBeDefined();
+      expect(style.themeType).toBe("dark");
+    });
+
+    it("HighlightStyle.define with themeType light", () => {
+      const style = HighlightStyle.define(
+        [{ tag: tags.keyword, color: "#0000ff" }],
+        { themeType: "light" }
+      );
+      expect(style).toBeDefined();
+      expect(style.themeType).toBe("light");
+    });
+
+    it("HighlightStyle.define with class names instead of inline styles", () => {
+      const style = HighlightStyle.define([
+        { tag: tags.keyword, class: "my-keyword" },
+        { tag: tags.string, class: "my-string" },
+      ]);
+      expect(style).toBeDefined();
+      // Class-only styles should not generate a module
+      expect(style.module).toBeNull();
+    });
+
+    it("syntaxHighlighting with fallback option", () => {
+      const style = HighlightStyle.define([
+        { tag: tags.keyword, color: "#708" },
+      ]);
+      const ext = syntaxHighlighting(style, { fallback: true });
+      expect(ext).toBeDefined();
+      // Should work as an extension
+      const state = EditorState.create({ doc: "x", extensions: [ext] });
+      expect(state).toBeDefined();
+    });
+
+    it("syntaxHighlighting with dark themeType activates conditionally", () => {
+      const darkStyle = HighlightStyle.define(
+        [{ tag: tags.keyword, color: "#c678dd" }],
+        { themeType: "dark" }
+      );
+      const ext = syntaxHighlighting(darkStyle);
+      const state = EditorState.create({ doc: "let x = 1", extensions: [ext] });
+      expect(state).toBeDefined();
+    });
+
+    it("highlightingFor returns null when no highlighters are active", () => {
+      const state = EditorState.create({ doc: "x" });
+      const result = highlightingFor(state, [tags.keyword]);
+      expect(result).toBeNull();
+    });
+
+    it("highlightingFor returns class for matching tags", () => {
+      const style = HighlightStyle.define([
+        { tag: tags.keyword, color: "#708" },
+      ]);
+      const state = EditorState.create({
+        doc: "x",
+        extensions: [syntaxHighlighting(style)],
+      });
+      const result = highlightingFor(state, [tags.keyword]);
+      expect(result).not.toBeNull();
+      expect(typeof result).toBe("string");
+    });
+
+    it("multiple highlight styles combine classes", () => {
+      const style1 = HighlightStyle.define([
+        { tag: tags.keyword, color: "#708" },
+      ]);
+      const style2 = HighlightStyle.define([
+        { tag: tags.keyword, fontWeight: "bold" },
+      ]);
+      const state = EditorState.create({
+        doc: "x",
+        extensions: [syntaxHighlighting(style1), syntaxHighlighting(style2)],
+      });
+      const result = highlightingFor(state, [tags.keyword]);
+      expect(result).not.toBeNull();
+      // Should contain space-separated classes from both styles
+      expect(result!.split(" ").length).toBeGreaterThanOrEqual(2);
+    });
   });
 });

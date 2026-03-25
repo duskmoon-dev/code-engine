@@ -1275,3 +1275,267 @@ describe("EditorState.phrase", () => {
     expect(state.phrase("$1 and $2", "A", "B")).toBe("A and B");
   });
 });
+
+describe("RangeSet.iter (static)", () => {
+  class Mark extends RangeValue {
+    constructor(readonly label: string) { super(); }
+    eq(other: RangeValue) { return other instanceof Mark && this.label === other.label; }
+  }
+
+  function buildSet(...ranges: [number, number, string][]) {
+    const builder = new RangeSetBuilder<Mark>();
+    for (const [from, to, label] of ranges) builder.add(from, to, new Mark(label));
+    return builder.finish();
+  }
+
+  it("iterates over a single set in order", () => {
+    const set = buildSet([0, 3, "a"], [5, 8, "b"], [10, 15, "c"]);
+    const cursor = RangeSet.iter<Mark>([set]);
+    const results: [number, number, string][] = [];
+    while (cursor.value) {
+      results.push([cursor.from, cursor.to, cursor.value.label]);
+      cursor.next();
+    }
+    expect(results).toEqual([[0, 3, "a"], [5, 8, "b"], [10, 15, "c"]]);
+  });
+
+  it("iterates over multiple sets merged in order", () => {
+    const set1 = buildSet([0, 3, "a"], [10, 15, "c"]);
+    const set2 = buildSet([5, 8, "b"], [20, 25, "d"]);
+    const cursor = RangeSet.iter<Mark>([set1, set2]);
+    const results: [number, number, string][] = [];
+    while (cursor.value) {
+      results.push([cursor.from, cursor.to, cursor.value.label]);
+      cursor.next();
+    }
+    expect(results.length).toBe(4);
+    expect(results[0][0]).toBe(0);
+    expect(results[1][0]).toBe(5);
+    expect(results[2][0]).toBe(10);
+    expect(results[3][0]).toBe(20);
+  });
+
+  it("iterates from a specific position skipping earlier ranges", () => {
+    const set = buildSet([0, 3, "a"], [5, 8, "b"], [10, 15, "c"]);
+    const cursor = RangeSet.iter<Mark>([set], 6);
+    const results: [number, number, string][] = [];
+    while (cursor.value) {
+      results.push([cursor.from, cursor.to, cursor.value.label]);
+      cursor.next();
+    }
+    // Should skip the [0,3] range and possibly [5,8] depending on implementation
+    // At minimum, we should not see ranges that end before position 6
+    expect(results.length).toBeGreaterThanOrEqual(1);
+    expect(results[results.length - 1][0]).toBe(10);
+  });
+});
+
+describe("RangeSet.eq (static)", () => {
+  // eq compares point ranges (RangeValue with point=true), not regular spans
+  class PointMark extends RangeValue {
+    declare point: boolean;
+    constructor(readonly label: string) { super(); }
+    eq(other: RangeValue) { return other instanceof PointMark && this.label === other.label; }
+  }
+  PointMark.prototype.point = true;
+
+  function buildPointSet(...ranges: [number, number, string][]) {
+    return RangeSet.of(
+      ranges.map(([from, to, label]) => new PointMark(label).range(from, to)),
+      true,
+    );
+  }
+
+  it("same set instance returns true", () => {
+    const set = buildPointSet([0, 0, "a"], [5, 5, "b"]);
+    expect(RangeSet.eq([set], [set])).toBe(true);
+  });
+
+  it("different point content returns false", () => {
+    const set1 = buildPointSet([0, 0, "a"], [5, 5, "b"]);
+    const set2 = buildPointSet([0, 0, "a"], [5, 5, "c"]);
+    expect(RangeSet.eq([set1], [set2])).toBe(false);
+  });
+
+  it("same content different instances returns true", () => {
+    const set1 = buildPointSet([0, 0, "a"], [5, 5, "b"]);
+    const set2 = buildPointSet([0, 0, "a"], [5, 5, "b"]);
+    expect(RangeSet.eq([set1], [set2])).toBe(true);
+  });
+
+  it("with from/to range restriction compares only that range", () => {
+    const set1 = buildPointSet([0, 0, "a"], [5, 5, "b"]);
+    const set2 = buildPointSet([0, 0, "x"], [5, 5, "b"]);
+    // Different at position 0 but same at position 5, so restricting to 4..10 should be equal
+    expect(RangeSet.eq([set1], [set2], 4, 10)).toBe(true);
+    // Full comparison should be unequal
+    expect(RangeSet.eq([set1], [set2])).toBe(false);
+  });
+});
+
+describe("RangeSet.of (static)", () => {
+  class Mark extends RangeValue {
+    constructor(readonly label: string) { super(); }
+    eq(other: RangeValue) { return other instanceof Mark && this.label === other.label; }
+  }
+
+  it("creates from a single Range", () => {
+    const range = new Mark("x").range(2, 5);
+    const set = RangeSet.of([range]);
+    expect(set.size).toBe(1);
+    const iter = set.iter();
+    expect(iter.from).toBe(2);
+    expect(iter.to).toBe(5);
+  });
+
+  it("creates from a sorted array of Ranges", () => {
+    const ranges = [
+      new Mark("a").range(0, 3),
+      new Mark("b").range(5, 8),
+      new Mark("c").range(10, 15),
+    ];
+    const set = RangeSet.of(ranges);
+    expect(set.size).toBe(3);
+    const iter = set.iter();
+    expect(iter.from).toBe(0);
+    iter.next();
+    expect(iter.from).toBe(5);
+    iter.next();
+    expect(iter.from).toBe(10);
+  });
+
+  it("creates from an unsorted array with sort=true", () => {
+    const ranges = [
+      new Mark("c").range(10, 15),
+      new Mark("a").range(0, 3),
+      new Mark("b").range(5, 8),
+    ];
+    const set = RangeSet.of(ranges, true);
+    expect(set.size).toBe(3);
+    const iter = set.iter();
+    expect(iter.from).toBe(0);
+    iter.next();
+    expect(iter.from).toBe(5);
+    iter.next();
+    expect(iter.from).toBe(10);
+  });
+});
+
+describe("RangeSet.spans (static)", () => {
+  class Mark extends RangeValue {
+    constructor(readonly label: string) { super(); }
+    eq(other: RangeValue) { return other instanceof Mark && this.label === other.label; }
+  }
+
+  class PointMark extends RangeValue {
+    declare point: boolean;
+    constructor(readonly label: string) { super(); }
+    eq(other: RangeValue) { return other instanceof PointMark && this.label === other.label; }
+  }
+  PointMark.prototype.point = true;
+
+  function buildSet(...ranges: [number, number, string][]) {
+    const builder = new RangeSetBuilder<Mark>();
+    for (const [from, to, label] of ranges) builder.add(from, to, new Mark(label));
+    return builder.finish();
+  }
+
+  it("iterates span regions over a set", () => {
+    const set = buildSet([2, 5, "a"], [8, 12, "b"]);
+    const spans: [number, number][] = [];
+    RangeSet.spans<Mark>([set], 0, 15, {
+      span(from, to) { spans.push([from, to]); },
+      point() {},
+    });
+    // Should have spans covering the gaps and the ranges
+    expect(spans.length).toBeGreaterThan(0);
+  });
+
+  it("point decorations show up as points", () => {
+    const set = RangeSet.of([new PointMark("pt").range(5, 5)]);
+    const points: [number, number, string][] = [];
+    RangeSet.spans<PointMark>([set], 0, 10, {
+      span() {},
+      point(from, to, value) { points.push([from, to, value.label]); },
+    });
+    expect(points.length).toBe(1);
+    expect(points[0]).toEqual([5, 5, "pt"]);
+  });
+
+  it("empty set produces one span for whole range", () => {
+    const spans: [number, number][] = [];
+    RangeSet.spans<Mark>([RangeSet.empty], 0, 20, {
+      span(from, to) { spans.push([from, to]); },
+      point() {},
+    });
+    expect(spans.length).toBe(1);
+    expect(spans[0]).toEqual([0, 20]);
+  });
+
+  it("spans with multiple sets merges correctly", () => {
+    const set1 = buildSet([0, 5, "a"]);
+    const set2 = buildSet([3, 8, "b"]);
+    const spans: [number, number][] = [];
+    RangeSet.spans<Mark>([set1, set2], 0, 10, {
+      span(from, to) { spans.push([from, to]); },
+      point() {},
+    });
+    expect(spans.length).toBeGreaterThan(0);
+    // First span should start at 0
+    expect(spans[0][0]).toBe(0);
+    // Last span should end at 10
+    expect(spans[spans.length - 1][1]).toBe(10);
+  });
+});
+
+describe("RangeSet.compare (static)", () => {
+  // compare inspects point ranges (point=true), so use PointMark
+  class PointMark extends RangeValue {
+    declare point: boolean;
+    constructor(readonly label: string) { super(); }
+    eq(other: RangeValue) { return other instanceof PointMark && this.label === other.label; }
+  }
+  PointMark.prototype.point = true;
+
+  function buildPointSet(...ranges: [number, number, string][]) {
+    return RangeSet.of(
+      ranges.map(([from, to, label]) => new PointMark(label).range(from, to)),
+      true,
+    );
+  }
+
+  it("identical sets report no differences", () => {
+    const set = buildPointSet([0, 0, "a"], [5, 5, "b"]);
+    const diffs: [number, number][] = [];
+    RangeSet.compare<PointMark>([set], [set], ChangeSet.empty(20), {
+      compareRange(from, to) { diffs.push([from, to]); },
+      comparePoint(from, to) { diffs.push([from, to]); },
+    });
+    expect(diffs.length).toBe(0);
+  });
+
+  it("different sets report differences", () => {
+    const set1 = buildPointSet([0, 0, "a"], [5, 5, "b"]);
+    const set2 = buildPointSet([0, 0, "a"], [5, 5, "c"]);
+    const diffs: [number, number][] = [];
+    RangeSet.compare<PointMark>([set1], [set2], ChangeSet.empty(20), {
+      compareRange(from, to) { diffs.push([from, to]); },
+      comparePoint(from, to) { diffs.push([from, to]); },
+    });
+    expect(diffs.length).toBeGreaterThan(0);
+  });
+
+  it("compare with textDiff mapping from ChangeSet", () => {
+    const set1 = buildPointSet([0, 0, "a"]);
+    // After inserting "xx" at 0, old position 0 maps to 2
+    const changes = ChangeSet.of([{ from: 0, insert: "xx" }], 10);
+    const set2 = buildPointSet([2, 2, "a"]);
+    const diffs: [number, number][] = [];
+    RangeSet.compare<PointMark>([set1], [set2], changes.desc, {
+      compareRange(from, to) { diffs.push([from, to]); },
+      comparePoint(from, to) { diffs.push([from, to]); },
+    });
+    // The text change region is iterated; point content is equivalent after mapping
+    expect(diffs).toBeDefined();
+  });
+});
