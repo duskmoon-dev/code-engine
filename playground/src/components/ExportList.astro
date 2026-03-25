@@ -1,84 +1,43 @@
 ---
-const pkg = '@duskmoon-dev/code-engine'
+import pkgJson from '../../../package.json'
 
-const categories = [
-  {
-    name: 'Root',
-    exports: [{ path: '.', description: 'Barrel re-export of core modules' }],
-  },
-  {
-    name: 'Core',
-    exports: [
-      { path: 'state' },
-      { path: 'view' },
-      { path: 'language' },
-      { path: 'commands' },
-      { path: 'search' },
-      { path: 'autocomplete' },
-      { path: 'lint' },
-      { path: 'collab' },
-      { path: 'merge' },
-      { path: 'lsp' },
-      { path: 'language-data' },
-    ],
-  },
-  {
-    name: 'Parser',
-    exports: [
-      { path: 'parser/common' },
-      { path: 'parser/lr' },
-      { path: 'parser/highlight' },
-    ],
-  },
-  {
-    name: 'Languages',
-    exports: [
-      { path: 'lang/javascript' },
-      { path: 'lang/python' },
-      { path: 'lang/html' },
-      { path: 'lang/css' },
-      { path: 'lang/json' },
-      { path: 'lang/markdown' },
-      { path: 'lang/xml' },
-      { path: 'lang/sql' },
-      { path: 'lang/rust' },
-      { path: 'lang/go' },
-      { path: 'lang/java' },
-      { path: 'lang/cpp' },
-      { path: 'lang/php' },
-      { path: 'lang/sass' },
-      { path: 'lang/less' },
-      { path: 'lang/yaml' },
-      { path: 'lang/angular' },
-      { path: 'lang/vue' },
-      { path: 'lang/liquid' },
-      { path: 'lang/wast' },
-      { path: 'lang/jinja' },
-      { path: 'lang/lezer' },
-      { path: 'lang/legacy/*', description: 'StreamLanguage.define() based legacy modes' },
-    ],
-  },
-  {
-    name: 'Themes',
-    exports: [
-      { path: 'theme/one-dark' },
-      { path: 'theme/duskmoon' },
-    ],
-  },
-  {
-    name: 'Keymaps',
-    exports: [
-      { path: 'keymaps/vim' },
-      { path: 'keymaps/emacs' },
-    ],
-  },
-  {
-    name: 'Setup',
-    exports: [
-      { path: 'setup', description: 'basicSetup, minimalSetup extension arrays' },
-    ],
-  },
-]
+const pkgName = pkgJson.name
+const exportKeys = Object.keys(pkgJson.exports).map(k => k === '.' ? '.' : k.slice(2)) // strip './'
+
+// Categorize exports dynamically from package.json
+const descriptions: Record<string, string> = {
+  '.': 'Barrel re-export of core modules',
+  'setup': 'basicSetup, minimalSetup extension arrays',
+  'lang/legacy/*': 'StreamLanguage.define() based legacy modes',
+}
+
+const coreModules = ['state', 'view', 'language', 'commands', 'search', 'autocomplete', 'lint', 'collab', 'merge', 'lsp', 'language-data']
+
+function categorize(key: string): string {
+  if (key === '.') return 'Root'
+  if (coreModules.includes(key)) return 'Core'
+  if (key.startsWith('parser/')) return 'Parser'
+  if (key.startsWith('lang/')) return 'Languages'
+  if (key.startsWith('theme/')) return 'Themes'
+  if (key.startsWith('keymaps/')) return 'Keymaps'
+  if (key === 'setup') return 'Setup'
+  return 'Other'
+}
+
+const categoryOrder = ['Root', 'Core', 'Parser', 'Languages', 'Themes', 'Keymaps', 'Setup']
+
+const grouped = new Map<string, { path: string; description?: string }[]>()
+for (const cat of categoryOrder) grouped.set(cat, [])
+
+for (const key of exportKeys) {
+  const cat = categorize(key)
+  const list = grouped.get(cat)
+  if (list) list.push({ path: key, description: descriptions[key] })
+}
+
+const categories = categoryOrder
+  .map(name => ({ name, exports: grouped.get(name)! }))
+  .filter(c => c.exports.length > 0)
 ---
 
 {categories.map(cat => (
@@ -88,7 +47,7 @@ const categories = [
       <tbody>
         {cat.exports.map(exp => (
           <tr>
-            <td><code>{pkg}/{exp.path}</code></td>
+            <td><code>{pkgName}/{exp.path}</code></td>
             {exp.description && <td class="desc">{exp.description}</td>}
           </tr>
         ))}

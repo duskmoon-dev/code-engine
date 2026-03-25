@@ -1,12 +1,14 @@
 ---
 import Layout from '../layouts/Layout.astro'
+import pkg from '../../../package.json'
+const version = pkg.version
 ---
 <Layout title="Home">
   <div class="hero">
     <h1>@duskmoon-dev/code-engine</h1>
     <p class="tagline">Deep fork of CodeMirror 6 + Lezer — single package, zero dependencies</p>
     <div class="badges">
-      <span class="badge">v0.1.0</span>
+      <span class="badge">v{version}</span>
       <span class="badge">MIT License</span>
       <span class="badge">Zero Dependencies</span>
     </div>
