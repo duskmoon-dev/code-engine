@@ -7,7 +7,7 @@ import {
   getClientID,
   rebaseUpdates,
 } from "../../src/core/collab/index";
-import { EditorState } from "../../src/core/state/index";
+import { EditorState, ChangeSet } from "../../src/core/state/index";
 
 describe("Collab extension", () => {
   describe("exports", () => {
@@ -410,5 +410,97 @@ describe("collab extra behavioral tests", () => {
     state = state.update({ changes: { from: state.doc.length, insert: "\nline3" } }).state;
     expect(state.doc.lines).toBe(3);
     expect(state.doc.line(3).text).toBe("line3");
+  });
+});
+
+describe("rebaseUpdates", () => {
+  it("returns empty array for empty updates", () => {
+    const result = rebaseUpdates([], []);
+    expect(result).toEqual([]);
+  });
+
+  it("returns updates unchanged when no overlap", () => {
+    const updates = [{
+      changes: ChangeSet.of([{ from: 0, insert: "x" }], 5),
+      clientID: "a",
+    }];
+    const result = rebaseUpdates(updates, []);
+    expect(result.length).toBe(1);
+    expect(result[0].clientID).toBe("a");
+  });
+
+  it("filters out own updates when rebasing", () => {
+    const changes = ChangeSet.of([{ from: 0, insert: "x" }], 5);
+    const updates = [{ changes, clientID: "a" }];
+    const over = [{ changes: changes.desc, clientID: "a" }];
+    const result = rebaseUpdates(updates, over);
+    expect(result.length).toBe(0);
+  });
+
+  it("rebases foreign updates over own", () => {
+    const myChanges = ChangeSet.of([{ from: 0, insert: "x" }], 5);
+    const theirChanges = ChangeSet.of([{ from: 5, insert: "y" }], 5);
+    const updates = [
+      { changes: myChanges, clientID: "a" },
+      { changes: theirChanges, clientID: "b" },
+    ];
+    const over = [{ changes: myChanges.desc, clientID: "a" }];
+    const result = rebaseUpdates(updates, over);
+    // my update is skipped, their update is rebased
+    expect(result.length).toBe(1);
+    expect(result[0].clientID).toBe("b");
+  });
+});
+
+describe("receiveUpdates with remote changes", () => {
+  it("applies a remote insert", () => {
+    let state = EditorState.create({
+      doc: "hello",
+      extensions: [collab({ startVersion: 0, clientID: "local" })],
+    });
+    const remoteChanges = ChangeSet.of([{ from: 5, insert: " world" }], 5);
+    const tr = receiveUpdates(state, [{ changes: remoteChanges, clientID: "remote" }]);
+    expect(tr.state.doc.toString()).toBe("hello world");
+    expect(getSyncedVersion(tr.state)).toBe(1);
+  });
+
+  it("applies a remote deletion", () => {
+    let state = EditorState.create({
+      doc: "hello world",
+      extensions: [collab({ startVersion: 0 })],
+    });
+    const remoteChanges = ChangeSet.of([{ from: 5, to: 11 }], 11);
+    const tr = receiveUpdates(state, [{ changes: remoteChanges, clientID: "remote" }]);
+    expect(tr.state.doc.toString()).toBe("hello");
+  });
+
+  it("applies multiple remote updates", () => {
+    let state = EditorState.create({
+      doc: "abc",
+      extensions: [collab({ startVersion: 0 })],
+    });
+    const u1 = { changes: ChangeSet.of([{ from: 3, insert: "d" }], 3), clientID: "r1" };
+    const u2 = { changes: ChangeSet.of([{ from: 4, insert: "e" }], 4), clientID: "r2" };
+    const tr = receiveUpdates(state, [u1, u2]);
+    expect(tr.state.doc.toString()).toBe("abcde");
+    expect(getSyncedVersion(tr.state)).toBe(2);
+  });
+
+  it("rebases local changes over remote updates", () => {
+    let state = EditorState.create({
+      doc: "abc",
+      extensions: [collab({ startVersion: 0, clientID: "local" })],
+    });
+    // Make a local change
+    state = state.update({ changes: { from: 3, insert: "x" } }).state;
+    expect(sendableUpdates(state).length).toBe(1);
+    // Receive a remote change at version 0
+    const remote = { changes: ChangeSet.of([{ from: 0, insert: "!" }], 3), clientID: "remote" };
+    const tr = receiveUpdates(state, [remote]);
+    // Both changes should be applied
+    expect(tr.state.doc.toString()).toContain("!");
+    expect(tr.state.doc.toString()).toContain("x");
+    // Local change should still be sendable (rebased)
+    expect(sendableUpdates(tr.state).length).toBe(1);
   });
 });
