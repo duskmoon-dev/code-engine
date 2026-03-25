@@ -90,5 +90,23 @@ describe("Parser common module", () => {
       expect(Array.isArray(fragments)).toBe(true);
       expect(fragments.length).toBeGreaterThan(0);
     });
+
+    it("tree.toString() returns a string", () => {
+      const tree = pythonLanguage.parser.parse("x = 1");
+      expect(typeof tree.toString()).toBe("string");
+    });
+
+    it("NodeProp has built-in props (closedBy, openedBy, group)", () => {
+      expect(NodeProp.closedBy).toBeDefined();
+      expect(NodeProp.openedBy).toBeDefined();
+      expect(NodeProp.group).toBeDefined();
+    });
+
+    it("tree resolve() finds a node at a position", () => {
+      const tree = pythonLanguage.parser.parse("x = 1\nprint(x)");
+      const node = tree.resolve(0);
+      expect(node).toBeDefined();
+      expect(node.type).toBeDefined();
+    });
   });
 });
