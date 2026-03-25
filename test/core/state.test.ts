@@ -425,6 +425,61 @@ describe("Text utilities", () => {
     expect(pos).toBe(1); // ASCII: 1 char per cluster
   });
 
+  it("findClusterBreak handles surrogate pairs forward", () => {
+    const str = "a\uD83D\uDE00b"; // a😀b
+    const pos = findClusterBreak(str, 1, true); // start at the emoji
+    expect(pos).toBe(3); // should skip both surrogates
+  });
+
+  it("findClusterBreak handles surrogate pairs backward", () => {
+    const str = "a\uD83D\uDE00b"; // a😀b
+    const pos = findClusterBreak(str, 3, false); // position after emoji
+    expect(pos).toBe(1); // should go back to before the emoji
+  });
+
+  it("findClusterBreak handles combining marks forward", () => {
+    const str = "e\u0301x"; // é (e + combining acute accent) + x
+    const pos = findClusterBreak(str, 0, true);
+    expect(pos).toBe(2); // should include the combining mark
+  });
+
+  it("findClusterBreak handles combining marks backward", () => {
+    const str = "ae\u0301x"; // a + é (e + combining accent) + x
+    // from position 4 (after 'x'), backward: consumes 'x' then extends past combining mark → 2
+    const pos1 = findClusterBreak(str, 4, false);
+    expect(pos1).toBe(2);
+    // from position 2 (at combining mark), backward: consumes 'e' → 1
+    const pos2 = findClusterBreak(str, 2, false);
+    expect(pos2).toBe(1);
+  });
+
+  it("findClusterBreak handles variation selectors forward", () => {
+    const str = "\u2764\uFE0F"; // ❤️ (heart + variation selector)
+    const pos = findClusterBreak(str, 0, true);
+    expect(pos).toBe(2); // should include variation selector
+  });
+
+  it("findClusterBreak handles ZWJ sequences forward", () => {
+    // 👨‍💻 = man + ZWJ + laptop
+    const str = "\uD83D\uDC68\u200D\uD83D\uDCBB";
+    const pos = findClusterBreak(str, 0, true);
+    expect(pos).toBe(str.length); // entire ZWJ sequence is one cluster
+  });
+
+  it("findClusterBreak at end of string returns pos", () => {
+    expect(findClusterBreak("abc", 3, true)).toBe(3);
+  });
+
+  it("findClusterBreak at start of string backward returns 0", () => {
+    expect(findClusterBreak("abc", 0, false)).toBe(0);
+  });
+
+  it("findClusterBreak with includeExtending=false stops after first char", () => {
+    const str = "e\u0301x"; // é + x
+    const pos = findClusterBreak(str, 0, true, false);
+    expect(pos).toBe(1); // only advance one code unit
+  });
+
   it("codePointAt returns char code", () => {
     const code = codePointAt("A", 0);
     expect(code).toBe(65); // 'A' is 65
