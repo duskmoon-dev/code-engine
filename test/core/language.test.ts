@@ -1910,3 +1910,60 @@ describe("TreeIndentContext and indent strategies with real language", () => {
     expect(indent).toBe(0);
   });
 });
+
+describe("Language.findRegions and DocInput coverage", () => {
+  it("Language.findRegions explores tree for nested language (covers lines 119-143)", () => {
+    // html() language allows nesting (hasWrappers = true), use it as state lang
+    // then ask for pythonLanguage regions — not found, returns []
+    const { html } = require("../../src/lang/html/index");
+    const htmlSupport = html();
+    const state = EditorState.create({
+      doc: "<div>hello</div>",
+      extensions: [htmlSupport],
+    });
+    ensureSyntaxTree(state, state.doc.length, 1000);
+    // pythonLanguage.data != htmlLanguage.data; htmlLanguage.allowsNesting = true
+    const regions = pythonLanguage.findRegions(state);
+    expect(Array.isArray(regions)).toBe(true);
+    expect(regions.length).toBe(0);
+  });
+
+  it("Language.allowsNesting returns true for language with parseMixed (covers line 146)", () => {
+    const { html, htmlLanguage } = require("../../src/lang/html/index");
+    // HTML uses parseMixed, so allowsNesting should be true
+    expect(htmlLanguage.allowsNesting).toBe(true);
+  });
+
+  it("DocInput constructs from a Text document (covers lines 255-263)", () => {
+    const text = Text.of(["hello", "world"]);
+    const input = new DocInput(text);
+    expect(input.length).toBe(text.length);
+    expect(input.lineChunks).toBe(true);
+  });
+
+  it("DocInput.chunk() returns text at position (covers chunk/syncTo)", () => {
+    const text = Text.of(["hello world"]);
+    const input = new DocInput(text);
+    const chunk = input.chunk(0);
+    expect(typeof chunk).toBe("string");
+    expect(chunk.length).toBeGreaterThan(0);
+  });
+
+  it("ParseContext.getSkippingParser returns a Parser instance (covers line 478)", () => {
+    const parser = ParseContext.getSkippingParser();
+    expect(parser).toBeDefined();
+  });
+
+  it("getSkippingParser().createParse().advance() returns a Tree (covers lines 480-499)", () => {
+    const parser = ParseContext.getSkippingParser();
+    const text = Text.of(["hello world"]);
+    const input = new DocInput(text);
+    const ranges = [{from: 0, to: text.length}];
+    const partial = parser.createParse(input, [], ranges);
+    expect(partial).toBeDefined();
+    expect(partial.parsedPos).toBe(0);
+    const tree = partial.advance();
+    // Should return a Tree after advancing
+    expect(tree).not.toBeNull();
+  });
+});

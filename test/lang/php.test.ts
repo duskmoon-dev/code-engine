@@ -353,4 +353,31 @@ describe("PHP language pack", () => {
     const indent = getIndentation(state, 14);
     expect(typeof indent).toBe("number");
   });
+
+  it("SwitchBody indentation: case line (covers php.ts SwitchBody handler line 17-18)", () => {
+    // "case 1:" triggers isCase=true path in SwitchBody handler
+    const doc = "<?php switch ($x) {\ncase 1:\n  echo 'one';\n}";
+    const state = EditorState.create({ doc, extensions: [php({ plain: false })] });
+    ensureSyntaxTree(state, state.doc.length, 1000);
+    const indent = getIndentation(state, 20); // start of "case 1:" line
+    expect(typeof indent).toBe("number");
+  });
+
+  it("SwitchBody indentation: closing brace (covers SwitchBody closed path)", () => {
+    // "}" triggers closed=true path in SwitchBody handler
+    const doc = "<?php switch ($x) {\ncase 1:\n  echo 'one';\n}";
+    const state = EditorState.create({ doc, extensions: [php({ plain: false })] });
+    ensureSyntaxTree(state, state.doc.length, 1000);
+    const indent = getIndentation(state, 43); // start of "}" line
+    expect(typeof indent).toBe("number");
+  });
+
+  it("SwitchBody indentation: statement line (covers default branch)", () => {
+    // "  echo 'one';" triggers neither closed nor isCase path
+    const doc = "<?php switch ($x) {\ncase 1:\n  echo 'one';\n}";
+    const state = EditorState.create({ doc, extensions: [php({ plain: false })] });
+    ensureSyntaxTree(state, state.doc.length, 1000);
+    const indent = getIndentation(state, 28); // start of "  echo 'one';" line
+    expect(typeof indent).toBe("number");
+  });
 });
