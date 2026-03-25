@@ -671,6 +671,22 @@ describe("moveLineUp / moveLineDown", () => {
   });
 });
 
+describe("moveLineDown with multi-range selection on same line", () => {
+  it("merges two cursors on the same line when moving down", () => {
+    const state = EditorState.create({
+      doc: "aaa\nbbb\nccc",
+      selection: EditorSelection.create([
+        EditorSelection.cursor(1),
+        EditorSelection.cursor(2),
+      ]),
+      extensions: [EditorState.allowMultipleSelections.of(true)],
+    });
+    const result = run(moveLineDown, state)!;
+    expect(result).not.toBeNull();
+    expect(result.doc.toString()).toBe("bbb\naaa\nccc");
+  });
+});
+
 describe("copyLineUp / copyLineDown", () => {
   it("copyLineDown duplicates line below", () => {
     const state = EditorState.create({ doc: "aaa\nbbb", selection: { anchor: 1 } });

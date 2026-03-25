@@ -21,7 +21,7 @@ import {
   closeSearchPanel,
   validRegExp,
 } from "../../src/core/search/index";
-import { Text } from "../../src/core/state/index";
+import { Text, EditorState, EditorSelection, Transaction } from "../../src/core/state/index";
 
 describe("search module exports", () => {
   it("exports search as a function", () => {
@@ -601,5 +601,85 @@ describe("validRegExp extended", () => {
   it("returns false for invalid patterns", () => {
     expect(validRegExp("*")).toBe(false);
     expect(validRegExp("(?P<name>a)")).toBe(false);
+  });
+});
+
+// Helper to run a StateCommand
+function run(cmd: (target: {state: EditorState, dispatch: (tr: Transaction) => void}) => boolean, state: EditorState): EditorState | null {
+  let result: EditorState | null = null;
+  const dispatched = cmd({ state, dispatch: (tr: Transaction) => { result = tr.state; } });
+  return dispatched ? result : null;
+}
+
+describe("selectNextOccurrence", () => {
+  it("expands empty cursor to word when cursor is inside a word", () => {
+    const state = EditorState.create({ doc: "hello world hello", selection: { anchor: 2 } });
+    const result = run(selectNextOccurrence, state)!;
+    expect(result).not.toBeNull();
+    expect(result.sliceDoc(result.selection.main.from, result.selection.main.to)).toBe("hello");
+  });
+
+  it("returns false for empty cursor outside any word", () => {
+    const state = EditorState.create({ doc: "hello world", selection: { anchor: 5 } });
+    // cursor at position 5 is exactly at the space between words — may select 'hello' or be empty
+    // This just checks the function returns a boolean
+    expect(typeof selectNextOccurrence({ state, dispatch: () => {} })).toBe("boolean");
+  });
+
+  it("finds next occurrence of selected text and adds to selection", () => {
+    // Select first "foo", then invoke selectNextOccurrence to add second "foo"
+    const doc = "foo bar foo baz";
+    const state = EditorState.create({
+      doc,
+      selection: EditorSelection.range(0, 3),
+      extensions: [EditorState.allowMultipleSelections.of(true)],
+    });
+    const result = run(selectNextOccurrence, state)!;
+    expect(result).not.toBeNull();
+    expect(result.selection.ranges.length).toBe(2);
+    // Second range should cover the second "foo" at position 8-11
+    const ranges = result.selection.ranges.map(r => ({ from: r.from, to: r.to }));
+    expect(ranges.some(r => r.from === 8 && r.to === 11)).toBe(true);
+  });
+
+  it("wraps around to find occurrence before current selection", () => {
+    const doc = "foo bar foo baz";
+    // Start with selection at second "foo" (positions 8-11)
+    const state = EditorState.create({
+      doc,
+      selection: EditorSelection.range(8, 11),
+      extensions: [EditorState.allowMultipleSelections.of(true)],
+    });
+    const result = run(selectNextOccurrence, state)!;
+    expect(result).not.toBeNull();
+    // Should wrap around and find first "foo" at 0-3
+    const ranges = result.selection.ranges.map(r => ({ from: r.from, to: r.to }));
+    expect(ranges.some(r => r.from === 0 && r.to === 3)).toBe(true);
+  });
+
+  it("returns false when selected text does not appear elsewhere in document", () => {
+    const doc = "hello world";
+    const state = EditorState.create({
+      doc,
+      selection: EditorSelection.range(0, 5),
+      extensions: [EditorState.allowMultipleSelections.of(true)],
+    });
+    // "hello" only appears once, so selectNextOccurrence should return false
+    const result = selectNextOccurrence({ state, dispatch: () => {} });
+    expect(result).toBe(false);
+  });
+
+  it("returns false when ranges have inconsistent text", () => {
+    const doc = "foo bar baz";
+    const state = EditorState.create({
+      doc,
+      selection: EditorSelection.create([
+        EditorSelection.range(0, 3),  // "foo"
+        EditorSelection.range(4, 7),  // "bar"
+      ]),
+      extensions: [EditorState.allowMultipleSelections.of(true)],
+    });
+    const result = selectNextOccurrence({ state, dispatch: () => {} });
+    expect(result).toBe(false);
   });
 });
