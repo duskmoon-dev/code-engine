@@ -180,3 +180,55 @@ describe("forEachDiagnostic behavioral tests", () => {
     expect(diags).toEqual(["err", "info"]);
   });
 });
+
+describe("setDiagnostics severity types", () => {
+  it("accepts error severity", () => {
+    const state = EditorState.create({ doc: "x" });
+    const spec = setDiagnostics(state, [
+      { from: 0, to: 1, severity: "error", message: "syntax error" },
+    ]);
+    const newState = state.update(spec).state;
+    expect(diagnosticCount(newState)).toBe(1);
+    const msgs: string[] = [];
+    forEachDiagnostic(newState, d => msgs.push(d.severity));
+    expect(msgs[0]).toBe("error");
+  });
+
+  it("accepts warning severity", () => {
+    const state = EditorState.create({ doc: "x" });
+    const spec = setDiagnostics(state, [
+      { from: 0, to: 1, severity: "warning", message: "unused variable" },
+    ]);
+    const newState = state.update(spec).state;
+    const msgs: string[] = [];
+    forEachDiagnostic(newState, d => msgs.push(d.severity));
+    expect(msgs[0]).toBe("warning");
+  });
+
+  it("accepts hint severity", () => {
+    const state = EditorState.create({ doc: "x" });
+    const spec = setDiagnostics(state, [
+      { from: 0, to: 1, severity: "hint", message: "consider refactoring" },
+    ]);
+    const newState = state.update(spec).state;
+    const msgs: string[] = [];
+    forEachDiagnostic(newState, d => msgs.push(d.severity));
+    expect(msgs[0]).toBe("hint");
+  });
+
+  it("replaces diagnostics when setDiagnostics is called again", () => {
+    let state = EditorState.create({ doc: "hello world" });
+    const spec1 = setDiagnostics(state, [
+      { from: 0, to: 5, severity: "error", message: "first" },
+      { from: 6, to: 11, severity: "error", message: "second" },
+    ]);
+    state = state.update(spec1).state;
+    expect(diagnosticCount(state)).toBe(2);
+
+    const spec2 = setDiagnostics(state, [
+      { from: 0, to: 5, severity: "warning", message: "only one now" },
+    ]);
+    state = state.update(spec2).state;
+    expect(diagnosticCount(state)).toBe(1);
+  });
+});
