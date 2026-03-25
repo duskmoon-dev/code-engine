@@ -6,7 +6,7 @@
 
 Deep fork of CodeMirror 6 + Lezer ecosystem — single package, zero dependencies.
 
-Collapses 44 upstream repositories into one npm package with 42 tree-shakeable subpath exports.
+Collapses 44 upstream repositories into one npm package with 43 tree-shakeable subpath exports.
 
 ## Install
 
@@ -61,7 +61,7 @@ new EditorView({
 
 ```bash
 bun install                           # install dependencies
-bun test                              # run tests (503 tests across 37 files)
+bun test                              # run tests (~800+ tests across 42 files)
 bun test test/core/state.test.ts      # run a single test file
 bun run typecheck                     # type check
 bun run build                         # full build pipeline
