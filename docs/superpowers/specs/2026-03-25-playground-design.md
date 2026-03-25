@@ -56,15 +56,67 @@ playground/
 
 ### Root Changes
 
+Add `"workspaces"` as a new top-level key (the root `package.json` does not currently have one) and append to `"scripts"`:
+
 ```json
-// package.json additions
+// root package.json — new key:
+"workspaces": ["playground"],
+
+// root package.json — add to "scripts":
+"build:playground": "cd playground && bun run build"
+```
+
+`bun install` at root automatically installs all workspace members. The `workspace:*` dep in `playground/package.json` resolves to the local `@duskmoon-dev/code-engine` source — no separate build step required before `bun run dev` in the playground.
+
+### `playground/astro.config.ts`
+
+```ts
+import { defineConfig } from 'astro/config'
+
+export default defineConfig({
+  output: 'static',
+  base: '/code-engine',
+})
+```
+
+### `playground/tsconfig.json`
+
+```json
 {
-  "workspaces": ["playground"],
-  "scripts": {
-    "build:playground": "cd playground && bun run build"
+  "extends": "../tsconfig.json",
+  "include": ["src/**/*.ts", "src/**/*.astro"],
+  "compilerOptions": {
+    "rootDir": ".",
+    "outDir": "./dist",
+    "noEmit": true
   }
 }
 ```
+
+### `playground/package.json`
+
+```json
+{
+  "name": "@duskmoon-dev/code-engine-playground",
+  "version": "0.0.1",
+  "private": true,
+  "scripts": {
+    "dev": "astro dev",
+    "build": "astro build",
+    "preview": "astro preview"
+  },
+  "dependencies": {
+    "@duskmoon-dev/code-engine": "workspace:*"
+  },
+  "devDependencies": {
+    "astro": "^5.x"
+  }
+}
+```
+
+### Workspace & Lockfile
+
+After adding `playground/` as a workspace member, run `bun install` at the repo root to regenerate `bun.lock`. The updated lockfile must be committed. CI's `bun install` step does **not** use `--frozen-lockfile` for the playground build (the existing deploy-pages workflow does not pass `--frozen-lockfile`; this is preserved).
 
 ---
 
@@ -83,14 +135,15 @@ Content:
 ### `/docs` — API Reference
 
 Content:
-- All 42 exports organized in a table by category:
+- All exports organized in a table by category. The `package.json` has 42 named export keys total: the root `.` entry, 40 named subpath exports, and one wildcard `./lang/legacy/*`. For the reference table, render the 6 named categories below (the legacy wildcard is noted as a single entry, not expanded):
+  - **Root** (1): `.` (barrel re-export of core modules)
   - **Core** (11): `state`, `view`, `language`, `commands`, `search`, `autocomplete`, `lint`, `collab`, `merge`, `lsp`, `language-data`
   - **Parser** (3): `parser/common`, `parser/lr`, `parser/highlight`
-  - **Languages** (22): all `lang/*` packs
+  - **Languages** (22 + legacy wildcard): all named `lang/*` packs + `lang/legacy/*`
   - **Themes** (2): `theme/one-dark`, `theme/duskmoon`
   - **Keymaps** (2): `keymaps/vim`, `keymaps/emacs`
   - **Setup** (1): `setup` (basicSetup, minimalSetup)
-- Full Changelog (rendered from `CHANGELOG.md` at build time using Astro's `fs` access)
+- Full Changelog (rendered from `CHANGELOG.md` at build time). In `Changelog.astro`, use Astro's `readFile` from `node:fs/promises` or `readFileSync` from `node:fs`. Path resolution: `new URL('../../../CHANGELOG.md', import.meta.url)` navigates from `playground/src/components/` up three levels to the repo root. Render as plain `<pre>` or split on `\n## ` to produce `<section>` per release — no markdown parser dependency needed.
 - Links to npm package and GitHub repository
 
 ### `/playground` — Live Editor
@@ -108,14 +161,29 @@ Content:
 
 ### Editor Initialization
 
+All import paths match the exact subpath export keys in `package.json` (prefixed with `@duskmoon-dev/code-engine`):
+
 ```ts
 // inside <script> tag — compiled by Astro/Vite
-import { EditorState } from '@duskmoon-dev/code-engine/state'
-import { EditorView, basicSetup } from '@duskmoon-dev/code-engine/setup'
-import { Compartment } from '@duskmoon-dev/code-engine/state'
+import { EditorState, Compartment } from '@duskmoon-dev/code-engine/state'
+import { EditorView } from '@duskmoon-dev/code-engine/view'
+import { basicSetup } from '@duskmoon-dev/code-engine/setup'
 import { javascript } from '@duskmoon-dev/code-engine/lang/javascript'
+import { python } from '@duskmoon-dev/code-engine/lang/python'
+import { html } from '@duskmoon-dev/code-engine/lang/html'
+// ... import all 22 language factories the same way
 import { oneDark } from '@duskmoon-dev/code-engine/theme/one-dark'
-// ... other language/theme/keymap imports
+import { duskmoon } from '@duskmoon-dev/code-engine/theme/duskmoon'
+import { vim } from '@duskmoon-dev/code-engine/keymaps/vim'
+import { emacs } from '@duskmoon-dev/code-engine/keymaps/emacs'
+
+// sampleCode: a plain object mapping language name to a code string
+const sampleCode: Record<string, string> = {
+  javascript: 'function hello() {\n  console.log("Hello, world!")\n}',
+  python: 'def hello():\n    print("Hello, world!")',
+  html: '<!DOCTYPE html>\n<html>\n  <body>Hello, world!</body>\n</html>',
+  // ... one snippet per language; keep them short (5–10 lines)
+}
 
 const languageCompartment = new Compartment()
 const themeCompartment = new Compartment()
@@ -141,7 +209,7 @@ All three compartments are reconfigured via `view.dispatch({ effects: compartmen
 
 Language changes also update the editor doc to a language-appropriate sample snippet.
 
-Vim and emacs keymaps are mutually exclusive: selecting one deselects the other.
+Vim and emacs keymaps are mutually exclusive: checking one auto-unchecks the other via JavaScript before dispatching the compartment reconfiguration. Both can be unchecked (no keymap active).
 
 ---
 
@@ -149,7 +217,10 @@ Vim and emacs keymaps are mutually exclusive: selecting one deselects the other.
 
 ### Updated `deploy-pages.yml`
 
+The existing two-job structure (`build` + `deploy`) is preserved. Only the steps within the `build` job change — replace the `bun run scripts/build-docs.ts` step and the artifact upload path:
+
 ```yaml
+# within the existing 'build' job:
 - name: Install dependencies
   run: bun install
 
@@ -164,8 +235,7 @@ Vim and emacs keymaps are mutually exclusive: selecting one deselects the other.
   with:
     path: playground/dist
 
-- name: Deploy to GitHub Pages
-  uses: actions/deploy-pages@v4
+# the existing 'deploy' job (needs: build, uses deploy-pages@v4) is unchanged
 ```
 
 ### Base Path
