@@ -4,8 +4,12 @@ import Layout from '../layouts/Layout.astro'
 <Layout title="Not Found">
   <div class="not-found">
     <h1>404</h1>
-    <p>Page not found.</p>
-    <a href={import.meta.env.BASE_URL}>Back to home</a>
+    <p>This page doesn't exist.</p>
+    <nav class="not-found-links" aria-label="Helpful links">
+      <a href={import.meta.env.BASE_URL}>Home</a>
+      <a href={`${import.meta.env.BASE_URL}docs`}>API Docs</a>
+      <a href={`${import.meta.env.BASE_URL}playground`}>Playground</a>
+    </nav>
   </div>
 </Layout>
 
@@ -22,5 +26,26 @@ import Layout from '../layouts/Layout.astro'
   .not-found p {
     color: var(--color-text-muted);
     margin-bottom: var(--space-md);
+  }
+  .not-found-links {
+    display: flex;
+    gap: var(--space-md);
+    justify-content: center;
+    flex-wrap: wrap;
+  }
+  .not-found-links a {
+    padding: 0.4rem 1rem;
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius);
+    transition: border-color 0.15s;
+  }
+  .not-found-links a:hover {
+    border-color: var(--color-accent);
+    text-decoration: none;
+  }
+  .not-found-links a:focus-visible {
+    outline: 2px solid var(--color-accent);
+    outline-offset: 2px;
   }
 </style>
