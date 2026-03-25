@@ -312,5 +312,36 @@ describe("LR Parser module", () => {
       expect(node).toBeDefined();
       expect(node.from).toBeLessThanOrEqual(12);
     });
+
+    it("rust tree has correct length for simple code", () => {
+      const code = "let x: i32 = 42;";
+      const tree = rustLanguage.parser.parse(code);
+      expect(tree.length).toBe(code.length);
+    });
+
+    it("javascript LRParser nodeSet types have id property", () => {
+      const parser = javascriptLanguage.parser as LRParser;
+      for (const t of parser.nodeSet.types.slice(0, 3)) {
+        expect(typeof t.id).toBe("number");
+      }
+    });
+
+    it("python tree from multi-line code has correct length", () => {
+      const code = "x = 1\ny = 2";
+      const tree = pythonLanguage.parser.parse(code);
+      expect(tree.length).toBe(code.length);
+    });
+
+    it("rust LRParser topNode is top", () => {
+      const parser = rustLanguage.parser as LRParser;
+      expect(parser.topNode.isTop).toBe(true);
+    });
+
+    it("javascript tree iterate visits more than 5 nodes for arrow function", () => {
+      const tree = javascriptLanguage.parser.parse("const add = (a, b) => a + b;");
+      let count = 0;
+      tree.iterate({ enter: () => { count++; } });
+      expect(count).toBeGreaterThan(5);
+    });
   });
 });

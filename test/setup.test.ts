@@ -336,5 +336,41 @@ describe("Setup extensions", () => {
       expect(state.selection.main.from).toBe(6);
       expect(state.selection.main.to).toBe(11);
     });
+
+    it("basicSetup allows 4 sequential transactions", () => {
+      let state = EditorState.create({ doc: "a", extensions: basicSetup });
+      state = state.update({ changes: { from: 1, insert: "b" } }).state;
+      state = state.update({ changes: { from: 2, insert: "c" } }).state;
+      state = state.update({ changes: { from: 3, insert: "d" } }).state;
+      expect(state.doc.toString()).toBe("abcd");
+    });
+
+    it("minimalSetup allows 4 sequential transactions", () => {
+      let state = EditorState.create({ doc: "1", extensions: minimalSetup });
+      state = state.update({ changes: { from: 1, insert: "2" } }).state;
+      state = state.update({ changes: { from: 2, insert: "3" } }).state;
+      state = state.update({ changes: { from: 3, insert: "4" } }).state;
+      expect(state.doc.toString()).toBe("1234");
+    });
+
+    it("basicSetup delete-all content works", () => {
+      const doc = "hello world";
+      let state = EditorState.create({ doc, extensions: basicSetup });
+      state = state.update({ changes: { from: 0, to: doc.length } }).state;
+      expect(state.doc.toString()).toBe("");
+    });
+
+    it("minimalSetup delete-all content works", () => {
+      const doc = "foo bar";
+      let state = EditorState.create({ doc, extensions: minimalSetup });
+      state = state.update({ changes: { from: 0, to: doc.length } }).state;
+      expect(state.doc.length).toBe(0);
+    });
+
+    it("basicSetup insert at start works", () => {
+      let state = EditorState.create({ doc: "world", extensions: basicSetup });
+      state = state.update({ changes: { from: 0, insert: "hello " } }).state;
+      expect(state.doc.toString()).toBe("hello world");
+    });
   });
 });

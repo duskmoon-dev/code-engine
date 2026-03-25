@@ -317,5 +317,45 @@ describe("Sass language pack", () => {
       expect(state.doc.line(1).text).toBe("$font-size: 16px;");
       expect(state.doc.line(2).text).toBe("$line-height: 1.5;");
     });
+
+    it("sass() state allows 4 sequential transactions", () => {
+      let state = EditorState.create({ doc: "$a: 1;", extensions: [sass()] });
+      state = state.update({ changes: { from: 6, insert: "\n$b: 2;" } }).state;
+      state = state.update({ changes: { from: state.doc.length, insert: "\n$c: 3;" } }).state;
+      state = state.update({ changes: { from: state.doc.length, insert: "\n$d: 4;" } }).state;
+      expect(state.doc.lines).toBe(4);
+    });
+
+    it("sass() state allows deletion of entire content", () => {
+      const doc = "$color: red;\n.btn { color: $color; }";
+      let state = EditorState.create({ doc, extensions: [sass()] });
+      state = state.update({ changes: { from: 0, to: doc.length } }).state;
+      expect(state.doc.toString()).toBe("");
+    });
+
+    it("sass() state allows insert at start", () => {
+      let state = EditorState.create({ doc: ".btn { color: red; }", extensions: [sass()] });
+      state = state.update({ changes: { from: 0, insert: "$primary: red;\n" } }).state;
+      expect(state.doc.line(1).text).toBe("$primary: red;");
+    });
+
+    it("sass() state selection can span lines", () => {
+      const state = EditorState.create({
+        doc: "$color: red;\n.btn { color: $color; }",
+        selection: { anchor: 0, head: 12 },
+        extensions: [sass()],
+      });
+      expect(state.selection.main.from).toBe(0);
+      expect(state.selection.main.to).toBe(12);
+    });
+
+    it("indented sass() state doc line text is correct", () => {
+      const state = EditorState.create({
+        doc: ".nav\n  color: red\n  font-size: 14px",
+        extensions: [sass({ indented: true })],
+      });
+      expect(state.doc.line(2).text).toBe("  color: red");
+      expect(state.doc.line(3).text).toBe("  font-size: 14px");
+    });
   });
 });

@@ -318,4 +318,38 @@ describe("YAML language pack", () => {
     const state = EditorState.create({ doc, extensions: [yaml()] });
     expect(state.doc.length).toBe(doc.length);
   });
+
+  it("yaml() state allows 4 sequential transactions", () => {
+    let state = EditorState.create({ doc: "a: 1", extensions: [yaml()] });
+    state = state.update({ changes: { from: 4, insert: "\nb: 2" } }).state;
+    state = state.update({ changes: { from: state.doc.length, insert: "\nc: 3" } }).state;
+    state = state.update({ changes: { from: state.doc.length, insert: "\nd: 4" } }).state;
+    expect(state.doc.lines).toBe(4);
+    expect(state.doc.line(4).text).toBe("d: 4");
+  });
+
+  it("yaml() state allows deletion of entire content", () => {
+    const doc = "name: Alice\nage: 30";
+    let state = EditorState.create({ doc, extensions: [yaml()] });
+    state = state.update({ changes: { from: 0, to: doc.length } }).state;
+    expect(state.doc.toString()).toBe("");
+  });
+
+  it("yaml() state allows insert at start", () => {
+    let state = EditorState.create({ doc: "key: value", extensions: [yaml()] });
+    state = state.update({ changes: { from: 0, insert: "---\n" } }).state;
+    expect(state.doc.line(1).text).toBe("---");
+  });
+
+  it("yamlLanguage parser tree has correct length", () => {
+    const code = "name: Alice\nage: 30\ncity: NYC";
+    const tree = yamlLanguage.parser.parse(code);
+    expect(tree.length).toBe(code.length);
+  });
+
+  it("yaml() state with unicode content works", () => {
+    const doc = "greeting: こんにちは\nname: 世界";
+    const state = EditorState.create({ doc, extensions: [yaml()] });
+    expect(state.doc.toString()).toBe(doc);
+  });
 });
