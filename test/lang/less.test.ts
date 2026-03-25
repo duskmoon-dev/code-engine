@@ -220,5 +220,30 @@ describe("Less language pack", () => {
       const state = EditorState.create({ doc, extensions: [less()] });
       expect(state.doc.length).toBe(doc.length);
     });
+
+    it("lessLanguage allows doc mutation via transaction", () => {
+      let state = EditorState.create({ doc: "@x: 1;", extensions: [less()] });
+      state = state.update({ changes: { from: 6, insert: "\n@y: 2;" } }).state;
+      expect(state.doc.lines).toBe(2);
+    });
+
+    it("lessLanguage can parse mixin guard condition", () => {
+      const tree = lessLanguage.parser.parse(".mixin(@a) when (@a > 0) { color: green; }\n.mixin(@a) when (@a <= 0) { color: red; }");
+      expect(tree.length).toBeGreaterThan(0);
+    });
+
+    it("lessLanguage can parse namespace and accessor", () => {
+      const tree = lessLanguage.parser.parse("#bundle { .button { display: block; border: 1px solid; } }\n.header a { color: orange; #bundle.button(); }");
+      expect(tree.length).toBeGreaterThan(0);
+      expect(tree.type.isTop).toBe(true);
+    });
+
+    it("lessLanguage doc line count is correct", () => {
+      const state = EditorState.create({
+        doc: "@a: 1;\n@b: 2;\n@c: 3;\n.rule { width: @a + @b + @c; }",
+        extensions: [less()],
+      });
+      expect(state.doc.lines).toBe(4);
+    });
   });
 });

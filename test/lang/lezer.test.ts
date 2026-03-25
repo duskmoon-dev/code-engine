@@ -247,5 +247,32 @@ describe("Lezer language pack", () => {
       const tree = lezerLanguage.parser.parse("@external tokens tokenizer from \"./tokens\" { Identifier String Number }");
       expect(tree.length).toBeGreaterThan(0);
     });
+
+    it("lezerLanguage cursor traversal finds multiple nodes", () => {
+      const tree = lezerLanguage.parser.parse("@top Program { statement* }\nstatement { id \":\" value \";\"}");
+      let count = 0;
+      tree.iterate({ enter: () => { count++; } });
+      expect(count).toBeGreaterThan(1);
+    });
+
+    it("lezerLanguage can parse multiple rules", () => {
+      const tree = lezerLanguage.parser.parse("@top Program { expr* }\nexpr { term (\"+\" term)* }\nterm { Number | \"(\" expr \")\" }");
+      expect(tree.length).toBeGreaterThan(0);
+      expect(tree.type.isTop).toBe(true);
+    });
+
+    it("EditorState with lezer() has correct doc line count", () => {
+      const state = EditorState.create({
+        doc: "@top Program { body }\nbody { statement* }\nstatement { Identifier \";\" }",
+        extensions: [lezer()],
+      });
+      expect(state.doc.lines).toBe(3);
+    });
+
+    it("lezerLanguage allows doc mutation via transaction", () => {
+      let state = EditorState.create({ doc: "@top P { e* }", extensions: [lezer()] });
+      state = state.update({ changes: { from: 13, insert: "\ne { Number }" } }).state;
+      expect(state.doc.lines).toBe(2);
+    });
   });
 });

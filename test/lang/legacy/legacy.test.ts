@@ -281,5 +281,51 @@ describe("Legacy language packs (StreamLanguage)", () => {
       state = state.update({ changes: { from: 12, insert: "\nputs 'world'" } }).state;
       expect(state.doc.lines).toBe(2);
     });
+
+    it("erlang syntaxTree is non-empty", () => {
+      const lang = StreamLanguage.define(erlang);
+      const state = EditorState.create({
+        doc: "-module(counter).\ncounter(N) -> receive inc -> counter(N+1) end.",
+        extensions: [new LanguageSupport(lang)],
+      });
+      expect(syntaxTree(state).length).toBeGreaterThan(0);
+    });
+
+    it("lua syntaxTree is non-empty", () => {
+      const lang = StreamLanguage.define(lua);
+      const state = EditorState.create({
+        doc: "local t = {1, 2, 3}\nfor i, v in ipairs(t) do\n  print(i, v)\nend",
+        extensions: [new LanguageSupport(lang)],
+      });
+      expect(syntaxTree(state).length).toBeGreaterThan(0);
+    });
+
+    it("clojure syntaxTree is non-empty", () => {
+      const lang = StreamLanguage.define(clojure);
+      const state = EditorState.create({
+        doc: "(ns my.app)\n(defn square [x] (* x x))\n(map square [1 2 3 4 5])",
+        extensions: [new LanguageSupport(lang)],
+      });
+      expect(syntaxTree(state).length).toBeGreaterThan(0);
+    });
+
+    it("coffeescript syntaxTree is non-empty", () => {
+      const lang = StreamLanguage.define(coffeeScript);
+      const state = EditorState.create({
+        doc: "class Animal\n  constructor: (@name) ->\n  speak: -> \"#{@name} makes a sound\"",
+        extensions: [new LanguageSupport(lang)],
+      });
+      expect(syntaxTree(state).length).toBeGreaterThan(0);
+    });
+
+    it("shell doc length is correct", () => {
+      const lang = StreamLanguage.define(shell);
+      const doc = "echo hello";
+      const state = EditorState.create({
+        doc,
+        extensions: [new LanguageSupport(lang)],
+      });
+      expect(state.doc.length).toBe(doc.length);
+    });
   });
 });

@@ -212,4 +212,29 @@ describe("Rust language pack", () => {
     expect(tree.length).toBeGreaterThan(0);
     expect(tree.type.isTop).toBe(true);
   });
+
+  it("rustLanguage can parse async fn", () => {
+    const tree = rustLanguage.parser.parse("use std::io;\nasync fn read_file(path: &str) -> io::Result<String> {\n  tokio::fs::read_to_string(path).await\n}");
+    expect(tree.length).toBeGreaterThan(0);
+  });
+
+  it("rustLanguage can parse generic functions with bounds", () => {
+    const tree = rustLanguage.parser.parse("fn largest<T: PartialOrd>(list: &[T]) -> &T {\n  let mut largest = &list[0];\n  for item in list { if item > largest { largest = item; } }\n  largest\n}");
+    expect(tree.length).toBeGreaterThan(0);
+    expect(tree.type.isTop).toBe(true);
+  });
+
+  it("EditorState with rust() has correct doc line count", () => {
+    const state = EditorState.create({
+      doc: "fn main() {\n  let x = 1;\n  println!(\"{}\", x);\n}",
+      extensions: [rust()],
+    });
+    expect(state.doc.lines).toBe(4);
+  });
+
+  it("rustLanguage allows doc mutation via transaction", () => {
+    let state = EditorState.create({ doc: "fn main() {}", extensions: [rust()] });
+    state = state.update({ changes: { from: 12, insert: "\nfn helper() {}" } }).state;
+    expect(state.doc.lines).toBe(2);
+  });
 });
