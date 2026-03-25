@@ -5,6 +5,7 @@ import {
 } from "../../src/lang/python/index";
 import { EditorState } from "../../src/core/state/index";
 import { syntaxTree, ensureSyntaxTree, getIndentation, foldable } from "../../src/core/language/index";
+import { CompletionContext } from "../../src/core/autocomplete/index";
 
 describe("Python language pack", () => {
   it("exports python function", () => {
@@ -402,6 +403,81 @@ describe("Python language pack", () => {
       ensureSyntaxTree(state, state.doc.length, 1000);
       const fold = foldable(state, 0, 9);
       expect(fold === null || typeof fold!.from === "number").toBe(true);
+    });
+  });
+
+  describe("localCompletionSource behavioral", () => {
+    it("returns completions from function params (ParamList + FunctionDefinition paths)", () => {
+      const doc = "def foo(x, y):\n    return x";
+      const state = EditorState.create({ doc, extensions: [python()] });
+      ensureSyntaxTree(state, state.doc.length, 1000);
+      // resolveInner(27, -1) = VariableName [26-27] (the 'x' in return x)
+      const cx = new CompletionContext(state, 27, false);
+      const result = localCompletionSource(cx);
+      expect(result).not.toBeNull();
+      expect(result!.options.some(o => o.label === "x")).toBe(true);
+    });
+
+    it("returns completions from for loop variable (ForStatement outer path)", () => {
+      const doc = "for x in range(10):\n    pass\nx";
+      const state = EditorState.create({ doc, extensions: [python()] });
+      ensureSyntaxTree(state, state.doc.length, 1000);
+      // pos 30 is 'x' VariableName at end
+      const cx = new CompletionContext(state, 30, false);
+      const result = localCompletionSource(cx);
+      expect(result).not.toBeNull();
+    });
+
+    it("returns completions from import statement (ImportStatement path)", () => {
+      const doc = "import os\nos";
+      const state = EditorState.create({ doc, extensions: [python()] });
+      ensureSyntaxTree(state, state.doc.length, 1000);
+      // pos 11 is inside 'os' VariableName on second line
+      const cx = new CompletionContext(state, 11, false);
+      const result = localCompletionSource(cx);
+      expect(result).not.toBeNull();
+      expect(result!.options.some(o => o.label === "os")).toBe(true);
+    });
+
+    it("returns completions from assignment statement (AssignStatement path)", () => {
+      const doc = "x = 1\nx";
+      const state = EditorState.create({ doc, extensions: [python()] });
+      ensureSyntaxTree(state, state.doc.length, 1000);
+      // resolveInner(7, -1) = VariableName [6-7] (the 'x' on second line)
+      const cx = new CompletionContext(state, 7, false);
+      const result = localCompletionSource(cx);
+      expect(result).not.toBeNull();
+      expect(result!.options.some(o => o.label === "x")).toBe(true);
+    });
+
+    it("returns null inside string literal (dontComplete guard)", () => {
+      const doc = "x = 'hello'";
+      const state = EditorState.create({ doc, extensions: [python()] });
+      ensureSyntaxTree(state, state.doc.length, 1000);
+      // pos 7 is inside the string
+      const cx = new CompletionContext(state, 7, false);
+      const result = localCompletionSource(cx);
+      expect(result).toBeNull();
+    });
+
+    it("explicit context returns completions at non-word position", () => {
+      const doc = "x = 1\n";
+      const state = EditorState.create({ doc, extensions: [python()] });
+      ensureSyntaxTree(state, state.doc.length, 1000);
+      const cx = new CompletionContext(state, 6, true);
+      const result = localCompletionSource(cx);
+      expect(result).not.toBeNull();
+    });
+
+    it("returns completions from class definition (ClassDefinition path)", () => {
+      const doc = "class Foo:\n    pass\nFoo";
+      const state = EditorState.create({ doc, extensions: [python()] });
+      ensureSyntaxTree(state, state.doc.length, 1000);
+      // pos 22 is inside 'Foo' VariableName at end
+      const cx = new CompletionContext(state, 22, false);
+      const result = localCompletionSource(cx);
+      expect(result).not.toBeNull();
+      expect(result!.options.some(o => o.label === "Foo")).toBe(true);
     });
   });
 });
