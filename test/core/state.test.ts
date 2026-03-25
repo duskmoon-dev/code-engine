@@ -15,6 +15,10 @@ import {
   RangeSet,
   RangeSetBuilder,
   RangeValue,
+  findClusterBreak,
+  codePointAt,
+  countColumn,
+  findColumn,
 } from "../../src/core/state/index";
 
 describe("EditorState", () => {
@@ -249,5 +253,30 @@ describe("Annotation", () => {
       annotations: myAnnotation.of("test-value"),
     });
     expect(tr.annotation(myAnnotation)).toBe("test-value");
+  });
+});
+
+describe("Text utilities", () => {
+  it("findClusterBreak finds grapheme cluster boundaries", () => {
+    const str = "hello";
+    const pos = findClusterBreak(str, 0, true);
+    expect(pos).toBe(1); // ASCII: 1 char per cluster
+  });
+
+  it("codePointAt returns char code", () => {
+    const code = codePointAt("A", 0);
+    expect(code).toBe(65); // 'A' is 65
+  });
+
+  it("countColumn counts columns in a string", () => {
+    const col = countColumn("  hello", 0, 4); // 2 spaces = 2 cols, then "hel" = 3 more
+    expect(typeof col).toBe("number");
+    expect(col).toBeGreaterThan(0);
+  });
+
+  it("findColumn finds position for a column offset", () => {
+    const pos = findColumn("hello", 3, 4);
+    expect(typeof pos).toBe("number");
+    expect(pos).toBeGreaterThanOrEqual(0);
   });
 });
