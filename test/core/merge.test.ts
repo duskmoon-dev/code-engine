@@ -335,4 +335,24 @@ describe("diff behavioral tests", () => {
     expect(typeof c.fromB).toBe("number");
     expect(typeof c.toB).toBe("number");
   });
+
+  it("goToNextChunk is a function", () => {
+    expect(typeof goToNextChunk).toBe("function");
+  });
+
+  it("goToPreviousChunk is a function", () => {
+    expect(typeof goToPreviousChunk).toBe("function");
+  });
+
+  it("getChunks is a function", () => {
+    expect(typeof getChunks).toBe("function");
+  });
+
+  it("acceptChunk is a function", () => {
+    expect(typeof acceptChunk).toBe("function");
+  });
+
+  it("rejectChunk is a function", () => {
+    expect(typeof rejectChunk).toBe("function");
+  });
 });

@@ -288,4 +288,34 @@ describe("YAML language pack", () => {
     const state = EditorState.create({ doc, extensions: [yaml()] });
     expect(state.doc.toString()).toBe(doc);
   });
+
+  it("yaml() state doc line count is correct", () => {
+    const state = EditorState.create({
+      doc: "name: Alice\nage: 30\ncity: NYC",
+      extensions: [yaml()],
+    });
+    expect(state.doc.lines).toBe(3);
+  });
+
+  it("yaml() state doc line text is accessible", () => {
+    const state = EditorState.create({
+      doc: "version: 1\nkind: Deployment",
+      extensions: [yaml()],
+    });
+    expect(state.doc.line(1).text).toBe("version: 1");
+    expect(state.doc.line(2).text).toBe("kind: Deployment");
+  });
+
+  it("yaml() state allows multiple sequential transactions", () => {
+    let state = EditorState.create({ doc: "a: 1", extensions: [yaml()] });
+    state = state.update({ changes: { from: 4, insert: "\nb: 2" } }).state;
+    state = state.update({ changes: { from: state.doc.length, insert: "\nc: 3" } }).state;
+    expect(state.doc.lines).toBe(3);
+  });
+
+  it("yaml() extension preserves doc length invariant", () => {
+    const doc = "key: value\nother: data";
+    const state = EditorState.create({ doc, extensions: [yaml()] });
+    expect(state.doc.length).toBe(doc.length);
+  });
 });

@@ -384,5 +384,44 @@ describe("Legacy language packs (batch 6)", () => {
       state = state.update({ changes: { from: 9, insert: "\nlet y = 2" } }).state;
       expect(state.doc.lines).toBe(2);
     });
+
+    it("dylan doc length is correct", () => {
+      const lang = StreamLanguage.define(dylan);
+      const doc = "define method greet() format-out(\"Hello\\n\") end;";
+      const state = EditorState.create({ doc, extensions: [new LanguageSupport(lang)] });
+      expect(state.doc.length).toBe(doc.length);
+    });
+
+    it("eiffel doc mutation via transaction works", () => {
+      const lang = StreamLanguage.define(eiffel);
+      let state = EditorState.create({ doc: "class HELLO", extensions: [new LanguageSupport(lang)] });
+      state = state.update({ changes: { from: 11, insert: "\nend" } }).state;
+      expect(state.doc.lines).toBe(2);
+    });
+
+    it("nsis doc line text is accessible", () => {
+      const lang = StreamLanguage.define(nsis);
+      const state = EditorState.create({
+        doc: "Section \"Main\"\n  DetailPrint \"Hello\"\nSectionEnd",
+        extensions: [new LanguageSupport(lang)],
+      });
+      expect(state.doc.line(1).text).toBe("Section \"Main\"");
+    });
+
+    it("gas doc replacement transaction works", () => {
+      const lang = StreamLanguage.define(gas);
+      let state = EditorState.create({ doc: ".section .text", extensions: [new LanguageSupport(lang)] });
+      state = state.update({ changes: { from: 9, to: 14, insert: ".data" } }).state;
+      expect(state.doc.toString()).toBe(".section .data");
+    });
+
+    it("troff doc line count is correct", () => {
+      const lang = StreamLanguage.define(troff);
+      const state = EditorState.create({
+        doc: ".TH FOO 1\n.SH NAME\nfoo - a program\n.SH SYNOPSIS\nfoo [options]",
+        extensions: [new LanguageSupport(lang)],
+      });
+      expect(state.doc.lines).toBe(5);
+    });
   });
 });

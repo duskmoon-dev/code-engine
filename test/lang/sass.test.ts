@@ -287,5 +287,35 @@ describe("Sass language pack", () => {
       const state = EditorState.create({ doc, extensions: [sass()] });
       expect(state.doc.toString()).toBe(doc);
     });
+
+    it("sass() state doc line count is correct", () => {
+      const state = EditorState.create({
+        doc: "$primary: blue;\n$secondary: red;\n.btn { color: $primary; }",
+        extensions: [sass()],
+      });
+      expect(state.doc.lines).toBe(3);
+    });
+
+    it("sass() state allows multiple sequential transactions", () => {
+      let state = EditorState.create({ doc: "$x: 1;", extensions: [sass()] });
+      state = state.update({ changes: { from: 6, insert: "\n$y: 2;" } }).state;
+      state = state.update({ changes: { from: state.doc.length, insert: "\n$z: 3;" } }).state;
+      expect(state.doc.lines).toBe(3);
+    });
+
+    it("sass() state deletion transaction works", () => {
+      let state = EditorState.create({ doc: "$primary: blue;\n$secondary: red;", extensions: [sass()] });
+      state = state.update({ changes: { from: 15, to: 32 } }).state;
+      expect(state.doc.toString()).toBe("$primary: blue;");
+    });
+
+    it("sass() state doc line text is accessible", () => {
+      const state = EditorState.create({
+        doc: "$font-size: 16px;\n$line-height: 1.5;",
+        extensions: [sass()],
+      });
+      expect(state.doc.line(1).text).toBe("$font-size: 16px;");
+      expect(state.doc.line(2).text).toBe("$line-height: 1.5;");
+    });
   });
 });

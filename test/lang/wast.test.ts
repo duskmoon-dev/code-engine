@@ -325,5 +325,39 @@ describe("WAST language pack", () => {
       });
       expect(state.doc.lines).toBe(5);
     });
+
+    it("wast() state doc line text is accessible", () => {
+      const state = EditorState.create({
+        doc: "(module)\n(func $f)",
+        extensions: [wast()],
+      });
+      expect(state.doc.line(1).text).toBe("(module)");
+      expect(state.doc.line(2).text).toBe("(func $f)");
+    });
+
+    it("wast() state allows multiple sequential transactions", () => {
+      let state = EditorState.create({ doc: "(module)", extensions: [wast()] });
+      state = state.update({ changes: { from: 8, insert: "\n(func $a)" } }).state;
+      state = state.update({ changes: { from: state.doc.length, insert: "\n(func $b)" } }).state;
+      expect(state.doc.lines).toBe(3);
+    });
+
+    it("wast() extension preserves doc length invariant", () => {
+      const doc = "(module (func $main))";
+      const state = EditorState.create({ doc, extensions: [wast()] });
+      expect(state.doc.length).toBe(doc.length);
+    });
+
+    it("wast() state replacement transaction works", () => {
+      let state = EditorState.create({ doc: "(module (memory 1))", extensions: [wast()] });
+      state = state.update({ changes: { from: 15, to: 16, insert: "2" } }).state;
+      expect(state.doc.toString()).toBe("(module (memory 2))");
+    });
+
+    it("wast() state with unicode content works", () => {
+      const doc = ";; こんにちは\n(module)";
+      const state = EditorState.create({ doc, extensions: [wast()] });
+      expect(state.doc.toString()).toBe(doc);
+    });
   });
 });

@@ -386,5 +386,44 @@ describe("Legacy language packs (batch 2)", () => {
       state = state.update({ changes: { from: 12, insert: "\nputs \"world\"" } }).state;
       expect(state.doc.lines).toBe(2);
     });
+
+    it("pascal doc length is correct", () => {
+      const lang = StreamLanguage.define(pascal);
+      const doc = "program Hello;\nbegin\n  writeln('Hello');\nend.";
+      const state = EditorState.create({ doc, extensions: [new LanguageSupport(lang)] });
+      expect(state.doc.length).toBe(doc.length);
+    });
+
+    it("nginx doc mutation via transaction works", () => {
+      const lang = StreamLanguage.define(nginx);
+      let state = EditorState.create({ doc: "server {", extensions: [new LanguageSupport(lang)] });
+      state = state.update({ changes: { from: 8, insert: "\n  listen 80;\n}" } }).state;
+      expect(state.doc.lines).toBe(3);
+    });
+
+    it("powerShell doc line text is accessible", () => {
+      const lang = StreamLanguage.define(powerShell);
+      const state = EditorState.create({
+        doc: "Get-Process\nGet-Service",
+        extensions: [new LanguageSupport(lang)],
+      });
+      expect(state.doc.line(1).text).toBe("Get-Process");
+    });
+
+    it("commonLisp doc replacement transaction works", () => {
+      const lang = StreamLanguage.define(commonLisp);
+      let state = EditorState.create({ doc: "(defun foo () nil)", extensions: [new LanguageSupport(lang)] });
+      state = state.update({ changes: { from: 8, to: 11, insert: "bar" } }).state;
+      expect(state.doc.toString()).toBe("(defun bar () nil)");
+    });
+
+    it("vb doc line count is correct", () => {
+      const lang = StreamLanguage.define(vb);
+      const state = EditorState.create({
+        doc: "Module Main\n  Sub Main()\n    Console.WriteLine(\"Hello\")\n  End Sub\nEnd Module",
+        extensions: [new LanguageSupport(lang)],
+      });
+      expect(state.doc.lines).toBe(5);
+    });
   });
 });

@@ -310,5 +310,40 @@ describe("theme/one-dark", () => {
       expect(state.selection.main.from).toBe(6);
       expect(state.selection.main.to).toBe(11);
     });
+
+    it("oneDark state doc line count is correct", () => {
+      const state = EditorState.create({
+        doc: "line1\nline2\nline3",
+        extensions: [oneDark],
+      });
+      expect(state.doc.lines).toBe(3);
+    });
+
+    it("oneDark state deletion transaction works", () => {
+      let state = EditorState.create({ doc: "hello world", extensions: [oneDark] });
+      state = state.update({ changes: { from: 5, to: 11 } }).state;
+      expect(state.doc.toString()).toBe("hello");
+    });
+
+    it("oneDark state with unicode content works", () => {
+      const doc = "// こんにちは\nconst x = 1;";
+      const state = EditorState.create({ doc, extensions: [oneDark] });
+      expect(state.doc.toString()).toBe(doc);
+    });
+
+    it("oneDark state doc line text is accessible", () => {
+      const state = EditorState.create({
+        doc: "first line\nsecond line",
+        extensions: [oneDark],
+      });
+      expect(state.doc.line(1).text).toBe("first line");
+      expect(state.doc.line(2).text).toBe("second line");
+    });
+
+    it("oneDark extension preserves doc length invariant", () => {
+      const doc = "const hello = 'world';";
+      const state = EditorState.create({ doc, extensions: [oneDark] });
+      expect(state.doc.length).toBe(doc.length);
+    });
   });
 });

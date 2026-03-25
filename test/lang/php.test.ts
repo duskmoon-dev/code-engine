@@ -279,4 +279,31 @@ describe("PHP language pack", () => {
     });
     expect(state.doc.toString()).toContain("<?php");
   });
+
+  it("php() state doc line count is correct", () => {
+    const state = EditorState.create({
+      doc: "<?php\n$x = 1;\n$y = 2;\necho $x + $y;\n?>",
+      extensions: [php()],
+    });
+    expect(state.doc.lines).toBe(5);
+  });
+
+  it("php() state allows multiple sequential transactions", () => {
+    let state = EditorState.create({ doc: "<?php\n$x = 1;", extensions: [php()] });
+    state = state.update({ changes: { from: 14, insert: "\n$y = 2;" } }).state;
+    state = state.update({ changes: { from: state.doc.length, insert: "\n$z = 3;" } }).state;
+    expect(state.doc.lines).toBe(4);
+  });
+
+  it("php() extension preserves doc length invariant", () => {
+    const doc = "<?php echo 'hello'; ?>";
+    const state = EditorState.create({ doc, extensions: [php()] });
+    expect(state.doc.length).toBe(doc.length);
+  });
+
+  it("php() state with unicode content works", () => {
+    const doc = "<?php // こんにちは\necho 'hello';";
+    const state = EditorState.create({ doc, extensions: [php()] });
+    expect(state.doc.toString()).toBe(doc);
+  });
 });

@@ -285,5 +285,32 @@ describe("LR Parser module", () => {
       expect(node).toBeDefined();
       expect(node.from).toBeLessThanOrEqual(code.length - 1);
     });
+
+    it("python tree has correct length", () => {
+      const code = "def foo(): pass";
+      const tree = pythonLanguage.parser.parse(code);
+      expect(tree.length).toBe(code.length);
+    });
+
+    it("python tree iterate counts nodes", () => {
+      const tree = pythonLanguage.parser.parse("x = 1\ny = 2\nz = x + y");
+      let count = 0;
+      tree.iterate({ enter: () => { count++; } });
+      expect(count).toBeGreaterThan(3);
+    });
+
+    it("javascript tree has correct top-level type", () => {
+      const { javascriptLanguage } = require("../../src/lang/javascript/index");
+      const tree = javascriptLanguage.parser.parse("const x = 42;");
+      expect(tree.type.isTop).toBe(true);
+    });
+
+    it("rust tree resolveInner finds node", () => {
+      const { rustLanguage } = require("../../src/lang/rust/index");
+      const tree = rustLanguage.parser.parse("fn main() { let x = 1; }");
+      const node = tree.resolveInner(12);
+      expect(node).toBeDefined();
+      expect(node.from).toBeLessThanOrEqual(12);
+    });
   });
 });

@@ -313,5 +313,35 @@ describe("Angular language pack", () => {
       const state = EditorState.create({ doc, extensions: [angular()] });
       expect(state.doc.toString()).toBe(doc);
     });
+
+    it("angular() state doc line count is correct", () => {
+      const state = EditorState.create({
+        doc: "<div>\n  <p>Hello</p>\n</div>",
+        extensions: [angular()],
+      });
+      expect(state.doc.lines).toBe(3);
+    });
+
+    it("angular() state allows multiple sequential transactions", () => {
+      let state = EditorState.create({ doc: "<p>Hello</p>", extensions: [angular()] });
+      state = state.update({ changes: { from: 12, insert: "\n<p>World</p>" } }).state;
+      state = state.update({ changes: { from: state.doc.length, insert: "\n<p>!</p>" } }).state;
+      expect(state.doc.lines).toBe(3);
+    });
+
+    it("angular() extension preserves doc length invariant", () => {
+      const doc = "<ng-container *ngIf=\"show\">content</ng-container>";
+      const state = EditorState.create({ doc, extensions: [angular()] });
+      expect(state.doc.length).toBe(doc.length);
+    });
+
+    it("angular() state doc line text is accessible", () => {
+      const state = EditorState.create({
+        doc: "<h1>Title</h1>\n<p>Body</p>",
+        extensions: [angular()],
+      });
+      expect(state.doc.line(1).text).toBe("<h1>Title</h1>");
+      expect(state.doc.line(2).text).toBe("<p>Body</p>");
+    });
   });
 });

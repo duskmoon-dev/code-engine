@@ -394,4 +394,24 @@ describe("lint additional coverage", () => {
     expect(received.message).toBe("info-msg");
     expect(received.severity).toBe("info");
   });
+
+  it("lintKeymap is an array", () => {
+    expect(Array.isArray(lintKeymap)).toBe(true);
+  });
+
+  it("lintKeymap has key bindings", () => {
+    expect(lintKeymap.length).toBeGreaterThan(0);
+  });
+
+  it("lintGutter is defined", () => {
+    expect(lintGutter).toBeDefined();
+  });
+
+  it("openLintPanel is a function", () => {
+    expect(typeof openLintPanel).toBe("function");
+  });
+
+  it("closeLintPanel is a function", () => {
+    expect(typeof closeLintPanel).toBe("function");
+  });
 });

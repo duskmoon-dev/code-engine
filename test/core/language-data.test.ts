@@ -242,4 +242,31 @@ describe("LanguageDescription extra matching", () => {
     expect(match).toBeDefined();
     expect(match!.name).toBe("JavaScript");
   });
+
+  it("languages includes Python", () => {
+    const match = LanguageDescription.matchLanguageName(languages, "Python");
+    expect(match).toBeDefined();
+    expect(match!.name).toBe("Python");
+  });
+
+  it("languages includes Rust", () => {
+    const match = LanguageDescription.matchLanguageName(languages, "Rust");
+    expect(match).toBeDefined();
+    expect(match!.name).toBe("Rust");
+  });
+
+  it("languages includes Go", () => {
+    const match = LanguageDescription.matchLanguageName(languages, "Go");
+    expect(match).toBeDefined();
+  });
+
+  it("languages includes TypeScript", () => {
+    const match = LanguageDescription.matchLanguageName(languages, "TypeScript");
+    expect(match).toBeDefined();
+  });
+
+  it("languages includes SQL", () => {
+    const match = LanguageDescription.matchLanguageName(languages, "SQL");
+    expect(match).toBeDefined();
+  });
 });

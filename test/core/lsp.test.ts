@@ -274,4 +274,24 @@ describe("LSP factory functions", () => {
   it("findReferences is a function", () => {
     expect(typeof findReferences).toBe("function");
   });
+
+  it("formatDocument is a function", () => {
+    expect(typeof formatDocument).toBe("function");
+  });
+
+  it("renameSymbol is a function", () => {
+    expect(typeof renameSymbol).toBe("function");
+  });
+
+  it("hoverTooltips is a function", () => {
+    expect(typeof hoverTooltips).toBe("function");
+  });
+
+  it("formatKeymap is an array", () => {
+    expect(Array.isArray(formatKeymap)).toBe(true);
+  });
+
+  it("renameKeymap is an array", () => {
+    expect(Array.isArray(renameKeymap)).toBe(true);
+  });
 });

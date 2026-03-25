@@ -280,5 +280,37 @@ describe("Vim keymap", () => {
       state = state.update({ changes: { from: 5, insert: "!" } }).state;
       expect(state.doc.toString()).toBe("hello!");
     });
+
+    it("vim() state doc line count is correct", () => {
+      const state = EditorState.create({
+        doc: "first\nsecond\nthird\nfourth",
+        extensions: [vim()],
+      });
+      expect(state.doc.lines).toBe(4);
+    });
+
+    it("vim() state deletion transaction works", () => {
+      let state = EditorState.create({ doc: "hello world", extensions: [vim()] });
+      state = state.update({ changes: { from: 5, to: 11 } }).state;
+      expect(state.doc.toString()).toBe("hello");
+    });
+
+    it("vim() state with unicode content works", () => {
+      const doc = "// こんにちは\nconst x = 1;";
+      const state = EditorState.create({ doc, extensions: [vim()] });
+      expect(state.doc.toString()).toBe(doc);
+    });
+
+    it("vim() state replacement transaction works", () => {
+      let state = EditorState.create({ doc: "foo bar", extensions: [vim()] });
+      state = state.update({ changes: { from: 4, to: 7, insert: "baz" } }).state;
+      expect(state.doc.toString()).toBe("foo baz");
+    });
+
+    it("vim() extension preserves doc length invariant", () => {
+      const doc = "function hello() {}";
+      const state = EditorState.create({ doc, extensions: [vim()] });
+      expect(state.doc.length).toBe(doc.length);
+    });
   });
 });

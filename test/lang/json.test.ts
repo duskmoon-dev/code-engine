@@ -311,5 +311,41 @@ describe("JSON language pack", () => {
       expect(linter).toBeDefined();
       expect(typeof linter).toBe("function");
     });
+
+    it("json() state doc line count is correct", () => {
+      const state = EditorState.create({
+        doc: "{\n  \"a\": 1,\n  \"b\": 2\n}",
+        extensions: [json()],
+      });
+      expect(state.doc.lines).toBe(4);
+    });
+
+    it("json() state allows multiple sequential transactions", () => {
+      let state = EditorState.create({ doc: "{}", extensions: [json()] });
+      state = state.update({ changes: { from: 1, insert: "\"x\": 1" } }).state;
+      state = state.update({ changes: { from: state.doc.length - 1, insert: ", \"y\": 2" } }).state;
+      expect(state.doc.toString()).toContain("\"y\": 2");
+    });
+
+    it("json() extension preserves doc length invariant", () => {
+      const doc = "{\"key\": \"value\"}";
+      const state = EditorState.create({ doc, extensions: [json()] });
+      expect(state.doc.length).toBe(doc.length);
+    });
+
+    it("json() state doc line text is accessible", () => {
+      const state = EditorState.create({
+        doc: "{\n  \"name\": \"Alice\"\n}",
+        extensions: [json()],
+      });
+      expect(state.doc.line(1).text).toBe("{");
+      expect(state.doc.line(3).text).toBe("}");
+    });
+
+    it("json() state with unicode content works", () => {
+      const doc = "{\"greeting\": \"こんにちは\"}";
+      const state = EditorState.create({ doc, extensions: [json()] });
+      expect(state.doc.toString()).toBe(doc);
+    });
   });
 });
