@@ -2,6 +2,9 @@
 import Layout from '../layouts/Layout.astro'
 import pkg from '../../../package.json'
 const version = pkg.version
+const exportKeys = Object.keys(pkg.exports)
+const exportCount = exportKeys.length
+const langCount = exportKeys.filter(k => k.startsWith('./lang/') && !k.includes('*')).length
 ---
 <Layout title="Home">
   <div class="hero">
@@ -16,12 +19,12 @@ const version = pkg.version
 
   <div class="features">
     <div class="feature">
-      <h3>43 Subpath Exports</h3>
-      <p>Tree-shakeable imports for state, view, language, 22 language packs, themes, and more.</p>
+      <h3>{exportCount} Subpath Exports</h3>
+      <p>Tree-shakeable imports for state, view, language, {langCount} language packs, themes, and more.</p>
     </div>
     <div class="feature">
-      <h3>22 Languages</h3>
-      <p>JavaScript, TypeScript, Python, Rust, Go, HTML, CSS, and 15 more with full syntax highlighting.</p>
+      <h3>{langCount} Languages</h3>
+      <p>JavaScript, TypeScript, Python, Rust, Go, HTML, CSS, and {langCount - 7} more with full syntax highlighting.</p>
     </div>
     <div class="feature">
       <h3>Single Package</h3>
@@ -54,11 +57,11 @@ new EditorView({
   <nav class="page-links">
     <a href={`${import.meta.env.BASE_URL}docs`} class="link-card">
       <h3>API Reference</h3>
-      <p>Browse all 43 exports and the changelog</p>
+      <p>Browse all {exportCount} exports and the changelog</p>
     </a>
     <a href={`${import.meta.env.BASE_URL}playground`} class="link-card">
       <h3>Playground</h3>
-      <p>Try the editor with 23 languages and themes</p>
+      <p>Try the editor with {langCount} languages and themes</p>
     </a>
   </nav>
 </Layout>

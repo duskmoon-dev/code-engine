@@ -2,9 +2,11 @@
 import Layout from '../layouts/Layout.astro'
 import ExportList from '../components/ExportList.astro'
 import Changelog from '../components/Changelog.astro'
+import pkg from '../../../package.json'
 const base = import.meta.env.BASE_URL
+const exportCount = Object.keys(pkg.exports).length
 ---
-<Layout title="API Reference" description="Full API reference for all 43 subpath exports in @duskmoon-dev/code-engine, organized by category with changelog.">
+<Layout title="API Reference" description={`Full API reference for all ${exportCount} subpath exports in @duskmoon-dev/code-engine, organized by category with changelog.`}>
   <h1>API Reference</h1>
   <p>All exports from <code>@duskmoon-dev/code-engine</code>, organized by category.
     <a href={`${base}playground`} class="try-link">→ Try in Playground</a>
