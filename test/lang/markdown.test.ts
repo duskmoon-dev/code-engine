@@ -2,17 +2,12 @@ import { describe, it, expect } from "bun:test";
 import {
   markdown,
   markdownLanguage,
-  parser,
+  parser, MarkdownParser,
   parseCode,
-  GFM,
-  Table,
-  TaskList,
-  Strikethrough,
-  Autolink,
-  Subscript,
-  Superscript,
-  Emoji,
+  GFM, Table, TaskList, Strikethrough, Autolink,
+  Subscript, Superscript, Emoji,
 } from "../../src/lang/markdown/index";
+import { javascript } from "../../src/lang/javascript/index";
 
 describe("Markdown language pack", () => {
   it("exports markdown function", () => {
@@ -27,10 +22,34 @@ describe("Markdown language pack", () => {
   it("creates language support with default options", () => {
     const support = markdown();
     expect(support).toBeDefined();
+    expect(support.language).toBe(markdownLanguage);
+  });
+
+  it("creates language support with GFM extension", () => {
+    const support = markdown({ extensions: [GFM] });
+    expect(support).toBeDefined();
+  });
+
+  it("creates language support with multiple extensions", () => {
+    const support = markdown({ extensions: [GFM, Strikethrough, TaskList] });
+    expect(support).toBeDefined();
+  });
+
+  it("creates language support with codeLanguages", () => {
+    const support = markdown({
+      codeLanguages: [javascript()],
+    });
+    expect(support).toBeDefined();
   });
 
   it("exports parser", () => {
     expect(parser).toBeDefined();
+    expect(parser instanceof MarkdownParser).toBe(true);
+  });
+
+  it("exports MarkdownParser", () => {
+    expect(MarkdownParser).toBeDefined();
+    expect(typeof MarkdownParser).toBe("function");
   });
 
   it("exports parseCode function", () => {
@@ -39,6 +58,7 @@ describe("Markdown language pack", () => {
 
   it("exports GFM extension", () => {
     expect(GFM).toBeDefined();
+    expect(Array.isArray(GFM)).toBe(true);
   });
 
   it("exports Table extension", () => {
@@ -67,5 +87,11 @@ describe("Markdown language pack", () => {
 
   it("exports Emoji extension", () => {
     expect(Emoji).toBeDefined();
+  });
+
+  it("parser can parse markdown text", () => {
+    const tree = parser.parse("# Hello\n\nThis is **markdown**.");
+    expect(tree).toBeDefined();
+    expect(tree.length).toBeGreaterThan(0);
   });
 });
