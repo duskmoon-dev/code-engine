@@ -126,5 +126,31 @@ describe("Collab extension", () => {
       const newState = receiveUpdates(state, []);
       expect(newState).toBeDefined();
     });
+
+    it("returns a transaction after receiving empty updates", () => {
+      const state = EditorState.create({
+        doc: "hello",
+        extensions: [collab({ startVersion: 0 })],
+      });
+      const tr = receiveUpdates(state, []);
+      expect(tr.state.doc.toString()).toBe("hello");
+    });
+  });
+
+  describe("multi-client simulation", () => {
+    it("two clients with different clientIDs have different IDs", () => {
+      const s1 = EditorState.create({ doc: "hello", extensions: [collab({ clientID: "client-A" })] });
+      const s2 = EditorState.create({ doc: "hello", extensions: [collab({ clientID: "client-B" })] });
+      expect(getClientID(s1)).toBe("client-A");
+      expect(getClientID(s2)).toBe("client-B");
+      expect(getClientID(s1)).not.toBe(getClientID(s2));
+    });
+
+    it("getClientID returns an auto-generated string if not specified", () => {
+      const state = EditorState.create({ doc: "hello", extensions: [collab()] });
+      const id = getClientID(state);
+      expect(typeof id).toBe("string");
+      expect(id.length).toBeGreaterThan(0);
+    });
   });
 });
