@@ -1,7 +1,7 @@
 import { describe, it, expect } from "bun:test";
 import { wast, wastLanguage } from "../../src/lang/wast/index";
 import { EditorState } from "../../src/core/state/index";
-import { LanguageSupport } from "../../src/core/language/index";
+import { LanguageSupport, syntaxTree } from "../../src/core/language/index";
 
 describe("WAST language pack", () => {
   describe("exports", () => {
@@ -152,6 +152,25 @@ describe("WAST language pack", () => {
         extensions: [support],
       });
       expect(state).toBeDefined();
+    });
+
+    it("wastLanguage parser produces a non-empty tree", () => {
+      const tree = wastLanguage.parser.parse("(module (func $add (param $a i32) (param $b i32) (result i32) (i32.add (local.get $a) (local.get $b))))");
+      expect(tree.length).toBeGreaterThan(0);
+    });
+
+    it("wastLanguage parser tree has a top-level type", () => {
+      const tree = wastLanguage.parser.parse("(module)");
+      expect(tree.type.isTop).toBe(true);
+    });
+
+    it("syntaxTree from EditorState with wast() is non-empty", () => {
+      const state = EditorState.create({
+        doc: "(module (memory 1))",
+        extensions: [wast()],
+      });
+      const tree = syntaxTree(state);
+      expect(tree.length).toBeGreaterThan(0);
     });
   });
 });

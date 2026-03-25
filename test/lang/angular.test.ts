@@ -2,7 +2,7 @@ import { describe, it, expect } from "bun:test";
 import { angular, angularLanguage } from "../../src/lang/angular/index";
 import { html } from "../../src/lang/html/index";
 import { EditorState } from "../../src/core/state/index";
-import { LanguageSupport } from "../../src/core/language/index";
+import { LanguageSupport, syntaxTree } from "../../src/core/language/index";
 
 describe("Angular language pack", () => {
   describe("exports", () => {
@@ -125,6 +125,25 @@ describe("Angular language pack", () => {
         extensions: [support],
       });
       expect(state).toBeDefined();
+    });
+
+    it("angularLanguage parser produces a non-empty tree", () => {
+      const tree = angularLanguage.parser.parse("<div *ngFor=\"let item of items\">{{ item }}</div>");
+      expect(tree.length).toBeGreaterThan(0);
+    });
+
+    it("angularLanguage parser tree has a top-level type", () => {
+      const tree = angularLanguage.parser.parse("<app-root [title]=\"title\"></app-root>");
+      expect(tree.type.isTop).toBe(true);
+    });
+
+    it("syntaxTree from EditorState with angular() is non-empty", () => {
+      const state = EditorState.create({
+        doc: "<button (click)=\"onClick()\">Click me</button>",
+        extensions: [angular()],
+      });
+      const tree = syntaxTree(state);
+      expect(tree.length).toBeGreaterThan(0);
     });
   });
 });

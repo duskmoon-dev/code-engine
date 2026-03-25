@@ -2,7 +2,7 @@ import { describe, it, expect } from "bun:test";
 import { vue, vueLanguage } from "../../src/lang/vue/index";
 import { html } from "../../src/lang/html/index";
 import { EditorState } from "../../src/core/state/index";
-import { LanguageSupport } from "../../src/core/language/index";
+import { LanguageSupport, syntaxTree } from "../../src/core/language/index";
 
 describe("Vue language pack", () => {
   describe("exports", () => {
@@ -107,6 +107,25 @@ describe("Vue language pack", () => {
         extensions: [support],
       });
       expect(state).toBeDefined();
+    });
+
+    it("vueLanguage parser produces a non-empty tree", () => {
+      const tree = vueLanguage.parser.parse("<template><div>hello</div></template>");
+      expect(tree.length).toBeGreaterThan(0);
+    });
+
+    it("vueLanguage parser tree has a top-level type", () => {
+      const tree = vueLanguage.parser.parse("<template><p>{{ msg }}</p></template>");
+      expect(tree.type.isTop).toBe(true);
+    });
+
+    it("syntaxTree from EditorState with vue() is non-empty", () => {
+      const state = EditorState.create({
+        doc: "<template><span>{{ value }}</span></template>",
+        extensions: [vue()],
+      });
+      const tree = syntaxTree(state);
+      expect(tree.length).toBeGreaterThan(0);
     });
   });
 });
