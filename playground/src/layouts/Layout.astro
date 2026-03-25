@@ -19,9 +19,12 @@ const path = Astro.url.pathname
   <meta property="og:title" content={fullTitle}>
   <meta property="og:description" content={description}>
   <meta property="og:type" content="website">
-  <meta name="twitter:card" content="summary">
+  <meta property="og:image" content={`${new URL(base, 'https://duskmoon-dev.github.io')}og-image.svg`}>
+  <meta property="og:image:alt" content="@duskmoon-dev/code-engine — Deep fork of CodeMirror 6 + Lezer">
+  <meta name="twitter:card" content="summary_large_image">
   <meta name="twitter:title" content={fullTitle}>
   <meta name="twitter:description" content={description}>
+  <meta name="twitter:image" content={`${new URL(base, 'https://duskmoon-dev.github.io')}og-image.svg`}>
   <meta property="og:url" content={Astro.url.href}>
   <link rel="canonical" href={Astro.url.href}>
   <title>{fullTitle}</title>
