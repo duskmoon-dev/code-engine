@@ -600,3 +600,113 @@ describe("StrictMatcher", () => {
     expect(m.match("hello")).toBeNull();
   });
 });
+
+// ── insertBracket() ────────────────────────────────────────────────
+
+describe("insertBracket()", () => {
+  it("inserting '(' at end of empty doc inserts '()' and places cursor inside", () => {
+    const state = EditorState.create({ doc: "" });
+    const tr = insertBracket(state, "(");
+    expect(tr).not.toBeNull();
+    const next = state.update(tr!).state;
+    expect(next.doc.toString()).toBe("()");
+    expect(next.selection.main.head).toBe(1);
+  });
+
+  it("inserting '[' at end of doc inserts '[]'", () => {
+    const state = EditorState.create({ doc: "" });
+    const tr = insertBracket(state, "[");
+    expect(tr).not.toBeNull();
+    const next = state.update(tr!).state;
+    expect(next.doc.toString()).toBe("[]");
+  });
+
+  it("inserting '{' at end of doc inserts '{}'", () => {
+    const state = EditorState.create({ doc: "" });
+    const tr = insertBracket(state, "{");
+    expect(tr).not.toBeNull();
+    const next = state.update(tr!).state;
+    expect(next.doc.toString()).toBe("{}");
+  });
+
+  it("inserting '(' before a word character returns null (not in before list)", () => {
+    // 'a' is not in default 'before' chars ")]}:;>" so bracket is not auto-closed
+    const state = EditorState.create({ doc: "abc", selection: { anchor: 0 } });
+    const tr = insertBracket(state, "(");
+    expect(tr).toBeNull();
+  });
+
+  it("inserting '(' before ')' closes bracket (next char is in before list)", () => {
+    // ')' IS in the default before list, so '(' should be auto-closed
+    const state = EditorState.create({ doc: ")", selection: { anchor: 0 } });
+    const tr = insertBracket(state, "(");
+    expect(tr).not.toBeNull();
+    const next = state.update(tr!).state;
+    expect(next.doc.toString()).toBe("())");
+    expect(next.selection.main.head).toBe(1);
+  });
+
+  it("returns null for an unknown bracket character", () => {
+    const state = EditorState.create({ doc: "" });
+    const tr = insertBracket(state, "X");
+    expect(tr).toBeNull();
+  });
+
+  it("transaction has userEvent 'input.type'", () => {
+    const state = EditorState.create({ doc: "" });
+    const tr = insertBracket(state, "(");
+    expect(tr).not.toBeNull();
+    expect(tr!.isUserEvent("input.type")).toBe(true);
+  });
+});
+
+// ── deleteBracketPair() ────────────────────────────────────────────
+
+describe("deleteBracketPair()", () => {
+  it("deletes both '(' and ')' when cursor is between them", () => {
+    // Doc: "()", cursor at 1
+    const state = EditorState.create({ doc: "()", selection: { anchor: 1 } });
+    let dispatched = false;
+    const result = deleteBracketPair({ state, dispatch: (tr) => { dispatched = true; state.update(tr) } } as any);
+    expect(result).toBe(true);
+    expect(dispatched).toBe(true);
+  });
+
+  it("deletes both '[' and ']' when cursor is between them", () => {
+    const state = EditorState.create({ doc: "[]", selection: { anchor: 1 } });
+    let newState: EditorState | null = null;
+    deleteBracketPair({ state, dispatch: (tr) => { newState = state.update(tr).state } } as any);
+    expect(newState!.doc.toString()).toBe("");
+  });
+
+  it("deletes both '{' and '}' when cursor is between them", () => {
+    const state = EditorState.create({ doc: "{}", selection: { anchor: 1 } });
+    let newState: EditorState | null = null;
+    deleteBracketPair({ state, dispatch: (tr) => { newState = state.update(tr).state } } as any);
+    expect(newState!.doc.toString()).toBe("");
+  });
+
+  it("returns false when cursor is not between matching brackets", () => {
+    const state = EditorState.create({ doc: "hello", selection: { anchor: 2 } });
+    let dispatched = false;
+    const result = deleteBracketPair({ state, dispatch: () => { dispatched = true } } as any);
+    expect(result).toBe(false);
+    expect(dispatched).toBe(false);
+  });
+
+  it("returns false for readOnly state", () => {
+    const state = EditorState.create({ doc: "()", selection: { anchor: 1 }, extensions: [EditorState.readOnly.of(true)] });
+    let dispatched = false;
+    const result = deleteBracketPair({ state, dispatch: () => { dispatched = true } } as any);
+    expect(result).toBe(false);
+    expect(dispatched).toBe(false);
+  });
+
+  it("correctly places cursor at the deleted position", () => {
+    const state = EditorState.create({ doc: "x()y", selection: { anchor: 2 } });
+    let newState: EditorState | null = null;
+    deleteBracketPair({ state, dispatch: (tr) => { newState = state.update(tr).state } } as any);
+    expect(newState!.doc.toString()).toBe("xy");
+    expect(newState!.selection.main.head).toBe(1);
+  });
+});
