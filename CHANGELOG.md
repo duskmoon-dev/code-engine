@@ -10,15 +10,18 @@
 - **API reference docs**: `/docs` with all 43 subpath exports categorized, filterable, with per-row copy-import buttons and Try-in-Playground links for each language
 - **Changelog rendering**: `/docs` renders `CHANGELOG.md` at build time with section ID anchors for deep linking
 - **OG / social metadata**: OpenGraph image, JSON-LD structured data, canonical URLs, Twitter card
-- **Accessibility**: Skip-link, `lang="en"`, `aria-label` on all interactive controls, `role="region"` on scrollable tables, `tabindex` for keyboard navigation, `prefers-reduced-motion` CSS
+- **Accessibility**: Skip-link, `lang="en"`, `aria-label` on all interactive controls, `role="region"` on scrollable tables, `tabindex` for keyboard navigation, `prefers-reduced-motion` CSS, `a:focus-visible` outline for keyboard navigation
 - **Language-pack code splitting**: Each language loaded on demand; popular languages prefetched on idle; initial URL hash language loaded first
 - **Editor UX**: Status bar (line/col/selection), font-size controls, fullscreen, word wrap, read-only, whitespace, folding, active line, bracket matching, vim/emacs keymaps, download, reset
 
 ### Tests
 
-- 3560+ tests across 54 test files (up from 2900+ / 51)
-- Playwright-style source-validation and build-output test suites for the playground
+- 3580+ tests across 54 test files (up from 2900+ / 51)
+- Playground source-validation and build-output test suites
 - Behavioral tests for `insertBracket` and `deleteBracketPair`
+- Behavioral tests for `selectNextOccurrence` (word expansion, multi-cursor add, wrap-around)
+- Behavioral tests for `history` module: `addMapping`, `eqSelectionShape`, undo/redo selection
+- Behavioral tests for `completeAnyWord`: dedup, ignoreAt, large docs with tree structure
 
 ## 0.1.0 (2026-03-19)
 
