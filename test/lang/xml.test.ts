@@ -4,7 +4,7 @@ import {
   type ElementSpec, type AttrSpec
 } from "../../src/lang/xml/index";
 import { EditorState } from "../../src/core/state/index";
-import { syntaxTree, ensureSyntaxTree, getIndentation } from "../../src/core/language/index";
+import { syntaxTree, ensureSyntaxTree, getIndentation, foldable } from "../../src/core/language/index";
 import { CompletionContext } from "../../src/core/autocomplete/index";
 
 describe("XML language pack", () => {
@@ -411,6 +411,17 @@ describe("XML language pack", () => {
       ensureSyntaxTree(state, state.doc.length, 1000);
       const indent = getIndentation(state, 6);
       expect(typeof indent).toBe("number");
+    });
+
+    it("Element fold handler: multi-line element with OpenTag and CloseTag is foldable", () => {
+      // "<root>\n  <child/>\n</root>" - first line is "<root>" [0-6]
+      const doc = "<root>\n  <child/>\n</root>";
+      const state = EditorState.create({ doc, extensions: [xml()] });
+      ensureSyntaxTree(state, state.doc.length, 1000);
+      const fold = foldable(state, 0, 6);
+      expect(fold).not.toBeNull();
+      expect(typeof fold!.from).toBe("number");
+      expect(typeof fold!.to).toBe("number");
     });
   });
 
