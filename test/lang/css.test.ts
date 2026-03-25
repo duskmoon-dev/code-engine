@@ -4,7 +4,8 @@ import {
   cssCompletionSource, defineCSSCompletionSource
 } from "../../src/lang/css/index";
 import { EditorState } from "../../src/core/state/index";
-import { syntaxTree } from "../../src/core/language/index";
+import { syntaxTree, ensureSyntaxTree } from "../../src/core/language/index";
+import { CompletionContext } from "../../src/core/autocomplete/index";
 
 describe("CSS language pack", () => {
   it("exports css function", () => {
@@ -342,5 +343,84 @@ describe("CSS language pack", () => {
       extensions: [css()],
     });
     expect(state.doc.lines).toBe(6);
+  });
+
+  describe("cssCompletionSource behavioral", () => {
+    function callSource(doc: string, pos: number, explicit = false) {
+      const state = EditorState.create({ doc, extensions: [css()] });
+      ensureSyntaxTree(state, doc.length, 1000);
+      const cx = new CompletionContext(state, pos, explicit);
+      return cssCompletionSource(cx);
+    }
+
+    it("PropertyName node returns property completions", () => {
+      // "div { color: red; }" - "color" PropertyName ends at pos 11
+      const result = callSource("div { color: red; }", 11);
+      expect(result).not.toBeNull();
+      expect(result!.from).toBe(6);
+      expect(Array.isArray(result!.options)).toBe(true);
+    });
+
+    it("ValueName node returns value completions", () => {
+      // "div { display: flex; }" - "flex" ValueName ends at pos 19
+      const result = callSource("div { display: flex; }", 19);
+      expect(result).not.toBeNull();
+      expect(result!.options.some((o: any) => o.label === "flex")).toBe(true);
+    });
+
+    it("PseudoClassName node returns pseudo-class completions", () => {
+      // "a:hover { }" - "hover" PseudoClassName ends at pos 7
+      const result = callSource("a:hover { color: red; }", 7);
+      expect(result).not.toBeNull();
+      expect(result!.options.some((o: any) => o.label === "hover")).toBe(true);
+    });
+
+    it("TagName at top level returns tag completions", () => {
+      // "div { color: red; }" - "div" TagName ends at pos 3
+      const result = callSource("div { color: red; }", 3);
+      expect(result).not.toBeNull();
+      expect(result!.options.some((o: any) => o.label === "div")).toBe(true);
+    });
+
+    it("VariableName node returns CSS variable completions (covers variableNames + astTop)", () => {
+      // ":root { --x: 1; }" - "--x" VariableName ends at pos 11
+      const result = callSource(":root { --x: 1; } a { color: var(--x); }", 11);
+      expect(result).not.toBeNull();
+      expect(result!.options.some((o: any) => o.label === "--x")).toBe(true);
+    });
+
+    it("AtKeyword node returns at-rule completions", () => {
+      // "@unknown foo;" - "@unknown" AtKeyword ends at pos 8
+      const result = callSource("@unknown foo;", 8);
+      expect(result).not.toBeNull();
+      expect(Array.isArray(result!.options)).toBe(true);
+    });
+
+    it("non-matching node with explicit=false returns null", () => {
+      // Pos 5 is "{" in "div { color: red; }" - not a known completion node
+      const result = callSource("div { color: red; }", 5, false);
+      expect(result).toBeNull();
+    });
+
+    it("explicit=true in Block returns property completions", () => {
+      // Pos 6 is inside Block in "div { }" with explicit=true
+      const result = callSource("div { }", 6, true);
+      expect(result).not.toBeNull();
+      expect(Array.isArray(result!.options)).toBe(true);
+    });
+
+    it("explicit=true after : in declaration returns value completions", () => {
+      // In "div { color: }" pos 13 is after ":" with explicit=true
+      const result = callSource("div { color: }", 13, true);
+      expect(result).not.toBeNull();
+      expect(Array.isArray(result!.options)).toBe(true);
+    });
+
+    it("explicit=true after : in pseudo-class selector returns pseudo-class completions", () => {
+      // In "a: " pos 2 is ":"  with explicit=true
+      const result = callSource("a: ", 2, true);
+      expect(result).not.toBeNull();
+      expect(result!.options.some((o: any) => o.label === "hover")).toBe(true);
+    });
   });
 });
