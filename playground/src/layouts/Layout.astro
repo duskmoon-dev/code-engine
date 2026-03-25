@@ -25,6 +25,7 @@ const fullTitle = `${title} — @duskmoon-dev/code-engine`
   <link rel="icon" type="image/svg+xml" href={`${base}favicon.svg`}>
 </head>
 <body>
+  <a href="#main-content" class="skip-link">Skip to content</a>
   <nav>
     <a href={base} class="nav-brand">code-engine</a>
     <div class="nav-links">
@@ -33,7 +34,7 @@ const fullTitle = `${title} — @duskmoon-dev/code-engine`
       <a href="https://github.com/duskmoon-dev/code-engine" target="_blank" rel="noopener">GitHub</a>
     </div>
   </nav>
-  <main class:list={[{ wide }]}>
+  <main id="main-content" class:list={[{ wide }]}>
     <slot />
   </main>
   <footer>
@@ -44,6 +45,20 @@ const fullTitle = `${title} — @duskmoon-dev/code-engine`
 
 <style>
   @import '../styles/global.css';
+
+  .skip-link {
+    position: absolute;
+    top: -100%;
+    left: 0;
+    padding: 0.5rem 1rem;
+    background: var(--color-accent);
+    color: var(--color-bg);
+    z-index: 100;
+    font-weight: 600;
+  }
+  .skip-link:focus {
+    top: 0;
+  }
 
   nav {
     display: flex;

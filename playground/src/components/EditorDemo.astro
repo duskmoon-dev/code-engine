@@ -404,6 +404,14 @@ BinaryExpression { expression !add "+" expression }
     if (emacsCheckbox.checked) vimCheckbox.checked = false
     reconfigureExtensions()
   })
+
+  // Prefetch popular languages on idle to improve switching speed
+  if ('requestIdleCallback' in window) {
+    requestIdleCallback(() => {
+      const popular = ['python', 'typescript', 'html', 'css', 'json', 'rust', 'go']
+      for (const lang of popular) loadLanguage(lang)
+    })
+  }
 </script>
 
 <style>
