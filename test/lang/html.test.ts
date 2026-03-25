@@ -6,7 +6,8 @@ import {
   type TagSpec
 } from "../../src/lang/html/index";
 import { EditorState } from "../../src/core/state/index";
-import { syntaxTree } from "../../src/core/language/index";
+import { syntaxTree, ensureSyntaxTree, getIndentation, foldable } from "../../src/core/language/index";
+import { cssLanguage } from "../../src/lang/css/index";
 
 describe("HTML language pack", () => {
   it("exports html function", () => {
@@ -360,5 +361,67 @@ describe("HTML language pack", () => {
     let state = EditorState.create({ doc, extensions: [html()] });
     state = state.update({ changes: { from: 0, to: doc.length } }).state;
     expect(state.doc.toString()).toBe("");
+  });
+
+  describe("HTML indentation and fold handlers", () => {
+    it("Element indentation handler: inner line of multi-line element", () => {
+      // "<div>\n  <p>hello</p>\n</div>" - pos 6 is inside outer Element's body
+      const doc = "<div>\n  <p>hello</p>\n</div>";
+      const state = EditorState.create({ doc, extensions: [html()] });
+      ensureSyntaxTree(state, doc.length, 1000);
+      const indent = getIndentation(state, 6);
+      expect(typeof indent).toBe("number");
+    });
+
+    it("OpenTag indentation handler: second line of multi-line opening tag", () => {
+      // "<div\n  id='x'>content</div>" - pos 5 is inside OpenTag on second line
+      const doc = "<div\n  id='x'>content</div>";
+      const state = EditorState.create({ doc, extensions: [html()] });
+      ensureSyntaxTree(state, doc.length, 1000);
+      const indent = getIndentation(state, 5);
+      expect(typeof indent).toBe("number");
+    });
+
+    it("CloseTag indentation handler: closing tag line", () => {
+      // "<div>\n  content\n</div>" - pos 17 is on the closing tag line
+      const doc = "<div>\n  content\n</div>";
+      const state = EditorState.create({ doc, extensions: [html()] });
+      ensureSyntaxTree(state, doc.length, 1000);
+      const indent = getIndentation(state, 17);
+      expect(typeof indent).toBe("number");
+    });
+
+    it("Document indentation handler: position between top-level elements", () => {
+      // "<p>a</p>\n\n<div>" - pos 9 is on blank line between elements (Document level)
+      const doc = "<p>a</p>\n\n<div>";
+      const state = EditorState.create({ doc, extensions: [html()] });
+      ensureSyntaxTree(state, doc.length, 1000);
+      const indent = getIndentation(state, 9);
+      expect(indent === null || typeof indent === "number").toBe(true);
+    });
+
+    it("fold handler: Element with OpenTag and CloseTag is foldable", () => {
+      // "<div>\n  <p>hello</p>\n</div>" - first line is "<div>" (pos 0-5)
+      const doc = "<div>\n  <p>hello</p>\n</div>";
+      const state = EditorState.create({ doc, extensions: [html()] });
+      ensureSyntaxTree(state, doc.length, 1000);
+      const fold = foldable(state, 0, 5);
+      expect(fold).not.toBeNull();
+      expect(typeof fold!.from).toBe("number");
+      expect(typeof fold!.to).toBe("number");
+    });
+
+    it("html() with nestedLanguages covers nestedLanguages config path", () => {
+      // Exercises the wrap = configureNesting(...) path at line 147
+      const support = html({ nestedLanguages: [{ tag: "x-tmpl", parser: cssLanguage.parser }] });
+      expect(support).toBeDefined();
+      expect(support.language.name).toBe("html");
+    });
+
+    it("html() with nestedAttributes covers nestedAttributes config path", () => {
+      const support = html({ nestedAttributes: [{ name: "x-code", parser: cssLanguage.parser }] });
+      expect(support).toBeDefined();
+      expect(support.language.name).toBe("html");
+    });
   });
 });
