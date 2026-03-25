@@ -34,6 +34,9 @@ import {
 import { EditorState, EditorSelection, Text, Transaction } from "../../src/core/state/index";
 import { FuzzyMatcher, StrictMatcher } from "../../src/core/autocomplete/filter";
 import { completionConfig } from "../../src/core/autocomplete/config";
+import { asSource } from "../../src/core/autocomplete/completion";
+import { python } from "../../src/lang/python/index";
+import { ensureSyntaxTree } from "../../src/core/language/index";
 
 describe("autocomplete module exports", () => {
   it("exports autocompletion as a function", () => {
@@ -1056,5 +1059,102 @@ describe("completionConfig joinClass combiner", () => {
     const config = state.facet(completionConfig);
     const fakeCompletion = { label: "foo" };
     expect(config.optionClass(fakeCompletion as any)).toBe("opt-a opt-b");
+  });
+});
+
+describe("CompletionContext.tokenBefore behavioral tests (covers lines 119-123)", () => {
+  const doc = "def foo(x):\n    return x";
+
+  it("tokenBefore returns null when node name not found in types", () => {
+    const state = EditorState.create({ doc, extensions: [python()] });
+    ensureSyntaxTree(state, state.doc.length, 1000);
+    const ctx = new CompletionContext(state, 4, true);
+    const result = ctx.tokenBefore(["NonExistentNodeType"]);
+    expect(result).toBeNull();
+  });
+
+  it("tokenBefore returns token when matching node found", () => {
+    const state = EditorState.create({ doc, extensions: [python()] });
+    ensureSyntaxTree(state, state.doc.length, 1000);
+    // pos 7 = end of "foo" — resolveInner(7, -1) finds the VariableName [4-7]
+    const ctx = new CompletionContext(state, 7, true);
+    const result = ctx.tokenBefore(["VariableName"]);
+    expect(result).not.toBeNull();
+    expect(result!.text).toBe("foo");
+    expect(result!.from).toBe(4);
+  });
+});
+
+describe("ifIn behavioral invocation (covers lines 191-195)", () => {
+  it("ifIn source returns completions when pos is inside named node", () => {
+    const doc = "def foo(x):\n    return x";
+    const state = EditorState.create({ doc, extensions: [python()] });
+    ensureSyntaxTree(state, state.doc.length, 1000);
+    const innerSource = (_ctx: CompletionContext) => ({ from: 0, options: [{label: "found"}] });
+    const wrapped = ifIn(["VariableName"], innerSource);
+    // pos 7 is inside VariableName "foo"
+    const ctx = new CompletionContext(state, 7, true);
+    const result = wrapped(ctx);
+    expect(result).not.toBeNull();
+  });
+
+  it("ifIn source returns null when pos not in any named node", () => {
+    const doc = "x = 1";
+    const state = EditorState.create({ doc, extensions: [python()] });
+    ensureSyntaxTree(state, state.doc.length, 1000);
+    const innerSource = (_ctx: CompletionContext) => ({ from: 0, options: [{label: "found"}] });
+    const wrapped = ifIn(["FunctionDefinition"], innerSource);
+    // pos 0 is not inside FunctionDefinition
+    const ctx = new CompletionContext(state, 0, true);
+    const result = wrapped(ctx);
+    expect(result).toBeNull();
+  });
+});
+
+describe("ifNotIn behavioral invocation (covers lines 203-207)", () => {
+  it("ifNotIn source returns null when pos is inside named node", () => {
+    const doc = "def foo(x):\n    return x";
+    const state = EditorState.create({ doc, extensions: [python()] });
+    ensureSyntaxTree(state, state.doc.length, 1000);
+    const innerSource = (_ctx: CompletionContext) => ({ from: 0, options: [{label: "found"}] });
+    const wrapped = ifNotIn(["VariableName"], innerSource);
+    // pos 7 is inside VariableName "foo"
+    const ctx = new CompletionContext(state, 7, true);
+    const result = wrapped(ctx);
+    expect(result).toBeNull();
+  });
+
+  it("ifNotIn source returns completions when pos not in named node", () => {
+    const doc = "x = 1";
+    const state = EditorState.create({ doc, extensions: [python()] });
+    ensureSyntaxTree(state, state.doc.length, 1000);
+    const innerSource = (_ctx: CompletionContext) => ({ from: 0, options: [{label: "found"}] });
+    const wrapped = ifNotIn(["FunctionDefinition"], innerSource);
+    // pos 0 is not in FunctionDefinition
+    const ctx = new CompletionContext(state, 0, true);
+    const result = wrapped(ctx);
+    expect(result).not.toBeNull();
+  });
+});
+
+describe("asSource behavioral tests (covers lines 319-322)", () => {
+  it("asSource with array of strings creates a CompletionSource", () => {
+    const arr = ["foo", "bar", "baz"] as const;
+    const source = asSource(arr);
+    expect(typeof source).toBe("function");
+  });
+
+  it("asSource with same array reference returns cached source", () => {
+    const arr = ["alpha", "beta"] as const;
+    const source1 = asSource(arr);
+    const source2 = asSource(arr);
+    // Should return the same cached function
+    expect(source1).toBe(source2);
+  });
+
+  it("asSource with a function returns it directly", () => {
+    const fn = (_ctx: CompletionContext) => null;
+    const source = asSource(fn);
+    expect(source).toBe(fn);
   });
 });
