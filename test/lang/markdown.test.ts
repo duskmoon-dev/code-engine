@@ -8,6 +8,7 @@ import {
   Subscript, Superscript, Emoji,
 } from "../../src/lang/markdown/index";
 import { javascript } from "../../src/lang/javascript/index";
+import { htmlLanguage } from "../../src/lang/html/index";
 import { EditorState } from "../../src/core/state/index";
 
 describe("Markdown language pack", () => {
@@ -55,6 +56,46 @@ describe("Markdown language pack", () => {
 
   it("exports parseCode function", () => {
     expect(typeof parseCode).toBe("function");
+  });
+
+  describe("parseCode behavioral", () => {
+    it("parseCode returns a MarkdownExtension with wrap", () => {
+      const ext = parseCode({ codeParser: () => null });
+      expect(ext).toBeDefined();
+      expect(typeof (ext as any).wrap).toBe("function");
+    });
+
+    it("parseCode with codeParser covers FencedCode path", () => {
+      const jsParser = javascript().language.parser;
+      const ext = parseCode({ codeParser: (info) => info === "js" ? jsParser : null });
+      const p = markdownLanguage.parser.configure(ext);
+      const tree = p.parse("```js\nconsole.log('hi');\n```\n");
+      expect(tree.length).toBeGreaterThan(0);
+    });
+
+    it("parseCode with codeParser covers FencedCode without info (CodeInfo branch)", () => {
+      const jsParser = javascript().language.parser;
+      const ext = parseCode({ codeParser: () => jsParser });
+      const p = markdownLanguage.parser.configure(ext);
+      // FencedCode without language tag - codeParser receives ""
+      const tree = p.parse("```\nconsole.log('hi');\n```\n");
+      expect(tree.length).toBeGreaterThan(0);
+    });
+
+    it("parseCode with htmlParser covers HTMLBlock path and leftOverSpace", () => {
+      const ext = parseCode({ htmlParser: htmlLanguage.parser });
+      const p = markdownLanguage.parser.configure(ext);
+      // An HTML block in markdown triggers the HTMLBlock branch
+      const tree = p.parse("<div>\nhello\n</div>\n\nsome text");
+      expect(tree.length).toBeGreaterThan(0);
+    });
+
+    it("parseCode with codeParser returning null skips nested parse", () => {
+      const ext = parseCode({ codeParser: () => null });
+      const p = markdownLanguage.parser.configure(ext);
+      const tree = p.parse("```python\nx = 1\n```\n");
+      expect(tree.length).toBeGreaterThan(0);
+    });
   });
 
   it("exports GFM extension", () => {

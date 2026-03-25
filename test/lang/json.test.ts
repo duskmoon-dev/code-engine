@@ -129,6 +129,43 @@ describe("JSON language pack", () => {
       const lint = jsonParseLinter();
       expect(typeof lint).toBe("function");
     });
+
+    // Mock an EditorView-compatible object for testing the linter without DOM
+    function mockView(docStr: string) {
+      const lines = docStr.split("\n");
+      return {
+        state: {
+          doc: {
+            toString: () => docStr,
+            length: docStr.length,
+            line: (n: number) => ({ from: lines.slice(0, n - 1).reduce((s, l) => s + l.length + 1, 0) }),
+          },
+        },
+      } as any;
+    }
+
+    it("jsonParseLinter returns empty array for valid JSON", () => {
+      const lint = jsonParseLinter();
+      const result = lint(mockView('{"a": 1, "b": [2, 3]}'));
+      expect(result).toEqual([]);
+    });
+
+    it("jsonParseLinter returns a diagnostic for invalid JSON", () => {
+      const lint = jsonParseLinter();
+      const result = lint(mockView("{bad json}"));
+      expect(result.length).toBe(1);
+      expect(result[0].severity).toBe("error");
+      expect(typeof result[0].from).toBe("number");
+      expect(typeof result[0].message).toBe("string");
+    });
+
+    it("jsonParseLinter returns diagnostic at position 0 for unknown error format (Bun runtime)", () => {
+      const lint = jsonParseLinter();
+      const result = lint(mockView("invalid"));
+      expect(result.length).toBe(1);
+      expect(result[0].from).toBe(0);
+      expect(result[0].to).toBe(0);
+    });
   });
 
   describe("additional parse tree tests", () => {
