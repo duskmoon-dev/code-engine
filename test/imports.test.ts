@@ -230,4 +230,13 @@ describe("Import verification", () => {
     expect(mod.basicSetup).toBeDefined();
     expect(mod.minimalSetup).toBeDefined();
   });
+
+  it("imports from root barrel (src/index.ts)", async () => {
+    const mod = await import("../src/index");
+    // Root barrel re-exports core modules
+    expect(mod.EditorState).toBeDefined();
+    expect(mod.EditorView).toBeDefined();
+    expect(mod.LRLanguage).toBeDefined();
+    expect(mod.defaultKeymap).toBeDefined();
+  });
 });
