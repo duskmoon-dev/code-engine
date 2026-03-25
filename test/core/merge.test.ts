@@ -3,7 +3,7 @@ import {
   Change, diff, presentableDiff,
   MergeView, unifiedMergeView, acceptChunk, rejectChunk, getOriginalDoc,
   getChunks, goToNextChunk, goToPreviousChunk,
-  Chunk,
+  Chunk, uncollapseUnchanged, mergeViewSiblings,
 } from "../../src/core/merge/index";
 
 describe("Change", () => {
@@ -162,5 +162,44 @@ describe("Merge module exports", () => {
 
   it("exports Chunk as a class", () => {
     expect(typeof Chunk).toBe("function");
+  });
+
+  it("exports uncollapseUnchanged as defined", () => {
+    expect(uncollapseUnchanged).toBeDefined();
+  });
+
+  it("exports mergeViewSiblings as a function", () => {
+    expect(typeof mergeViewSiblings).toBe("function");
+  });
+});
+
+describe("diff behavioral tests", () => {
+  it("produces correct fromA/toA/fromB/toB for a replacement", () => {
+    const changes = diff("hello world", "hello there");
+    expect(changes.length).toBeGreaterThan(0);
+    let result = "";
+    let pos = 0;
+    for (const c of changes) {
+      result += "hello world".slice(pos, c.fromA);
+      result += "hello there".slice(c.fromB, c.toB);
+      pos = c.toA;
+    }
+    result += "hello world".slice(pos);
+    expect(result).toBe("hello there");
+  });
+
+  it("Change.fromA <= Change.toA always", () => {
+    const changes = diff("aabbcc", "aXbbYcc");
+    for (const c of changes) {
+      expect(c.fromA).toBeLessThanOrEqual(c.toA);
+      expect(c.fromB).toBeLessThanOrEqual(c.toB);
+    }
+  });
+
+  it("changes are non-overlapping and in order", () => {
+    const changes = diff("one two three four five", "ONE two THREE four FIVE");
+    for (let i = 1; i < changes.length; i++) {
+      expect(changes[i].fromA).toBeGreaterThanOrEqual(changes[i - 1].toA);
+    }
   });
 });
