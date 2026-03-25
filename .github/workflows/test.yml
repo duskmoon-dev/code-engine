@@ -28,7 +28,7 @@ jobs:
           node-version: "22"
 
       - name: Install dependencies
-        run: bun install --frozen-lockfile
+        run: bun install
 
       - name: Test with coverage
         run: bun test --coverage 2>&1 | tee coverage-report.txt
