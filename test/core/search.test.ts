@@ -225,4 +225,60 @@ describe("SearchCursor", () => {
     const result = cursor.next();
     expect(result.done).toBe(true);
   });
+
+  it("finds all occurrences of a term", () => {
+    const text = Text.of(["the cat sat on the mat"]);
+    const cursor = new SearchCursor(text, "at");
+    const matches: Array<{from: number; to: number}> = [];
+    let r = cursor.next();
+    while (!r.done) {
+      matches.push({ from: r.value!.from, to: r.value!.to });
+      r = cursor.next();
+    }
+    expect(matches.length).toBe(3); // "cat", "sat", "mat"
+  });
+
+  it("respects from/to range constraints", () => {
+    const text = Text.of(["hello hello hello"]);
+    const cursor = new SearchCursor(text, "hello", 6);
+    const first = cursor.next();
+    expect(first.value!.from).toBe(6);
+  });
+
+  it("is case-sensitive by default", () => {
+    const text = Text.of(["Hello HELLO hello"]);
+    const cursor = new SearchCursor(text, "hello");
+    const first = cursor.next();
+    expect(first.value!.from).toBe(12);
+  });
+});
+
+describe("RegExpCursor", () => {
+  it("matches a regex pattern", () => {
+    const text = Text.of(["foo123bar456"]);
+    const cursor = new RegExpCursor(text, "\\d+");
+    const first = cursor.next();
+    expect(first.value).toBeDefined();
+    expect(first.value!.from).toBe(3);
+    expect(first.value!.to).toBe(6);
+  });
+
+  it("returns done when no regex match", () => {
+    const text = Text.of(["no numbers here"]);
+    const cursor = new RegExpCursor(text, "\\d+");
+    const result = cursor.next();
+    expect(result.done).toBe(true);
+  });
+
+  it("finds all regex matches", () => {
+    const text = Text.of(["cat bat mat"]);
+    const cursor = new RegExpCursor(text, "[a-z]at");
+    const matches: string[] = [];
+    let r = cursor.next();
+    while (!r.done) {
+      matches.push(text.sliceString(r.value!.from, r.value!.to));
+      r = cursor.next();
+    }
+    expect(matches).toEqual(["cat", "bat", "mat"]);
+  });
 });
