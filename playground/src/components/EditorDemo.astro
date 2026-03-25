@@ -3,81 +3,91 @@
 
 <div class="editor-demo">
   <div class="controls" role="toolbar" aria-label="Editor settings">
-    <label for="lang-select">
-      Language
-      <select id="lang-select" aria-label="Select programming language"></select>
-      <span id="lang-loading" class="loading" hidden aria-live="polite" aria-label="Loading language">…</span>
-    </label>
-    <label for="theme-select">
-      Theme
-      <select id="theme-select" aria-label="Select editor theme">
-        <option value="one-dark">One Dark</option>
-        <option value="duskmoon">DuskMoon</option>
-      </select>
-    </label>
-    <label class="checkbox">
-      <input type="checkbox" id="ext-linenumbers" checked aria-label="Toggle line numbers">
-      Line Numbers
-    </label>
-    <label class="checkbox">
-      <input type="checkbox" id="ext-autocomplete" checked aria-label="Toggle autocomplete">
-      Autocomplete
-    </label>
-    <label class="checkbox">
-      <input type="checkbox" id="ext-wordwrap" aria-label="Toggle word wrap">
-      Word Wrap
-    </label>
-    <label class="checkbox">
-      <input type="checkbox" id="ext-readonly" aria-label="Toggle read-only mode">
-      Read-only
-    </label>
-    <label class="checkbox">
-      <input type="checkbox" id="ext-highlight-line" checked aria-label="Toggle active line highlight">
-      Active Line
-    </label>
-    <label class="checkbox">
-      <input type="checkbox" id="ext-brackets" checked aria-label="Toggle bracket matching">
-      Brackets
-    </label>
-    <label class="checkbox">
-      <input type="checkbox" id="ext-fold" checked aria-label="Toggle fold gutter">
-      Folding
-    </label>
-    <label class="checkbox">
-      <input type="checkbox" id="ext-whitespace" aria-label="Toggle whitespace visibility">
-      Whitespace
-    </label>
-    <label for="tab-size">
-      Tab
-      <select id="tab-size" aria-label="Select tab size">
-        <option value="2" selected>2</option>
-        <option value="4">4</option>
-        <option value="8">8</option>
-      </select>
-    </label>
-    <label class="checkbox">
-      <input type="checkbox" id="ext-indent-tabs" aria-label="Toggle tab indentation">
-      Use Tabs
-    </label>
-    <label class="checkbox">
-      <input type="checkbox" id="ext-vim" aria-label="Toggle Vim keymap">
-      Vim
-    </label>
-    <label class="checkbox">
-      <input type="checkbox" id="ext-emacs" aria-label="Toggle Emacs keymap">
-      Emacs
-    </label>
-    <span class="spacer"></span>
-    <div class="font-size-controls" role="group" aria-label="Editor font size">
-      <button id="btn-font-decrease" class="toolbar-btn" aria-label="Decrease font size">A−</button>
-      <span id="font-size-display" class="font-size-display">14</span>
-      <button id="btn-font-increase" class="toolbar-btn" aria-label="Increase font size">A+</button>
+    <div class="control-group">
+      <label for="lang-select">
+        Language
+        <select id="lang-select" aria-label="Select programming language"></select>
+        <span id="lang-loading" class="loading" hidden aria-live="polite" aria-label="Loading language">…</span>
+      </label>
+      <label for="theme-select">
+        Theme
+        <select id="theme-select" aria-label="Select editor theme">
+          <option value="one-dark">One Dark</option>
+          <option value="duskmoon">DuskMoon</option>
+        </select>
+      </label>
     </div>
-    <button id="btn-fullscreen" class="toolbar-btn" aria-label="Toggle fullscreen">Fullscreen</button>
-    <button id="btn-download" class="toolbar-btn" aria-label="Download editor content">Download</button>
-    <button id="btn-share" class="toolbar-btn" aria-label="Copy share link">Share</button>
-    <button id="btn-shortcuts" class="toolbar-btn" aria-label="Show keyboard shortcuts" title="Keyboard shortcuts">?</button>
-    <button id="btn-reset" class="toolbar-btn" aria-label="Reset to defaults">Reset</button>
+    <hr class="divider" />
+    <div class="control-group">
+      <label class="checkbox">
+        <input type="checkbox" id="ext-linenumbers" checked aria-label="Toggle line numbers">
+        Line Numbers
+      </label>
+      <label class="checkbox">
+        <input type="checkbox" id="ext-autocomplete" checked aria-label="Toggle autocomplete">
+        Autocomplete
+      </label>
+      <label class="checkbox">
+        <input type="checkbox" id="ext-wordwrap" aria-label="Toggle word wrap">
+        Word Wrap
+      </label>
+      <label class="checkbox">
+        <input type="checkbox" id="ext-readonly" aria-label="Toggle read-only mode">
+        Read-only
+      </label>
+      <label class="checkbox">
+        <input type="checkbox" id="ext-highlight-line" checked aria-label="Toggle active line highlight">
+        Active Line
+      </label>
+      <label class="checkbox">
+        <input type="checkbox" id="ext-brackets" checked aria-label="Toggle bracket matching">
+        Brackets
+      </label>
+      <label class="checkbox">
+        <input type="checkbox" id="ext-fold" checked aria-label="Toggle fold gutter">
+        Folding
+      </label>
+      <label class="checkbox">
+        <input type="checkbox" id="ext-whitespace" aria-label="Toggle whitespace visibility">
+        Whitespace
+      </label>
+    </div>
+    <hr class="divider" />
+    <div class="control-group">
+      <label for="tab-size">
+        Tab
+        <select id="tab-size" aria-label="Select tab size">
+          <option value="2" selected>2</option>
+          <option value="4">4</option>
+          <option value="8">8</option>
+        </select>
+      </label>
+      <label class="checkbox">
+        <input type="checkbox" id="ext-indent-tabs" aria-label="Toggle tab indentation">
+        Use Tabs
+      </label>
+      <label class="checkbox">
+        <input type="checkbox" id="ext-vim" aria-label="Toggle Vim keymap">
+        Vim
+      </label>
+      <label class="checkbox">
+        <input type="checkbox" id="ext-emacs" aria-label="Toggle Emacs keymap">
+        Emacs
+      </label>
+    </div>
+    <span class="spacer"></span>
+    <div class="control-group toolbar-actions">
+      <div class="font-size-controls" role="group" aria-label="Editor font size">
+        <button id="btn-font-decrease" class="toolbar-btn" aria-label="Decrease font size">A−</button>
+        <span id="font-size-display" class="font-size-display">14</span>
+        <button id="btn-font-increase" class="toolbar-btn" aria-label="Increase font size">A+</button>
+      </div>
+      <button id="btn-fullscreen" class="toolbar-btn" aria-label="Toggle fullscreen">Fullscreen</button>
+      <button id="btn-download" class="toolbar-btn" aria-label="Download editor content">Download</button>
+      <button id="btn-share" class="toolbar-btn" aria-label="Copy share link">Share</button>
+      <button id="btn-shortcuts" class="toolbar-btn" aria-label="Show keyboard shortcuts" title="Keyboard shortcuts">?</button>
+      <button id="btn-reset" class="toolbar-btn" aria-label="Reset to defaults">Reset</button>
+    </div>
   </div>
   <p id="load-error" class="load-error" role="alert" hidden>
     Failed to load language pack. Check your network connection.
@@ -922,6 +932,41 @@ BinaryExpression { expression !add "+" expression }
     padding: var(--space-sm) var(--space-md);
     background: var(--color-surface);
     border: 1px solid var(--color-border);
+  }
+
+  .control-group {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-sm);
+    align-items: center;
+  }
+
+  .divider {
+    border: none;
+    background: var(--color-border);
+  }
+
+  @media (min-width: 768px) {
+    .control-group {
+      flex-direction: column;
+      align-items: stretch;
+    }
+    .toolbar-actions {
+      flex-direction: row;
+      flex-wrap: wrap;
+      align-items: center;
+    }
+    .divider {
+      height: 1px;
+      width: 100%;
+    }
+  }
+
+  @media (max-width: 767px) {
+    .divider {
+      width: 1px;
+      align-self: stretch;
+    }
   }
 
   .controls label {
