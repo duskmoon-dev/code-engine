@@ -141,3 +141,42 @@ describe("lintGutter", () => {
     expect(ext).toBeDefined();
   });
 });
+
+describe("diagnosticCount behavioral tests", () => {
+  it("returns 0 for state with no diagnostics", () => {
+    const state = EditorState.create({ doc: "hello" });
+    // State without linter extension has no diagnostics
+    expect(diagnosticCount(state)).toBe(0);
+  });
+
+  it("returns count after setDiagnostics", () => {
+    const state = EditorState.create({ doc: "hello world" });
+    const spec = setDiagnostics(state, [
+      { from: 0, to: 5, severity: "error", message: "error 1" },
+      { from: 6, to: 11, severity: "warning", message: "warning 1" },
+    ]);
+    const newState = state.update(spec).state;
+    expect(diagnosticCount(newState)).toBe(2);
+  });
+});
+
+describe("forEachDiagnostic behavioral tests", () => {
+  it("does not call callback when no diagnostics", () => {
+    const state = EditorState.create({ doc: "hello" });
+    let called = 0;
+    forEachDiagnostic(state, () => { called++; });
+    expect(called).toBe(0);
+  });
+
+  it("calls callback for each diagnostic after setDiagnostics", () => {
+    const state = EditorState.create({ doc: "hello world" });
+    const spec = setDiagnostics(state, [
+      { from: 0, to: 5, severity: "error", message: "err" },
+      { from: 6, to: 11, severity: "info", message: "info" },
+    ]);
+    const newState = state.update(spec).state;
+    const diags: string[] = [];
+    forEachDiagnostic(newState, (d) => { diags.push(d.message); });
+    expect(diags).toEqual(["err", "info"]);
+  });
+});
