@@ -8,6 +8,7 @@ import {
 import { EditorState } from "../../src/core/state/index";
 import { syntaxTree, ensureSyntaxTree, getIndentation, foldable } from "../../src/core/language/index";
 import { cssLanguage } from "../../src/lang/css/index";
+import { CompletionContext } from "../../src/core/autocomplete/index";
 
 describe("HTML language pack", () => {
   it("exports html function", () => {
@@ -422,6 +423,75 @@ describe("HTML language pack", () => {
       const support = html({ nestedAttributes: [{ name: "x-code", parser: cssLanguage.parser }] });
       expect(support).toBeDefined();
       expect(support.language.name).toBe("html");
+    });
+  });
+
+  describe("htmlCompletionSource behavioral (covers complete.ts)", () => {
+    function callCompletion(doc: string, pos: number, explicit = false) {
+      const state = EditorState.create({ doc, extensions: [html()] });
+      ensureSyntaxTree(state, doc.length, 1000);
+      const cx = new CompletionContext(state, pos, explicit);
+      return htmlCompletionSource(cx);
+    }
+
+    it("TagName in OpenTag returns tag completions (completeTag path)", () => {
+      // "<div" - pos=4 at end of TagName "div" [1-4]
+      const result = callCompletion("<div", 4);
+      expect(result).not.toBeNull();
+      expect(result!.options.some((o: any) => o.label === "div")).toBe(true);
+    });
+
+    it("IncompleteTag returns tag completions (StartTag/IncompleteTag path)", () => {
+      // "<" - pos=1 at IncompleteTag
+      const result = callCompletion("<", 1);
+      expect(result).not.toBeNull();
+      expect(result!.options.length).toBeGreaterThan(0);
+    });
+
+    it("IncompleteCloseTag returns close tag completions (StartCloseTag path)", () => {
+      // "<div></" - pos=7 at IncompleteCloseTag after </
+      const result = callCompletion("<div></", 7);
+      expect(result).not.toBeNull();
+      expect(result!.options.some((o: any) => o.label === "div")).toBe(true);
+    });
+
+    it("TagName in CloseTag returns close tag completions", () => {
+      // "<div></div>" - pos=10 at TagName in CloseTag
+      const result = callCompletion("<div></div>", 10);
+      expect(result).not.toBeNull();
+    });
+
+    it("AttributeName returns attribute name completions (completeAttrName path)", () => {
+      // "<div class" - pos=10 at AttributeName
+      const result = callCompletion("<div class", 10);
+      expect(result).not.toBeNull();
+      expect(result!.options.some((o: any) => o.label === "class")).toBe(true);
+    });
+
+    it("Is node returns attribute value completions (completeAttrValue path)", () => {
+      // "<div class=" - pos=11 at Is node (=)
+      const result = callCompletion("<div class=", 11);
+      expect(result).not.toBeNull();
+    });
+
+    it("AttributeValue returns known values for typed attributes (completeAttrValue with values)", () => {
+      // `<input type="` - pos=13 inside AttributeValue with known values
+      const result = callCompletion(`<input type="`, 13);
+      expect(result).not.toBeNull();
+      expect(result!.options.some((o: any) => o.label === "text")).toBe(true);
+    });
+
+    it("explicit context in Element text returns start-tag completions (completeStartTag path)", () => {
+      // "<p>text</p>" - pos=0 with explicit=true at Document level
+      const result = callCompletion("<p>text</p>", 0, true);
+      expect(result).not.toBeNull();
+      expect(result!.options.some((o: any) => o.label === "<p")).toBe(true);
+    });
+
+    it("non-special position with explicit=false returns null", () => {
+      // "<div>text</div>" - pos=5 inside text content with explicit=false
+      const result = callCompletion("<div>text</div>", 5, false);
+      expect(result).toBeNull();
     });
   });
 });
