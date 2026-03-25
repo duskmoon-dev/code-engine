@@ -84,6 +84,12 @@ const categories = categoryOrder
   <div class="category">
     <h3>{cat.name} <span class="count">({cat.exports.length})</span></h3>
     <table>
+      <thead>
+        <tr>
+          <th>Import</th>
+          <th>Exports</th>
+        </tr>
+      </thead>
       <tbody>
         {cat.exports.map(exp => (
           <tr>
@@ -111,6 +117,16 @@ const categories = categoryOrder
   table {
     width: 100%;
     border-collapse: collapse;
+  }
+  th {
+    padding: 0.4rem 0.6rem;
+    text-align: left;
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: var(--color-text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    border-bottom: 2px solid var(--color-border);
   }
   td {
     padding: 0.4rem 0.6rem;
