@@ -273,4 +273,34 @@ describe("Python language pack", () => {
     const state = EditorState.create({ doc, extensions: [python()] });
     expect(state.doc.length).toBe(doc.length);
   });
+
+  it("python() state deletion transaction works", () => {
+    let state = EditorState.create({ doc: "x = 1\ny = 2", extensions: [python()] });
+    state = state.update({ changes: { from: 5, to: 11 } }).state;
+    expect(state.doc.toString()).toBe("x = 1");
+  });
+
+  it("python() state with unicode content works", () => {
+    const doc = "# こんにちは\nprint('hello')";
+    const state = EditorState.create({ doc, extensions: [python()] });
+    expect(state.doc.toString()).toBe(doc);
+  });
+
+  it("python() state selection can span lines", () => {
+    const state = EditorState.create({
+      doc: "x = 1\ny = 2\nz = 3",
+      selection: { anchor: 0, head: 5 },
+      extensions: [python()],
+    });
+    expect(state.selection.main.from).toBe(0);
+    expect(state.selection.main.to).toBe(5);
+  });
+
+  it("python() state doc line count is correct", () => {
+    const state = EditorState.create({
+      doc: "import os\nimport sys\nimport re",
+      extensions: [python()],
+    });
+    expect(state.doc.lines).toBe(3);
+  });
 });

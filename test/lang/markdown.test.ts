@@ -8,6 +8,7 @@ import {
   Subscript, Superscript, Emoji,
 } from "../../src/lang/markdown/index";
 import { javascript } from "../../src/lang/javascript/index";
+import { EditorState } from "../../src/core/state/index";
 
 describe("Markdown language pack", () => {
   it("exports markdown function", () => {
@@ -263,5 +264,39 @@ describe("Markdown language pack", () => {
   it("markdownLanguage can parse definition lists", () => {
     const tree = markdownLanguage.parser.parse("Term\n: Definition\n\nAnother term\n: Another definition");
     expect(tree.length).toBeGreaterThan(0);
+  });
+
+  it("markdown() state doc line text is accessible", () => {
+    const state = EditorState.create({
+      doc: "# Title\n\nFirst paragraph.\n\nSecond paragraph.",
+      extensions: [markdown()],
+    });
+    expect(state.doc.line(1).text).toBe("# Title");
+    expect(state.doc.line(3).text).toBe("First paragraph.");
+  });
+
+  it("markdown() state allows multiple sequential transactions", () => {
+    let state = EditorState.create({ doc: "# Hello", extensions: [markdown()] });
+    state = state.update({ changes: { from: 7, insert: "\n\nWorld" } }).state;
+    state = state.update({ changes: { from: state.doc.length, insert: "\n\nFoo" } }).state;
+    expect(state.doc.lines).toBe(5);
+  });
+
+  it("markdown() state deletion transaction works", () => {
+    let state = EditorState.create({ doc: "# Title\n\nParagraph.", extensions: [markdown()] });
+    state = state.update({ changes: { from: 7, to: 20 } }).state;
+    expect(state.doc.toString()).toBe("# Title");
+  });
+
+  it("markdown() state with unicode content works", () => {
+    const doc = "# こんにちは\n\nWorld";
+    const state = EditorState.create({ doc, extensions: [markdown()] });
+    expect(state.doc.toString()).toBe(doc);
+  });
+
+  it("markdown() extension preserves doc length invariant", () => {
+    const doc = "# Hello\n\nWorld";
+    const state = EditorState.create({ doc, extensions: [markdown()] });
+    expect(state.doc.length).toBe(doc.length);
   });
 });

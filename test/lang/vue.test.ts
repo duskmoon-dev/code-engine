@@ -295,5 +295,35 @@ describe("Vue language pack", () => {
       const state = EditorState.create({ doc, extensions: [vue()] });
       expect(state.doc.length).toBe(doc.length);
     });
+
+    it("vue() state deletion transaction works", () => {
+      let state = EditorState.create({ doc: "<template><div/></template>\n<script></script>", extensions: [vue()] });
+      state = state.update({ changes: { from: 27, to: 45 } }).state;
+      expect(state.doc.toString()).toBe("<template><div/></template>");
+    });
+
+    it("vue() state with unicode content works", () => {
+      const doc = "<template><!-- こんにちは --><p/></template>";
+      const state = EditorState.create({ doc, extensions: [vue()] });
+      expect(state.doc.toString()).toBe(doc);
+    });
+
+    it("vue() state selection within single line", () => {
+      const state = EditorState.create({
+        doc: "<template><div/></template>",
+        selection: { anchor: 0, head: 10 },
+        extensions: [vue()],
+      });
+      expect(state.selection.main.from).toBe(0);
+      expect(state.selection.main.to).toBe(10);
+    });
+
+    it("vue() state doc line count is correct", () => {
+      const state = EditorState.create({
+        doc: "<template>\n  <div/>\n</template>",
+        extensions: [vue()],
+      });
+      expect(state.doc.lines).toBe(3);
+    });
   });
 });

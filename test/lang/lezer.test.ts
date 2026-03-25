@@ -301,5 +301,35 @@ describe("Lezer language pack", () => {
       const state = EditorState.create({ doc, extensions: [lezer()] });
       expect(state.doc.length).toBe(doc.length);
     });
+
+    it("lezer() state deletion transaction works", () => {
+      let state = EditorState.create({ doc: "@top P { e* }\n@tokens { Number { @digit+ } }", extensions: [lezer()] });
+      state = state.update({ changes: { from: 13, to: 44 } }).state;
+      expect(state.doc.toString()).toBe("@top P { e* }");
+    });
+
+    it("lezer() state with unicode content works", () => {
+      const doc = "// こんにちは\n@top P { e* }";
+      const state = EditorState.create({ doc, extensions: [lezer()] });
+      expect(state.doc.toString()).toBe(doc);
+    });
+
+    it("lezer() state selection can span lines", () => {
+      const state = EditorState.create({
+        doc: "@top P { e* }\n@tokens {}",
+        selection: { anchor: 0, head: 13 },
+        extensions: [lezer()],
+      });
+      expect(state.selection.main.from).toBe(0);
+      expect(state.selection.main.to).toBe(13);
+    });
+
+    it("lezer() state doc line count is correct", () => {
+      const state = EditorState.create({
+        doc: "@top P { e* }\n@tokens { Number { @digit+ } }\ne { Number }",
+        extensions: [lezer()],
+      });
+      expect(state.doc.lines).toBe(3);
+    });
   });
 });

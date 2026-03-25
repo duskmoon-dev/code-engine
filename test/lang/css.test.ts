@@ -264,4 +264,34 @@ describe("CSS language pack", () => {
     const state = EditorState.create({ doc, extensions: [css()] });
     expect(state.doc.length).toBe(doc.length);
   });
+
+  it("css() state deletion transaction works", () => {
+    let state = EditorState.create({ doc: "p { color: red; }\nh1 { color: blue; }", extensions: [css()] });
+    state = state.update({ changes: { from: 17, to: 37 } }).state;
+    expect(state.doc.toString()).toBe("p { color: red; }");
+  });
+
+  it("css() state with unicode content works", () => {
+    const doc = "/* こんにちは */\n.box { color: red; }";
+    const state = EditorState.create({ doc, extensions: [css()] });
+    expect(state.doc.toString()).toBe(doc);
+  });
+
+  it("css() state selection can span lines", () => {
+    const state = EditorState.create({
+      doc: "p {\n  color: red;\n}",
+      selection: { anchor: 0, head: 3 },
+      extensions: [css()],
+    });
+    expect(state.selection.main.from).toBe(0);
+    expect(state.selection.main.to).toBe(3);
+  });
+
+  it("css() state doc line count is correct", () => {
+    const state = EditorState.create({
+      doc: "p { color: red; }\nh1 { font-size: 2em; }\n.box { margin: 0; }",
+      extensions: [css()],
+    });
+    expect(state.doc.lines).toBe(3);
+  });
 });

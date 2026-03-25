@@ -307,4 +307,34 @@ describe("XML language pack", () => {
     const state = EditorState.create({ doc, extensions: [xml()] });
     expect(state.doc.length).toBe(doc.length);
   });
+
+  it("xml() state deletion transaction works", () => {
+    let state = EditorState.create({ doc: "<root/>\n<other/>", extensions: [xml()] });
+    state = state.update({ changes: { from: 7, to: 16 } }).state;
+    expect(state.doc.toString()).toBe("<root/>");
+  });
+
+  it("xml() state with unicode content works", () => {
+    const doc = "<!-- こんにちは -->\n<root/>";
+    const state = EditorState.create({ doc, extensions: [xml()] });
+    expect(state.doc.toString()).toBe(doc);
+  });
+
+  it("xml() state selection can span lines", () => {
+    const state = EditorState.create({
+      doc: "<root>\n  <child/>\n</root>",
+      selection: { anchor: 0, head: 6 },
+      extensions: [xml()],
+    });
+    expect(state.selection.main.from).toBe(0);
+    expect(state.selection.main.to).toBe(6);
+  });
+
+  it("xml() state doc line count is correct", () => {
+    const state = EditorState.create({
+      doc: "<root>\n  <a/>\n  <b/>\n</root>",
+      extensions: [xml()],
+    });
+    expect(state.doc.lines).toBe(4);
+  });
 });
