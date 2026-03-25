@@ -353,6 +353,44 @@ describe('playground source validation', () => {
     })
   })
 
+  describe('ExportList Try-in-Playground links', () => {
+    it('has playgroundLangKeys map for language exports', () => {
+      const exportList = readComponent('ExportList.astro')
+      expect(exportList).toContain('playgroundLangKeys')
+    })
+
+    it('renders try-lang-link anchor for language exports', () => {
+      const exportList = readComponent('ExportList.astro')
+      expect(exportList).toContain('try-lang-link')
+      expect(exportList).toContain('playground#lang=')
+    })
+
+    it('playgroundLangKeys covers all named lang/* exports', () => {
+      const exportList = readComponent('ExportList.astro')
+      const pkg = JSON.parse(readFileSync(join(rootDir, 'package.json'), 'utf-8'))
+      const langExports = Object.keys(pkg.exports)
+        .filter(k => k.startsWith('./lang/') && !k.includes('*'))
+        .map(k => k.slice(2)) // strip './'
+
+      for (const lang of langExports) {
+        expect(exportList).toContain(`'${lang}':`)
+      }
+    })
+  })
+
+  describe('Changelog section IDs', () => {
+    it('h2 headings have id attributes for deep linking', () => {
+      const changelog = readComponent('Changelog.astro')
+      expect(changelog).toContain('id="cl-')
+    })
+
+    it('id generation uses kebab-case from heading text', () => {
+      const changelog = readComponent('Changelog.astro')
+      // Should use .replace to create slug-style ids
+      expect(changelog).toContain("replace(/[^a-z0-9]+/g, '-')")
+    })
+  })
+
   describe('Layout og:image meta tag', () => {
     it('has og:image meta tag referencing og-image.svg', () => {
       const layout = readFileSync(join(playgroundSrc, 'layouts', 'Layout.astro'), 'utf-8')
@@ -418,9 +456,10 @@ describe('playground source validation', () => {
 
     it('renders markdown with heading support', () => {
       const changelog = readComponent('Changelog.astro')
-      expect(changelog).toContain('<h2>')
-      expect(changelog).toContain('<h3>')
-      expect(changelog).toContain('<h4>')
+      // Headings are generated via template literals with id anchors
+      expect(changelog).toContain('<h2')
+      expect(changelog).toContain('<h3')
+      expect(changelog).toContain('<h4')
     })
 
     it('supports blockquotes and horizontal rules', () => {

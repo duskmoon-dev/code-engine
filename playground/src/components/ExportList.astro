@@ -3,6 +3,34 @@ import pkgJson from '../../../package.json'
 
 const pkgName = pkgJson.name
 const exportKeys = Object.keys(pkgJson.exports).map(k => k === '.' ? '.' : k.slice(2)) // strip './'
+const base = import.meta.env.BASE_URL
+
+// Language keys that map to playground language names
+// typescript is a special case (uses javascript({ typescript: true }) in the playground)
+const playgroundLangKeys: Record<string, string> = {
+  'lang/javascript': 'javascript',
+  'lang/python': 'python',
+  'lang/html': 'html',
+  'lang/css': 'css',
+  'lang/json': 'json',
+  'lang/markdown': 'markdown',
+  'lang/xml': 'xml',
+  'lang/sql': 'sql',
+  'lang/rust': 'rust',
+  'lang/go': 'go',
+  'lang/java': 'java',
+  'lang/cpp': 'cpp',
+  'lang/php': 'php',
+  'lang/sass': 'sass',
+  'lang/less': 'less',
+  'lang/yaml': 'yaml',
+  'lang/angular': 'angular',
+  'lang/vue': 'vue',
+  'lang/liquid': 'liquid',
+  'lang/wast': 'wast',
+  'lang/jinja': 'jinja',
+  'lang/lezer': 'lezer',
+}
 
 // Categorize exports dynamically from package.json
 const descriptions: Record<string, string> = {
@@ -112,6 +140,13 @@ const categories = categoryOrder
                   Uses <code>StreamLanguage.define(mode)</code> instead of native Lezer parsers.
                   Import the mode and wrap it: <code>StreamLanguage.define(yourMode)</code>.
                 </span>
+              )}
+              {playgroundLangKeys[exp.path] && (
+                <a
+                  href={`${base}playground#lang=${playgroundLangKeys[exp.path]}`}
+                  class="try-lang-link"
+                  aria-label={`Try ${exp.description?.split(',')[0] ?? exp.path} in playground`}
+                >Try →</a>
               )}
             </td>
           </tr>
@@ -300,6 +335,27 @@ const categories = categoryOrder
     font-size: 0.85em;
     color: var(--color-text-muted);
     font-style: italic;
+  }
+  .try-lang-link {
+    display: inline-block;
+    margin-left: 0.5rem;
+    padding: 0.1rem 0.4rem;
+    font-size: 0.8rem;
+    color: var(--color-accent);
+    border: 1px solid transparent;
+    border-radius: 3px;
+    white-space: nowrap;
+    transition: border-color 0.15s, background 0.15s;
+    vertical-align: middle;
+  }
+  .try-lang-link:hover {
+    border-color: var(--color-accent);
+    background: color-mix(in srgb, var(--color-accent) 10%, transparent);
+    text-decoration: none;
+  }
+  .try-lang-link:focus-visible {
+    outline: 2px solid var(--color-accent);
+    outline-offset: 1px;
   }
   :global(mark) {
     background: color-mix(in srgb, var(--color-accent) 30%, transparent);

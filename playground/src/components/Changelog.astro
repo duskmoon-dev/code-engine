@@ -13,10 +13,10 @@ function renderMarkdown(md: string): string {
   })
 
   processed = processed
-    // headings
-    .replace(/^### (.+)$/gm, '<h4>$1</h4>')
-    .replace(/^## (.+)$/gm, '<h3>$1</h3>')
-    .replace(/^# (.+)$/gm, '<h2>$1</h2>')
+    // headings (with id anchors on h2/h3 for deep linking)
+    .replace(/^### (.+)$/gm, (_m, t) => `<h4 id="cl-${t.toLowerCase().replace(/[^a-z0-9]+/g, '-')}">${t}</h4>`)
+    .replace(/^## (.+)$/gm, (_m, t) => `<h3 id="cl-${t.toLowerCase().replace(/[^a-z0-9]+/g, '-')}">${t}</h3>`)
+    .replace(/^# (.+)$/gm, (_m, t) => `<h2 id="cl-${t.toLowerCase().replace(/[^a-z0-9]+/g, '-')}">${t}</h2>`)
     // horizontal rules
     .replace(/^(?:---|\*\*\*|___)\s*$/gm, '<hr>')
     // blockquotes (consecutive > lines grouped, preserving line breaks)
