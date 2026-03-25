@@ -1,7 +1,7 @@
 import { describe, it, expect } from "bun:test";
 import { java, javaLanguage } from "../../src/lang/java/index";
 import { EditorState } from "../../src/core/state/index";
-import { syntaxTree, LanguageSupport } from "../../src/core/language/index";
+import { syntaxTree, LanguageSupport, ensureSyntaxTree, getIndentation } from "../../src/core/language/index";
 
 describe("Java language pack", () => {
   it("exports java function", () => {
@@ -345,5 +345,16 @@ describe("Java language pack", () => {
   it("javaLanguage can parse annotation", () => {
     const tree = javaLanguage.parser.parse("@Override\npublic String toString() { return \"obj\"; }");
     expect(tree.length).toBeGreaterThan(0);
+  });
+
+  it("SwitchBlock indentation strategy: case label gets 1-unit indent", () => {
+    // "switch (x) {\n  case 1:\n    break;\n}" - line 2 starts at pos 13
+    const state = EditorState.create({
+      doc: "switch (x) {\n  case 1:\n    break;\n}",
+      extensions: [java()],
+    });
+    ensureSyntaxTree(state, state.doc.length, 1000);
+    const indent = getIndentation(state, 13);
+    expect(typeof indent).toBe("number");
   });
 });

@@ -1,7 +1,7 @@
 import { describe, it, expect } from "bun:test";
 import { go, goLanguage, snippets, localCompletionSource } from "../../src/lang/go/index";
 import { EditorState } from "../../src/core/state/index";
-import { syntaxTree } from "../../src/core/language/index";
+import { syntaxTree, ensureSyntaxTree, getIndentation } from "../../src/core/language/index";
 
 describe("Go language pack", () => {
   it("exports go function", () => {
@@ -360,5 +360,16 @@ describe("Go language pack", () => {
     const code = "package main\nfunc main() {}";
     const tree = goLanguage.parser.parse(code);
     expect(tree.length).toBe(code.length);
+  });
+
+  it("SwitchBlock/SelectBlock indentation strategy: case label indent in switch", () => {
+    // "switch x {\ncase 1:\n  y()\n}" - line 2 starts at pos 11
+    const state = EditorState.create({
+      doc: "switch x {\ncase 1:\n  y()\n}",
+      extensions: [go()],
+    });
+    ensureSyntaxTree(state, state.doc.length, 1000);
+    const indent = getIndentation(state, 11);
+    expect(typeof indent).toBe("number");
   });
 });

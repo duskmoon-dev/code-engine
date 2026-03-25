@@ -2,7 +2,7 @@ import { describe, it, expect } from "bun:test";
 import { php, phpLanguage } from "../../src/lang/php/index";
 import { htmlLanguage } from "../../src/lang/html/index";
 import { EditorState } from "../../src/core/state/index";
-import { syntaxTree, LanguageSupport } from "../../src/core/language/index";
+import { syntaxTree, LanguageSupport, ensureSyntaxTree, getIndentation } from "../../src/core/language/index";
 
 describe("PHP language pack", () => {
   it("exports php function", () => {
@@ -342,5 +342,16 @@ describe("PHP language pack", () => {
     });
     expect(state.selection.main.from).toBe(0);
     expect(state.selection.main.to).toBe(5);
+  });
+
+  it("SwitchBody indentation strategy: case label indent in switch", () => {
+    // "<?php\nswitch ($x) {\n  case 1:\n    $y = 1;\n}"
+    // line 1 (<?php) ends at 5, line 2 ends at 19, line 3 starts at pos 20
+    const doc = "<?php\nswitch ($x) {\n  case 1:\n    $y = 1;\n}";
+    const state = EditorState.create({ doc, extensions: [php()] });
+    ensureSyntaxTree(state, state.doc.length, 1000);
+    // Position at start of "  case 1:" line (pos 20)
+    const indent = getIndentation(state, 20);
+    expect(typeof indent).toBe("number");
   });
 });
