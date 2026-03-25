@@ -6,7 +6,7 @@ const exportKeys = Object.keys(pkg.exports)
 const exportCount = exportKeys.length
 const langCount = exportKeys.filter(k => k.startsWith('./lang/') && !k.includes('*')).length
 ---
-<Layout title="Home">
+<Layout title="Home" description={`Deep fork of CodeMirror 6 + Lezer — ${exportCount} tree-shakeable exports, ${langCount} languages, zero dependencies`}>
   <div class="hero">
     <h1>@duskmoon-dev/code-engine</h1>
     <p class="tagline">Deep fork of CodeMirror 6 + Lezer — single package, zero dependencies</p>
