@@ -737,9 +737,9 @@ BinaryExpression { expression !add "+" expression }
     updateHash()
     const url = location.href
     if (url.length > MAX_SHARE_URL_LENGTH) {
-      shareBtn.textContent = 'Too long!'
-      shareBtn.title = 'Code is too large to share via URL. Try shorter code or use Copy instead.'
-      setTimeout(() => { shareBtn.textContent = 'Share'; shareBtn.title = '' }, 2500)
+      shareBtn.textContent = 'Use Copy ↑'
+      shareBtn.title = 'Code is too large for a share URL. Use the Copy button to copy the code instead.'
+      setTimeout(() => { shareBtn.textContent = 'Share'; shareBtn.title = '' }, 3000)
       return
     }
     try {
@@ -1123,6 +1123,13 @@ BinaryExpression { expression !add "+" expression }
     font-size: 0.75rem;
     font-family: var(--font-mono);
     color: var(--color-text-muted);
+    overflow: hidden;
+    white-space: nowrap;
+    gap: var(--space-sm);
+  }
+  .status-bar span {
+    overflow: hidden;
+    text-overflow: ellipsis;
   }
 
   @media (min-width: 768px) {

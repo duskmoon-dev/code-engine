@@ -122,7 +122,7 @@ describe('playground build output', () => {
   it('homepage has correct export count', requireBuild(() => {
     const html = readFileSync(join(distDir, 'index.html'), 'utf-8')
     expect(html).toContain('23 languages')
-    expect(html).toContain('43 exports')
+    expect(html).toContain('43 Subpath Exports')
   }))
 
   it('playground has status bar', requireBuild(() => {
@@ -204,7 +204,7 @@ describe('playground build output', () => {
 
   it('homepage has feature highlights section', requireBuild(() => {
     const html = readFileSync(join(distDir, 'index.html'), 'utf-8')
-    expect(html).toContain('42 Subpath Exports')
+    expect(html).toContain('43 Subpath Exports')
     expect(html).toContain('22 Languages')
     expect(html).toContain('Single Package')
   }))
