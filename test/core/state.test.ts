@@ -593,6 +593,39 @@ describe("ChangeDesc", () => {
     expect(changes[0].fromA).toBe(0);
     expect(changes[0].toA).toBe(3);
   });
+
+  it("iterGaps finds unchanged sections", () => {
+    const cs = ChangeSet.of([{ from: 3, to: 5, insert: "XY" }], 10);
+    const gaps: Array<{posA: number; posB: number; length: number}> = [];
+    cs.desc.iterGaps((posA, posB, length) => { gaps.push({ posA, posB, length }); });
+    expect(gaps.length).toBe(2);
+    expect(gaps[0].posA).toBe(0);
+    expect(gaps[0].length).toBe(3);
+    // second gap: after the change
+    expect(gaps[1].posA).toBe(5);
+  });
+
+  it("compose combines two changesets", () => {
+    const cs1 = ChangeSet.of([{ from: 0, insert: "X" }], 5);
+    const cs2 = ChangeSet.of([{ from: 1, insert: "Y" }], 6);
+    const composed = cs1.compose(cs2);
+    expect(composed.length).toBe(5);
+    expect(composed.newLength).toBe(7);
+  });
+
+  it("mapDesc maps positions through changes", () => {
+    const cs = ChangeSet.of([{ from: 0, insert: "XX" }], 5);
+    // Position 3 should shift right by 2
+    expect(cs.desc.mapPos(3)).toBe(5);
+  });
+
+  it("touchesRange detects overlap", () => {
+    const cs = ChangeSet.of([{ from: 3, to: 5, insert: "X" }], 10);
+    // A range that overlaps the change
+    expect(cs.desc.touchesRange(2, 4)).toBe(true);
+    // A range that doesn't
+    expect(cs.desc.touchesRange(6, 8)).toBe(false);
+  });
 });
 
 describe("StateEffectType", () => {
