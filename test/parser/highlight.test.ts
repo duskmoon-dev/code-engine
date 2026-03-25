@@ -9,6 +9,7 @@ import {
   getStyleTags,
   highlightCode,
 } from "../../src/parser/highlight/index";
+import { pythonLanguage } from "../../src/lang/python/index";
 
 describe("Parser highlight module", () => {
   describe("exports", () => {
@@ -237,6 +238,39 @@ describe("Parser highlight module", () => {
       const hl = tagHighlighter([], { all: "token" });
       const custom = Tag.define();
       expect(hl.style([custom])).toBe("token");
+    });
+  });
+
+  describe("highlightCode", () => {
+    it("calls the put callback for highlighted ranges", () => {
+      const code = "def hello(): pass";
+      const tree = pythonLanguage.parser.parse(code);
+      const texts: string[] = [];
+      highlightCode(code, tree, classHighlighter, (text, _style) => {
+        texts.push(text);
+      }, () => {});
+      expect(texts.length).toBeGreaterThan(0);
+    });
+
+    it("covers the entire code string", () => {
+      const code = "x = 42";
+      const tree = pythonLanguage.parser.parse(code);
+      let covered = 0;
+      highlightCode(code, tree, classHighlighter, (text, _style) => {
+        covered += text.length;
+      }, () => {});
+      expect(covered).toBe(code.length);
+    });
+  });
+
+  describe("highlightTree", () => {
+    it("calls the put callback for each highlighted node", () => {
+      const tree = pythonLanguage.parser.parse("import os\nprint(os.getcwd())");
+      const spans: Array<{ from: number; to: number }> = [];
+      highlightTree(tree, classHighlighter, (from, to) => {
+        spans.push({ from, to });
+      });
+      expect(spans.length).toBeGreaterThan(0);
     });
   });
 });
