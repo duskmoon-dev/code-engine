@@ -372,4 +372,35 @@ describe("collab extra behavioral tests", () => {
     const state = EditorState.create({ doc, extensions: [collab()] });
     expect(state.doc.toString()).toBe(doc);
   });
+
+  it("collab allows 4 sequential transactions", () => {
+    let state = EditorState.create({ doc: "", extensions: [collab()] });
+    for (let i = 0; i < 4; i++) {
+      state = state.update({ changes: { from: state.doc.length, insert: (i > 0 ? "\n" : "") + `step${i}` } }).state;
+    }
+    expect(state.doc.lines).toBe(4);
+    expect(sendableUpdates(state).length).toBeGreaterThan(0);
+  });
+
+  it("collab doc allows deletion of entire content", () => {
+    const doc = "full document";
+    let state = EditorState.create({ doc, extensions: [collab()] });
+    state = state.update({ changes: { from: 0, to: doc.length } }).state;
+    expect(state.doc.toString()).toBe("");
+    expect(sendableUpdates(state).length).toBeGreaterThan(0);
+  });
+
+  it("collab state selection within single line", () => {
+    const state = EditorState.create({
+      doc: "hello world",
+      selection: { anchor: 6, head: 11 },
+      extensions: [collab()],
+    });
+    expect(state.selection.main.from).toBe(6);
+    expect(state.selection.main.to).toBe(11);
+  });
+
+  it("receiveUpdates is a function", () => {
+    expect(typeof receiveUpdates).toBe("function");
+  });
 });

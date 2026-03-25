@@ -315,4 +315,37 @@ describe("C++ language pack", () => {
     });
     expect(state.doc.lines).toBe(3);
   });
+
+  it("cppLanguage can parse lambda expressions", () => {
+    const tree = cppLanguage.parser.parse("auto f = [](int x) { return x * 2; };");
+    expect(tree.length).toBeGreaterThan(0);
+    expect(tree.type.isTop).toBe(true);
+  });
+
+  it("cpp() state allows 4 sequential transactions", () => {
+    let state = EditorState.create({ doc: "int a = 1;", extensions: [cpp()] });
+    state = state.update({ changes: { from: 10, insert: "\nint b = 2;" } }).state;
+    state = state.update({ changes: { from: state.doc.length, insert: "\nint c = 3;" } }).state;
+    state = state.update({ changes: { from: state.doc.length, insert: "\nint d = 4;" } }).state;
+    expect(state.doc.lines).toBe(4);
+    expect(state.doc.line(4).text).toBe("int d = 4;");
+  });
+
+  it("cpp() state allows deletion of entire content", () => {
+    const doc = "int x = 1;\nint y = 2;";
+    let state = EditorState.create({ doc, extensions: [cpp()] });
+    state = state.update({ changes: { from: 0, to: doc.length } }).state;
+    expect(state.doc.toString()).toBe("");
+  });
+
+  it("cpp() state allows insert at start", () => {
+    let state = EditorState.create({ doc: "int main() {}", extensions: [cpp()] });
+    state = state.update({ changes: { from: 0, insert: "#include <iostream>\n" } }).state;
+    expect(state.doc.line(1).text).toBe("#include <iostream>");
+  });
+
+  it("cppLanguage can parse namespace with using", () => {
+    const tree = cppLanguage.parser.parse("namespace myns { using std::string; void foo() {} }");
+    expect(tree.length).toBeGreaterThan(0);
+  });
 });

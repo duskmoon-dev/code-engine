@@ -343,5 +343,38 @@ describe("Angular language pack", () => {
       expect(state.doc.line(1).text).toBe("<h1>Title</h1>");
       expect(state.doc.line(2).text).toBe("<p>Body</p>");
     });
+
+    it("angularLanguage parser tree has correct length", () => {
+      const code = "<div *ngIf=\"show\">content</div>";
+      const tree = angularLanguage.parser.parse(code);
+      expect(tree.length).toBe(code.length);
+    });
+
+    it("angular() state allows 4 sequential transactions", () => {
+      let state = EditorState.create({ doc: "<p>a</p>", extensions: [angular()] });
+      state = state.update({ changes: { from: 8, insert: "<p>b</p>" } }).state;
+      state = state.update({ changes: { from: state.doc.length, insert: "<p>c</p>" } }).state;
+      state = state.update({ changes: { from: state.doc.length, insert: "<p>d</p>" } }).state;
+      expect(state.doc.toString()).toBe("<p>a</p><p>b</p><p>c</p><p>d</p>");
+    });
+
+    it("angular() state allows deletion of all content", () => {
+      const doc = "<p>Hello</p>";
+      let state = EditorState.create({ doc, extensions: [angular()] });
+      state = state.update({ changes: { from: 0, to: doc.length } }).state;
+      expect(state.doc.toString()).toBe("");
+    });
+
+    it("angular() state allows insert at start", () => {
+      let state = EditorState.create({ doc: "<p>body</p>", extensions: [angular()] });
+      state = state.update({ changes: { from: 0, insert: "<!-- header -->" } }).state;
+      expect(state.doc.toString()).toContain("<!-- header -->");
+    });
+
+    it("angular() extension preserves doc length invariant", () => {
+      const doc = "<ng-template #myRef><span>{{value}}</span></ng-template>";
+      const state = EditorState.create({ doc, extensions: [angular()] });
+      expect(state.doc.length).toBe(doc.length);
+    });
   });
 });

@@ -420,5 +420,44 @@ describe("Legacy language packs (batch 5)", () => {
       });
       expect(state.doc.lines).toBe(3);
     });
+
+    it("spreadsheet doc length is correct", () => {
+      const lang = StreamLanguage.define(spreadsheet);
+      const doc = "=SUM(A1:A10)\n=AVERAGE(B1:B10)";
+      const state = EditorState.create({ doc, extensions: [new LanguageSupport(lang)] });
+      expect(state.doc.length).toBe(doc.length);
+    });
+
+    it("idl doc mutation via transaction works", () => {
+      const lang = StreamLanguage.define(idl);
+      let state = EditorState.create({ doc: "PRO hello", extensions: [new LanguageSupport(lang)] });
+      state = state.update({ changes: { from: 9, insert: "\n  PRINT, 'Hello'\nEND" } }).state;
+      expect(state.doc.lines).toBe(3);
+    });
+
+    it("webIDL doc line text is accessible", () => {
+      const lang = StreamLanguage.define(webIDL);
+      const state = EditorState.create({
+        doc: "interface Node {\n  readonly attribute DOMString nodeType;\n};",
+        extensions: [new LanguageSupport(lang)],
+      });
+      expect(state.doc.line(1).text).toBe("interface Node {");
+    });
+
+    it("cypher doc replacement transaction works", () => {
+      const lang = StreamLanguage.define(cypher);
+      let state = EditorState.create({ doc: "MATCH (n:Foo) RETURN n", extensions: [new LanguageSupport(lang)] });
+      state = state.update({ changes: { from: 9, to: 12, insert: "Bar" } }).state;
+      expect(state.doc.toString()).toBe("MATCH (n:Bar) RETURN n");
+    });
+
+    it("pegjs doc line count is correct", () => {
+      const lang = StreamLanguage.define(pegjs);
+      const state = EditorState.create({
+        doc: "start = word+\nword = [a-zA-Z]+\n_ = [ \\t]*",
+        extensions: [new LanguageSupport(lang)],
+      });
+      expect(state.doc.lines).toBe(3);
+    });
   });
 });

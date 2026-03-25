@@ -297,4 +297,30 @@ describe("Tree behavioral", () => {
     const node = tree.resolveInner(2, 1);
     expect(node).toBeDefined();
   });
+
+  it("Tree instances have a length property", () => {
+    const code = "def foo(): pass";
+    const tree = pythonLanguage.parser.parse(code);
+    expect(typeof tree.length).toBe("number");
+    expect(tree.length).toBe(code.length);
+  });
+
+  it("NodeType has a define method", () => {
+    expect(typeof NodeType.define).toBe("function");
+  });
+
+  it("NodeProp.closedBy is defined", () => {
+    expect(NodeProp.closedBy).toBeDefined();
+  });
+
+  it("Tree.build is a function", () => {
+    expect(typeof Tree.build).toBe("function");
+  });
+
+  it("javascript tree iterate finds nodes", () => {
+    const tree = javascriptLanguage.parser.parse("const x = 1;");
+    let count = 0;
+    tree.iterate({ enter: () => { count++; } });
+    expect(count).toBeGreaterThan(1);
+  });
 });

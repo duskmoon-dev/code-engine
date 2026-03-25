@@ -306,4 +306,41 @@ describe("PHP language pack", () => {
     const state = EditorState.create({ doc, extensions: [php()] });
     expect(state.doc.toString()).toBe(doc);
   });
+
+  it("phpLanguage parser tree has correct length", () => {
+    const code = "<?php\necho 'hello world';";
+    const tree = phpLanguage.parser.parse(code);
+    expect(tree.length).toBe(code.length);
+  });
+
+  it("php() state allows 4 sequential transactions", () => {
+    let state = EditorState.create({ doc: "<?php", extensions: [php()] });
+    state = state.update({ changes: { from: 5, insert: "\n$a = 1;" } }).state;
+    state = state.update({ changes: { from: state.doc.length, insert: "\n$b = 2;" } }).state;
+    state = state.update({ changes: { from: state.doc.length, insert: "\n$c = 3;" } }).state;
+    expect(state.doc.lines).toBe(4);
+  });
+
+  it("php() state allows deletion of entire content", () => {
+    const doc = "<?php\necho 'hello';";
+    let state = EditorState.create({ doc, extensions: [php()] });
+    state = state.update({ changes: { from: 0, to: doc.length } }).state;
+    expect(state.doc.toString()).toBe("");
+  });
+
+  it("php() state allows insert at start", () => {
+    let state = EditorState.create({ doc: "echo 'hello';", extensions: [php()] });
+    state = state.update({ changes: { from: 0, insert: "<?php\n" } }).state;
+    expect(state.doc.line(1).text).toBe("<?php");
+  });
+
+  it("php() state selection can span lines", () => {
+    const state = EditorState.create({
+      doc: "<?php\n$x = 1;",
+      selection: { anchor: 0, head: 5 },
+      extensions: [php()],
+    });
+    expect(state.selection.main.from).toBe(0);
+    expect(state.selection.main.to).toBe(5);
+  });
 });

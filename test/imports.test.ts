@@ -285,4 +285,34 @@ describe("Import verification", () => {
     const mod = await import("../src/lang/lezer/index");
     expect(mod.lezerLanguage).toBeDefined();
   });
+
+  it("imports from lang/go have expected exports", async () => {
+    const mod = await import("../src/lang/go/index");
+    expect(mod.go).toBeDefined();
+    expect(mod.goLanguage).toBeDefined();
+  });
+
+  it("imports from lang/rust have expected exports", async () => {
+    const mod = await import("../src/lang/rust/index");
+    expect(mod.rust).toBeDefined();
+    expect(mod.rustLanguage).toBeDefined();
+  });
+
+  it("imports from lang/sql have expected exports", async () => {
+    const mod = await import("../src/lang/sql/index");
+    expect(mod.sql).toBeDefined();
+    expect(mod.StandardSQL).toBeDefined();
+  });
+
+  it("imports from lang/yaml have expected exports", async () => {
+    const mod = await import("../src/lang/yaml/index");
+    expect(mod.yaml).toBeDefined();
+    expect(mod.yamlLanguage).toBeDefined();
+  });
+
+  it("imports from lang/json have expected exports", async () => {
+    const mod = await import("../src/lang/json/index");
+    expect(mod.json).toBeDefined();
+    expect(mod.jsonParseLinter).toBeDefined();
+  });
 });

@@ -313,4 +313,37 @@ describe("Java language pack", () => {
     });
     expect(state.doc.lines).toBe(3);
   });
+
+  it("javaLanguage can parse generic class", () => {
+    const tree = javaLanguage.parser.parse("class Container<T> { private T value; public T get() { return value; } }");
+    expect(tree.length).toBeGreaterThan(0);
+    expect(tree.type.isTop).toBe(true);
+  });
+
+  it("java() state allows 4 sequential transactions", () => {
+    let state = EditorState.create({ doc: "int a = 1;", extensions: [java()] });
+    state = state.update({ changes: { from: 10, insert: "\nint b = 2;" } }).state;
+    state = state.update({ changes: { from: state.doc.length, insert: "\nint c = 3;" } }).state;
+    state = state.update({ changes: { from: state.doc.length, insert: "\nint d = 4;" } }).state;
+    expect(state.doc.lines).toBe(4);
+    expect(state.doc.line(4).text).toBe("int d = 4;");
+  });
+
+  it("java() state allows deletion of entire content", () => {
+    const doc = "class A {}\nclass B {}";
+    let state = EditorState.create({ doc, extensions: [java()] });
+    state = state.update({ changes: { from: 0, to: doc.length } }).state;
+    expect(state.doc.toString()).toBe("");
+  });
+
+  it("java() state allows insert at start", () => {
+    let state = EditorState.create({ doc: "public class Main {}", extensions: [java()] });
+    state = state.update({ changes: { from: 0, insert: "import java.util.*;\n" } }).state;
+    expect(state.doc.line(1).text).toBe("import java.util.*;");
+  });
+
+  it("javaLanguage can parse annotation", () => {
+    const tree = javaLanguage.parser.parse("@Override\npublic String toString() { return \"obj\"; }");
+    expect(tree.length).toBeGreaterThan(0);
+  });
 });

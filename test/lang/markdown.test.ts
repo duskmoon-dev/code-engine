@@ -299,4 +299,41 @@ describe("Markdown language pack", () => {
     const state = EditorState.create({ doc, extensions: [markdown()] });
     expect(state.doc.length).toBe(doc.length);
   });
+
+  it("markdownLanguage parser tree has correct length", () => {
+    const code = "# Title\n\nParagraph text here.";
+    const tree = markdownLanguage.parser.parse(code);
+    expect(tree.length).toBe(code.length);
+  });
+
+  it("markdown() state allows 4 sequential transactions", () => {
+    let state = EditorState.create({ doc: "# Title", extensions: [markdown()] });
+    state = state.update({ changes: { from: 7, insert: "\n\npara1" } }).state;
+    state = state.update({ changes: { from: state.doc.length, insert: "\n\npara2" } }).state;
+    state = state.update({ changes: { from: state.doc.length, insert: "\n\npara3" } }).state;
+    expect(state.doc.lines).toBe(7);
+  });
+
+  it("markdown() state allows deletion of entire content", () => {
+    const doc = "# Title\n\nParagraph.";
+    let state = EditorState.create({ doc, extensions: [markdown()] });
+    state = state.update({ changes: { from: 0, to: doc.length } }).state;
+    expect(state.doc.toString()).toBe("");
+  });
+
+  it("markdown() state allows insert at start", () => {
+    let state = EditorState.create({ doc: "# Body", extensions: [markdown()] });
+    state = state.update({ changes: { from: 0, insert: "---\ntitle: doc\n---\n\n" } }).state;
+    expect(state.doc.line(1).text).toBe("---");
+  });
+
+  it("markdown() state selection within single line", () => {
+    const state = EditorState.create({
+      doc: "# Hello World",
+      selection: { anchor: 2, head: 7 },
+      extensions: [markdown()],
+    });
+    expect(state.selection.main.from).toBe(2);
+    expect(state.selection.main.to).toBe(7);
+  });
 });

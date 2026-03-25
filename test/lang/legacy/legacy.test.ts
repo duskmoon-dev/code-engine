@@ -414,5 +414,44 @@ describe("Legacy language packs (StreamLanguage)", () => {
       });
       expect(state.doc.lines).toBe(3);
     });
+
+    it("coffeeScript doc length is correct", () => {
+      const lang = StreamLanguage.define(coffeeScript);
+      const doc = "square = (x) -> x * x\ncube = (x) -> x * x * x";
+      const state = EditorState.create({ doc, extensions: [new LanguageSupport(lang)] });
+      expect(state.doc.length).toBe(doc.length);
+    });
+
+    it("r doc mutation via transaction works", () => {
+      const lang = StreamLanguage.define(r);
+      let state = EditorState.create({ doc: "x <- 1", extensions: [new LanguageSupport(lang)] });
+      state = state.update({ changes: { from: 6, insert: "\ny <- 2" } }).state;
+      expect(state.doc.lines).toBe(2);
+    });
+
+    it("legacyPython doc line text is accessible", () => {
+      const lang = StreamLanguage.define(legacyPython);
+      const state = EditorState.create({
+        doc: "import os\nimport sys",
+        extensions: [new LanguageSupport(lang)],
+      });
+      expect(state.doc.line(1).text).toBe("import os");
+    });
+
+    it("toml doc replacement transaction works", () => {
+      const lang = StreamLanguage.define(toml);
+      let state = EditorState.create({ doc: "title = \"old\"", extensions: [new LanguageSupport(lang)] });
+      state = state.update({ changes: { from: 8, to: 13, insert: "\"new\"" } }).state;
+      expect(state.doc.toString()).toBe("title = \"new\"");
+    });
+
+    it("lua doc line count is correct", () => {
+      const lang = StreamLanguage.define(lua);
+      const state = EditorState.create({
+        doc: "local x = 1\nlocal y = 2\nlocal z = x + y",
+        extensions: [new LanguageSupport(lang)],
+      });
+      expect(state.doc.lines).toBe(3);
+    });
   });
 });
