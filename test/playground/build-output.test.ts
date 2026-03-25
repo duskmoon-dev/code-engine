@@ -324,7 +324,9 @@ describe('playground build output', () => {
     const html = readFileSync(join(distDir, 'playground/index.html'), 'utf-8')
     expect(html).toContain('load-error')
     expect(html).toContain('role="alert"')
-    expect(html).toContain('Failed to load language pack')
+    expect(html).toContain('Failed to load')
+    expect(html).toContain('failed-lang-name')
+    expect(html).toContain('btn-retry-lang')
   }))
 
   it('all pages have twitter card meta tags', requireBuild(() => {

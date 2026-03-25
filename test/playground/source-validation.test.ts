@@ -307,6 +307,41 @@ describe('playground source validation', () => {
       const editor = readComponent('EditorDemo.astro')
       expect(editor).toContain('requestIdleCallback')
     })
+
+    it('prioritizes URL hash language in prefetch order', () => {
+      const editor = readComponent('EditorDemo.astro')
+      expect(editor).toContain('initialLang')
+      expect(editor).toContain('prefetchOrder')
+      expect(editor).toContain('location.hash')
+    })
+  })
+
+  describe('EditorDemo error handling', () => {
+    it('shows failed language name in error message', () => {
+      const editor = readComponent('EditorDemo.astro')
+      expect(editor).toContain('failed-lang-name')
+      expect(editor).toContain('failedLangName')
+    })
+
+    it('has retry button for failed language loads', () => {
+      const editor = readComponent('EditorDemo.astro')
+      expect(editor).toContain('btn-retry-lang')
+      expect(editor).toContain('retryLangBtn')
+      expect(editor).toContain('lastFailedLang')
+    })
+
+    it('logs console warnings for localStorage failures', () => {
+      const editor = readComponent('EditorDemo.astro')
+      expect(editor).toContain("console.warn('localStorage unavailable:")
+      expect(editor).toContain("console.warn('Failed to save editor state:")
+      expect(editor).toContain("console.warn('Failed to restore editor state:")
+    })
+
+    it('shows URL size in KB when share URL is too large', () => {
+      const editor = readComponent('EditorDemo.astro')
+      expect(editor).toContain('sizeKB')
+      expect(editor).toContain('Too large')
+    })
   })
 
   describe('Changelog component', () => {
