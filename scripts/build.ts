@@ -56,8 +56,8 @@ const entrypoints = [
   "src/theme/one-dark.ts",
   "src/theme/duskmoon.ts",
   "src/setup.ts",
-  "src/keymaps/vim.ts",
-  "src/keymaps/emacs.ts",
+  "src/keymaps/vim/index.ts",
+  "src/keymaps/emacs/index.ts",
 ].map(p => join(ROOT, p));
 
 async function main() {
@@ -65,7 +65,7 @@ async function main() {
 
   // 1. Type check
   console.log("Step 1: Type checking...");
-  const tc = Bun.spawnSync(["npx", "tsc", "--noEmit"], { cwd: ROOT, stdout: "inherit", stderr: "inherit" });
+  const tc = Bun.spawnSync(["bunx", "tsc", "--noEmit"], { cwd: ROOT, stdout: "inherit", stderr: "inherit" });
   if (tc.exitCode !== 0) {
     console.error("Type check failed!");
     process.exit(1);
@@ -102,7 +102,7 @@ async function main() {
   // 4. Generate .d.ts files
   console.log("Step 4: Generating declaration files...");
   const dts = Bun.spawnSync(
-    ["npx", "tsc", "-p", "tsconfig.build.json"],
+    ["bunx", "tsc", "-p", "tsconfig.build.json"],
     { cwd: ROOT, stdout: "inherit", stderr: "inherit" }
   );
   if (dts.exitCode !== 0) {

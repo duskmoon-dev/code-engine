@@ -15,9 +15,9 @@ Last full sync: 2026-03-19
 | core/language-data | codemirror/language-data | c8125b6 | 2026-03-19 |
 | core/merge | codemirror/merge | 54b5a2c | 2026-03-19 |
 | core/lsp | codemirror/lsp-client | 6e98014 | 2026-03-19 |
-| parser/common | lezer/parser-common | d33ee03 | 2026-03-19 |
-| parser/lr | lezer/parser-lr | f81d6a2 | 2026-03-19 |
-| parser/highlight | lezer/parser-highlight | 37e3eef | 2026-03-19 |
+| parser/common | lezer-parser/common | d33ee03 | 2026-03-19 |
+| parser/lr | lezer-parser/lr | f81d6a2 | 2026-03-19 |
+| parser/highlight | lezer-parser/highlight | 37e3eef | 2026-03-19 |
 | lang/javascript | codemirror/lang-javascript | d9cd92f | 2026-03-19 |
 | lang/java | codemirror/lang-java | d45754d | 2026-03-19 |
 | lang/json | codemirror/lang-json | b30a469 | 2026-03-19 |
@@ -56,3 +56,5 @@ Last full sync: 2026-03-19
 | lang/lezer (parser) | lezer-parser/lezer | dc7a0da | 2026-03-19 |
 | lang/yaml (parser) | lezer-parser/yaml | 07f3230 | 2026-03-19 |
 | core/view/style-mod | marijnh/style-mod | b81da5f | 2026-03-19 |
+| keymaps/vim | replit/codemirror-vim | v6.3.0 | 2026-03-25 |
+| keymaps/emacs | replit/codemirror-emacs | v6.1.0 | 2026-03-25 |
