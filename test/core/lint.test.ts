@@ -253,6 +253,55 @@ describe("lintKeymap depth", () => {
   });
 });
 
+describe("lint module additional", () => {
+  it("diagnosticCount starts at 0 for fresh state", () => {
+    const state = EditorState.create({ doc: "hello" });
+    expect(diagnosticCount(state)).toBe(0);
+  });
+
+  it("linter() returns a defined extension", () => {
+    const ext = linter(() => []);
+    expect(ext).toBeDefined();
+  });
+
+  it("setDiagnostics with multiple diagnostics sets count correctly", () => {
+    let state = EditorState.create({ doc: "one two three" });
+    const spec = setDiagnostics(state, [
+      { from: 0, to: 3, severity: "error", message: "error1" },
+      { from: 4, to: 7, severity: "warning", message: "warn1" },
+      { from: 8, to: 13, severity: "info", message: "info1" },
+    ]);
+    state = state.update(spec).state;
+    expect(diagnosticCount(state)).toBe(3);
+  });
+
+  it("forEachDiagnostic iterates all severities", () => {
+    let state = EditorState.create({ doc: "abc" });
+    const spec = setDiagnostics(state, [
+      { from: 0, to: 1, severity: "error", message: "e" },
+      { from: 1, to: 2, severity: "warning", message: "w" },
+      { from: 2, to: 3, severity: "info", message: "i" },
+    ]);
+    state = state.update(spec).state;
+    const messages: string[] = [];
+    forEachDiagnostic(state, (d) => { messages.push(d.message); });
+    expect(messages).toContain("e");
+    expect(messages).toContain("w");
+    expect(messages).toContain("i");
+  });
+
+  it("setDiagnosticsEffect is a StateEffect type", () => {
+    expect(setDiagnosticsEffect).toBeDefined();
+    expect(typeof setDiagnosticsEffect.of).toBe("function");
+  });
+
+  it("lintKeymap entries have run property", () => {
+    for (const binding of lintKeymap) {
+      expect(typeof binding.run).toBe("function");
+    }
+  });
+});
+
 describe("diagnosticCount after clearing", () => {
   it("returns 0 after clearing diagnostics", () => {
     let state = EditorState.create({ doc: "test" });

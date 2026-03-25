@@ -249,4 +249,34 @@ describe("XML language pack", () => {
     tree.iterate({ enter: () => { nodeCount++; } });
     expect(nodeCount).toBeGreaterThan(5);
   });
+
+  it("xmlLanguage can parse XML declaration", () => {
+    const tree = xmlLanguage.parser.parse("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<root><item>content</item></root>");
+    expect(tree.length).toBeGreaterThan(0);
+  });
+
+  it("xmlLanguage can parse CDATA section", () => {
+    const tree = xmlLanguage.parser.parse("<root><data><![CDATA[<b>bold</b> & special chars]]></data></root>");
+    expect(tree.length).toBeGreaterThan(0);
+    expect(tree.type.isTop).toBe(true);
+  });
+
+  it("xmlLanguage can parse namespace declarations", () => {
+    const tree = xmlLanguage.parser.parse("<root xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\" xsi:noNamespaceSchemaLocation=\"schema.xsd\"><item/></root>");
+    expect(tree.length).toBeGreaterThan(0);
+  });
+
+  it("EditorState with xml() has correct doc line count", () => {
+    const state = EditorState.create({
+      doc: "<root>\n  <item>a</item>\n  <item>b</item>\n</root>",
+      extensions: [xml()],
+    });
+    expect(state.doc.lines).toBe(4);
+  });
+
+  it("xmlLanguage allows doc mutation via transaction", () => {
+    let state = EditorState.create({ doc: "<root/>", extensions: [xml()] });
+    state = state.update({ changes: { from: 5, to: 7, insert: "><child/></root>" } }).state;
+    expect(state.doc.toString()).toBe("<root><child/></root>");
+  });
 });

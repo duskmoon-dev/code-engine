@@ -261,3 +261,47 @@ describe("Collab extension", () => {
     });
   });
 });
+
+describe("collab extra behavioral tests", () => {
+  it("getSyncedVersion with startVersion:10 returns 10", () => {
+    const state = EditorState.create({ doc: "test", extensions: [collab({ startVersion: 10 })] });
+    expect(getSyncedVersion(state)).toBe(10);
+  });
+
+  it("collab() works with unicode document", () => {
+    const doc = "こんにちは世界";
+    const state = EditorState.create({ doc, extensions: [collab()] });
+    expect(state.doc.toString()).toBe(doc);
+  });
+
+  it("sendableUpdates returns array after deletion transaction", () => {
+    let state = EditorState.create({ doc: "hello world", extensions: [collab()] });
+    state = state.update({ changes: { from: 5, to: 11 } }).state;
+    const updates = sendableUpdates(state);
+    expect(Array.isArray(updates)).toBe(true);
+    expect(updates.length).toBeGreaterThan(0);
+  });
+
+  it("collab() with multi-line document works", () => {
+    const state = EditorState.create({
+      doc: "line1\nline2\nline3",
+      extensions: [collab()],
+    });
+    expect(state.doc.lines).toBe(3);
+    expect(getSyncedVersion(state)).toBe(0);
+  });
+
+  it("receiveUpdates returns transaction with state", () => {
+    const state = EditorState.create({ doc: "abc", extensions: [collab({ startVersion: 0 })] });
+    const tr = receiveUpdates(state, []);
+    expect(tr).toBeDefined();
+    expect(tr.state).toBeDefined();
+    expect(typeof tr.state.doc.length).toBe("number");
+  });
+
+  it("collab clientID is accessible after state update", () => {
+    let state = EditorState.create({ doc: "test", extensions: [collab({ clientID: "c1" })] });
+    state = state.update({ changes: { from: 4, insert: "!" } }).state;
+    expect(getClientID(state)).toBe("c1");
+  });
+});

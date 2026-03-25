@@ -205,4 +205,36 @@ describe("CSS language pack", () => {
     expect(tree.length).toBeGreaterThan(0);
     expect(tree.type.isTop).toBe(true);
   });
+
+  it("cssLanguage cursor traversal finds multiple nodes", () => {
+    const tree = cssLanguage.parser.parse("body { color: red; } h1 { font-size: 2em; }");
+    let count = 0;
+    tree.iterate({ enter: () => { count++; } });
+    expect(count).toBeGreaterThan(5);
+  });
+
+  it("cssLanguage can parse CSS custom property (variable)", () => {
+    const tree = cssLanguage.parser.parse(":root { --primary-color: #3498db; --font-size: 16px; }\n.btn { color: var(--primary-color); font-size: var(--font-size); }");
+    expect(tree.length).toBeGreaterThan(0);
+  });
+
+  it("cssLanguage can parse grid layout", () => {
+    const tree = cssLanguage.parser.parse(".grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; grid-template-areas: 'header header header' 'sidebar main main'; }");
+    expect(tree.length).toBeGreaterThan(0);
+    expect(tree.type.isTop).toBe(true);
+  });
+
+  it("EditorState with css() has correct doc line count", () => {
+    const state = EditorState.create({
+      doc: "body { margin: 0; }\n.app { display: flex; }\n.header { background: blue; }",
+      extensions: [css()],
+    });
+    expect(state.doc.lines).toBe(3);
+  });
+
+  it("cssLanguage allows doc mutation via transaction", () => {
+    let state = EditorState.create({ doc: "p { color: red; }", extensions: [css()] });
+    state = state.update({ changes: { from: 17, insert: "\nh1 { color: blue; }" } }).state;
+    expect(state.doc.lines).toBe(2);
+  });
 });

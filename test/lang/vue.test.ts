@@ -235,5 +235,37 @@ describe("Vue language pack", () => {
       expect(tree.length).toBeGreaterThan(0);
       expect(tree.type.isTop).toBe(true);
     });
+
+    it("vueLanguage cursor traversal finds multiple nodes", () => {
+      const tree = vueLanguage.parser.parse("<template><div><p>hello</p></div></template>");
+      let count = 0;
+      tree.iterate({ enter: () => { count++; } });
+      expect(count).toBeGreaterThan(3);
+    });
+
+    it("vueLanguage can parse style scoped block", () => {
+      const tree = vueLanguage.parser.parse("<style scoped>\n.btn { color: blue; padding: 8px 16px; border-radius: 4px; }\n</style>");
+      expect(tree.length).toBeGreaterThan(0);
+    });
+
+    it("vueLanguage can parse provide/inject pattern", () => {
+      const tree = vueLanguage.parser.parse("<script>\nexport default {\n  provide() {\n    return { theme: 'dark', locale: 'en-US' };\n  },\n  inject: ['theme', 'locale'],\n}\n</script>");
+      expect(tree.length).toBeGreaterThan(0);
+      expect(tree.type.isTop).toBe(true);
+    });
+
+    it("EditorState with vue() has correct doc line count", () => {
+      const state = EditorState.create({
+        doc: "<template>\n  <div>hello</div>\n</template>",
+        extensions: [vue()],
+      });
+      expect(state.doc.lines).toBe(3);
+    });
+
+    it("vueLanguage allows doc mutation via transaction", () => {
+      let state = EditorState.create({ doc: "<template><div/></template>", extensions: [vue()] });
+      state = state.update({ changes: { from: 27, insert: "\n<script>export default {};</script>" } }).state;
+      expect(state.doc.lines).toBe(2);
+    });
   });
 });

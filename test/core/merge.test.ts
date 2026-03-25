@@ -251,4 +251,40 @@ describe("diff behavioral tests", () => {
     expect(c.fromB).toBe(15);
     expect(c.toB).toBe(25);
   });
+
+  it("diff returns empty array for identical strings", () => {
+    const changes = diff("hello world", "hello world");
+    expect(changes.length).toBe(0);
+  });
+
+  it("diff detects single character change", () => {
+    const changes = diff("abc", "axc");
+    expect(changes.length).toBeGreaterThan(0);
+    expect(changes[0].fromA).toBe(1);
+    expect(changes[0].toA).toBe(2);
+  });
+
+  it("diff detects insertion at start", () => {
+    const changes = diff("world", "hello world");
+    expect(changes.length).toBeGreaterThan(0);
+  });
+
+  it("diff detects deletion at end", () => {
+    const changes = diff("hello world", "hello");
+    expect(changes.length).toBeGreaterThan(0);
+  });
+
+  it("presentableDiff returns array for different strings", () => {
+    const result = presentableDiff("abc", "xyz");
+    expect(Array.isArray(result)).toBe(true);
+    expect(result.length).toBeGreaterThan(0);
+  });
+
+  it("Change constructor with zero length range", () => {
+    const c = new Change(5, 5, 5, 8);
+    expect(c.fromA).toBe(5);
+    expect(c.toA).toBe(5);
+    expect(c.fromB).toBe(5);
+    expect(c.toB).toBe(8);
+  });
 });

@@ -214,4 +214,51 @@ describe("Setup extensions", () => {
       expect(EditorView).toBeDefined();
     });
   });
+
+  describe("setup extra behavioral", () => {
+    it("basicSetup allows unicode document", () => {
+      const doc = "こんにちは世界";
+      const state = EditorState.create({ doc, extensions: basicSetup });
+      expect(state.doc.toString()).toBe(doc);
+    });
+
+    it("minimalSetup allows unicode document", () => {
+      const doc = "مرحبا بالعالم";
+      const state = EditorState.create({ doc, extensions: minimalSetup });
+      expect(state.doc.toString()).toBe(doc);
+    });
+
+    it("basicSetup state doc line text is accessible", () => {
+      const state = EditorState.create({
+        doc: "hello\nworld",
+        extensions: basicSetup,
+      });
+      expect(state.doc.line(1).text).toBe("hello");
+      expect(state.doc.line(2).text).toBe("world");
+    });
+
+    it("minimalSetup state doc line text is accessible", () => {
+      const state = EditorState.create({
+        doc: "a\nb\nc",
+        extensions: minimalSetup,
+      });
+      expect(state.doc.line(3).text).toBe("c");
+    });
+
+    it("basicSetup allows selection spanning lines", () => {
+      const state = EditorState.create({
+        doc: "line1\nline2",
+        selection: { anchor: 0, head: 11 },
+        extensions: basicSetup,
+      });
+      expect(state.selection.main.from).toBe(0);
+      expect(state.selection.main.to).toBe(11);
+    });
+
+    it("minimalSetup allows insertion at middle of doc", () => {
+      let state = EditorState.create({ doc: "hello world", extensions: minimalSetup });
+      state = state.update({ changes: { from: 5, insert: "!" } }).state;
+      expect(state.doc.toString()).toBe("hello! world");
+    });
+  });
 });

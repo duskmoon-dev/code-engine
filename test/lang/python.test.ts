@@ -213,4 +213,35 @@ describe("Python language pack", () => {
     const tree = pythonLanguage.parser.parse("x = 0\ndef outer():\n    def inner():\n        nonlocal x\n        global y\n        x += 1");
     expect(tree.length).toBeGreaterThan(0);
   });
+
+  it("pythonLanguage can parse TypedDict", () => {
+    const tree = pythonLanguage.parser.parse("from typing import TypedDict\nclass Point(TypedDict):\n    x: float\n    y: float");
+    expect(tree.length).toBeGreaterThan(0);
+    expect(tree.type.isTop).toBe(true);
+  });
+
+  it("pythonLanguage can parse protocol class", () => {
+    const tree = pythonLanguage.parser.parse("from typing import Protocol, runtime_checkable\n@runtime_checkable\nclass Drawable(Protocol):\n    def draw(self) -> None: ...");
+    expect(tree.length).toBeGreaterThan(0);
+  });
+
+  it("pythonLanguage can parse abstract base class", () => {
+    const tree = pythonLanguage.parser.parse("from abc import ABC, abstractmethod\nclass Animal(ABC):\n    @abstractmethod\n    def speak(self) -> str: pass");
+    expect(tree.length).toBeGreaterThan(0);
+    expect(tree.type.isTop).toBe(true);
+  });
+
+  it("EditorState with python() has correct doc line count", () => {
+    const state = EditorState.create({
+      doc: "import os\nimport sys\nprint(sys.argv)\nprint(os.getcwd())",
+      extensions: [python()],
+    });
+    expect(state.doc.lines).toBe(4);
+  });
+
+  it("pythonLanguage allows doc mutation via transaction", () => {
+    let state = EditorState.create({ doc: "x = 1", extensions: [python()] });
+    state = state.update({ changes: { from: 5, insert: "\ny = 2" } }).state;
+    expect(state.doc.lines).toBe(2);
+  });
 });
