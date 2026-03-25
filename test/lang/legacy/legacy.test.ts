@@ -9,6 +9,12 @@ import { lua } from "../../../src/lang/legacy/lua";
 import { dockerFile as dockerfile } from "../../../src/lang/legacy/dockerfile";
 import { toml } from "../../../src/lang/legacy/toml";
 import { erlang } from "../../../src/lang/legacy/erlang";
+import { python as legacyPython } from "../../../src/lang/legacy/python";
+import { r } from "../../../src/lang/legacy/r";
+import { perl } from "../../../src/lang/legacy/perl";
+import { swift } from "../../../src/lang/legacy/swift";
+import { clojure } from "../../../src/lang/legacy/clojure";
+import { coffeeScript } from "../../../src/lang/legacy/coffeescript";
 
 describe("Legacy language packs (StreamLanguage)", () => {
   describe("StreamParser exports", () => {
@@ -40,6 +46,36 @@ describe("Legacy language packs (StreamLanguage)", () => {
     it("erlang is a StreamParser object", () => {
       expect(erlang).toBeDefined();
       expect(typeof erlang).toBe("object");
+    });
+
+    it("legacy python is a StreamParser object", () => {
+      expect(legacyPython).toBeDefined();
+      expect(typeof legacyPython).toBe("object");
+    });
+
+    it("r is a StreamParser object", () => {
+      expect(r).toBeDefined();
+      expect(typeof r).toBe("object");
+    });
+
+    it("perl is a StreamParser object", () => {
+      expect(perl).toBeDefined();
+      expect(typeof perl).toBe("object");
+    });
+
+    it("swift is a StreamParser object", () => {
+      expect(swift).toBeDefined();
+      expect(typeof swift).toBe("object");
+    });
+
+    it("clojure is a StreamParser object", () => {
+      expect(clojure).toBeDefined();
+      expect(typeof clojure).toBe("object");
+    });
+
+    it("coffeeScript is a StreamParser object", () => {
+      expect(coffeeScript).toBeDefined();
+      expect(typeof coffeeScript).toBe("object");
     });
   });
 
@@ -98,6 +134,33 @@ describe("Legacy language packs (StreamLanguage)", () => {
         extensions: [new LanguageSupport(lang)],
       });
       expect(state.doc.toString()).toContain("FROM node:18");
+    });
+
+    it("legacy python integrates with EditorState", () => {
+      const lang = StreamLanguage.define(legacyPython);
+      const state = EditorState.create({
+        doc: "def hello():\n    print('Hello')\nhello()",
+        extensions: [new LanguageSupport(lang)],
+      });
+      expect(state.doc.toString()).toContain("def hello");
+    });
+
+    it("r language integrates with EditorState", () => {
+      const lang = StreamLanguage.define(r);
+      const state = EditorState.create({
+        doc: "x <- c(1, 2, 3)\nprint(mean(x))",
+        extensions: [new LanguageSupport(lang)],
+      });
+      expect(state.doc.toString()).toContain("x <- c(1, 2, 3)");
+    });
+
+    it("swift language integrates with EditorState", () => {
+      const lang = StreamLanguage.define(swift);
+      const state = EditorState.create({
+        doc: "func greet(name: String) -> String {\n    return \"Hello, \\(name)!\"\n}",
+        extensions: [new LanguageSupport(lang)],
+      });
+      expect(state.doc.toString()).toContain("func greet");
     });
   });
 });
