@@ -35,6 +35,14 @@
       <input type="checkbox" id="ext-whitespace" aria-label="Toggle whitespace visibility">
       Whitespace
     </label>
+    <label for="tab-size">
+      Tab
+      <select id="tab-size" aria-label="Select tab size">
+        <option value="2" selected>2</option>
+        <option value="4">4</option>
+        <option value="8">8</option>
+      </select>
+    </label>
     <label class="checkbox">
       <input type="checkbox" id="ext-vim" aria-label="Toggle Vim keymap">
       Vim
@@ -44,6 +52,11 @@
       Emacs
     </label>
     <span class="spacer"></span>
+    <div class="font-size-controls" role="group" aria-label="Editor font size">
+      <button id="btn-font-decrease" class="toolbar-btn" aria-label="Decrease font size">A−</button>
+      <span id="font-size-display" class="font-size-display">14</span>
+      <button id="btn-font-increase" class="toolbar-btn" aria-label="Increase font size">A+</button>
+    </div>
     <button id="btn-download" class="toolbar-btn" aria-label="Download editor content">Download</button>
     <button id="btn-share" class="toolbar-btn" aria-label="Copy share link">Share</button>
     <button id="btn-reset" class="toolbar-btn" aria-label="Reset to defaults">Reset</button>
@@ -357,6 +370,8 @@ BinaryExpression { expression !add "+" expression }
   const languageCompartment = new Compartment()
   const themeCompartment = new Compartment()
   const extensionCompartment = new Compartment()
+  const fontSizeCompartment = new Compartment()
+  const tabSizeCompartment = new Compartment()
 
   const langSelect = document.getElementById('lang-select') as HTMLSelectElement
   const themeSelect = document.getElementById('theme-select') as HTMLSelectElement
@@ -365,8 +380,15 @@ BinaryExpression { expression !add "+" expression }
   const wordWrapCheckbox = document.getElementById('ext-wordwrap') as HTMLInputElement
   const readOnlyCheckbox = document.getElementById('ext-readonly') as HTMLInputElement
   const whitespaceCheckbox = document.getElementById('ext-whitespace') as HTMLInputElement
+  const tabSizeSelect = document.getElementById('tab-size') as HTMLSelectElement
   const vimCheckbox = document.getElementById('ext-vim') as HTMLInputElement
   const emacsCheckbox = document.getElementById('ext-emacs') as HTMLInputElement
+  const fontDecreaseBtn = document.getElementById('btn-font-decrease')!
+  const fontIncreaseBtn = document.getElementById('btn-font-increase')!
+  const fontSizeDisplay = document.getElementById('font-size-display')!
+  let currentFontSize = 14
+  const MIN_FONT_SIZE = 10
+  const MAX_FONT_SIZE = 28
 
   const languageLabels: Record<string, string> = {
     javascript: 'JavaScript',
@@ -459,6 +481,8 @@ BinaryExpression { expression !add "+" expression }
         languageCompartment.of(javascript()),
         themeCompartment.of(oneDark),
         extensionCompartment.of(getActiveExtensions()),
+        fontSizeCompartment.of(EditorView.theme({ '&': { fontSize: currentFontSize + 'px' } })),
+        tabSizeCompartment.of(EditorState.tabSize.of(2)),
         statusBarUpdater,
       ],
     }),
@@ -531,6 +555,19 @@ BinaryExpression { expression !add "+" expression }
     reconfigureExtensions()
   })
 
+  function updateFontSize(size: number) {
+    currentFontSize = Math.max(MIN_FONT_SIZE, Math.min(MAX_FONT_SIZE, size))
+    fontSizeDisplay.textContent = String(currentFontSize)
+    view.dispatch({ effects: fontSizeCompartment.reconfigure(EditorView.theme({ '&': { fontSize: currentFontSize + 'px' } })) })
+  }
+
+  fontDecreaseBtn.addEventListener('click', () => updateFontSize(currentFontSize - 2))
+  fontIncreaseBtn.addEventListener('click', () => updateFontSize(currentFontSize + 2))
+
+  tabSizeSelect.addEventListener('change', () => {
+    view.dispatch({ effects: tabSizeCompartment.reconfigure(EditorState.tabSize.of(Number(tabSizeSelect.value))) })
+  })
+
   // URL hash state: persist settings in the URL for shareability
   function serializeState(): string {
     const params = new URLSearchParams()
@@ -543,6 +580,8 @@ BinaryExpression { expression !add "+" expression }
     if (whitespaceCheckbox.checked) params.set('ws', '1')
     if (vimCheckbox.checked) params.set('vim', '1')
     if (emacsCheckbox.checked) params.set('emacs', '1')
+    if (currentFontSize !== 14) params.set('fs', String(currentFontSize))
+    if (tabSizeSelect.value !== '2') params.set('tab', tabSizeSelect.value)
     return params.toString()
   }
 
@@ -565,6 +604,13 @@ BinaryExpression { expression !add "+" expression }
     if (params.get('ws') === '1') whitespaceCheckbox.checked = true
     if (params.get('vim') === '1') { vimCheckbox.checked = true; emacsCheckbox.checked = false }
     if (params.get('emacs') === '1') { emacsCheckbox.checked = true; vimCheckbox.checked = false }
+    const fs = params.get('fs')
+    if (fs) updateFontSize(Number(fs))
+    const tab = params.get('tab')
+    if (tab && ['2', '4', '8'].includes(tab)) {
+      tabSizeSelect.value = tab
+      view.dispatch({ effects: tabSizeCompartment.reconfigure(EditorState.tabSize.of(Number(tab))) })
+    }
     reconfigureExtensions()
   }
 
@@ -582,6 +628,9 @@ BinaryExpression { expression !add "+" expression }
   whitespaceCheckbox.addEventListener('change', updateHash)
   vimCheckbox.addEventListener('change', updateHash)
   emacsCheckbox.addEventListener('change', updateHash)
+  fontDecreaseBtn.addEventListener('click', updateHash)
+  fontIncreaseBtn.addEventListener('click', updateHash)
+  tabSizeSelect.addEventListener('change', updateHash)
 
   // Share button — copy current URL with hash state
   const shareBtn = document.getElementById('btn-share')!
@@ -637,6 +686,9 @@ BinaryExpression { expression !add "+" expression }
     whitespaceCheckbox.checked = false
     vimCheckbox.checked = false
     emacsCheckbox.checked = false
+    tabSizeSelect.value = '2'
+    updateFontSize(14)
+    view.dispatch({ effects: tabSizeCompartment.reconfigure(EditorState.tabSize.of(2)) })
     switchLanguage('javascript')
     view.dispatch({ effects: themeCompartment.reconfigure(themes['one-dark']) })
     reconfigureExtensions()
@@ -762,6 +814,20 @@ BinaryExpression { expression !add "+" expression }
 
   .spacer {
     flex: 1;
+  }
+
+  .font-size-controls {
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+  }
+
+  .font-size-display {
+    font-size: 0.75rem;
+    font-family: var(--font-mono);
+    color: var(--color-text-muted);
+    min-width: 1.5em;
+    text-align: center;
   }
 
   .toolbar-btn {
