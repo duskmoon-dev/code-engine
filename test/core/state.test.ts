@@ -161,6 +161,73 @@ describe("EditorSelection", () => {
     expect(range.from).toBe(3);
     expect(range.to).toBe(8);
   });
+
+  it("inverted range has from < to regardless of anchor/head order", () => {
+    const range = EditorSelection.range(8, 3);
+    expect(range.anchor).toBe(8);
+    expect(range.head).toBe(3);
+    expect(range.from).toBe(3);
+    expect(range.to).toBe(8);
+  });
+
+  it("cursor has empty=true, range has empty=false", () => {
+    expect(EditorSelection.cursor(5).empty).toBe(true);
+    expect(EditorSelection.range(3, 8).empty).toBe(false);
+  });
+});
+
+describe("SelectionRange methods", () => {
+  it("eq returns true for identical ranges", () => {
+    const a = EditorSelection.range(0, 5);
+    const b = EditorSelection.range(0, 5);
+    expect(a.eq(b)).toBe(true);
+  });
+
+  it("eq returns false for different ranges", () => {
+    const a = EditorSelection.range(0, 5);
+    const b = EditorSelection.range(0, 6);
+    expect(a.eq(b)).toBe(false);
+  });
+
+  it("toJSON returns anchor and head", () => {
+    const range = EditorSelection.range(3, 8);
+    const json = range.toJSON();
+    expect(json.anchor).toBe(3);
+    expect(json.head).toBe(8);
+  });
+
+  it("fromJSON restores a range", () => {
+    const range = SelectionRange.fromJSON({ anchor: 3, head: 8 });
+    expect(range.anchor).toBe(3);
+    expect(range.head).toBe(8);
+  });
+
+  it("fromJSON throws on invalid input", () => {
+    expect(() => SelectionRange.fromJSON(null)).toThrow();
+    expect(() => SelectionRange.fromJSON({})).toThrow();
+    expect(() => SelectionRange.fromJSON({ anchor: "x", head: 0 })).toThrow();
+  });
+
+  it("toJSON/fromJSON round-trips a range", () => {
+    const original = EditorSelection.range(10, 20);
+    const restored = SelectionRange.fromJSON(original.toJSON());
+    expect(original.eq(restored)).toBe(true);
+  });
+
+  it("extend covers from/to when they span anchor", () => {
+    const range = EditorSelection.cursor(5);
+    const extended = range.extend(2, 8);
+    expect(extended.from).toBe(2);
+    expect(extended.to).toBe(8);
+  });
+
+  it("map through empty change returns same range", () => {
+    const range = EditorSelection.range(3, 8);
+    const change = ChangeSet.of([], 10);
+    const mapped = range.map(change);
+    expect(mapped.from).toBe(3);
+    expect(mapped.to).toBe(8);
+  });
 });
 
 describe("Transaction", () => {
@@ -586,6 +653,123 @@ describe("EditorSelection multi-range", () => {
       EditorSelection.cursor(0),
     ]);
     expect(sel.ranges[0].from).toBeLessThanOrEqual(sel.ranges[1].from);
+  });
+
+  it("eq returns true for identical selections", () => {
+    const a = EditorSelection.create([EditorSelection.range(0, 5), EditorSelection.range(10, 15)], 0);
+    const b = EditorSelection.create([EditorSelection.range(0, 5), EditorSelection.range(10, 15)], 0);
+    expect(a.eq(b)).toBe(true);
+  });
+
+  it("eq returns false for different ranges", () => {
+    const a = EditorSelection.create([EditorSelection.range(0, 5)]);
+    const b = EditorSelection.create([EditorSelection.range(0, 6)]);
+    expect(a.eq(b)).toBe(false);
+  });
+
+  it("eq returns false for different mainIndex", () => {
+    const ranges = [EditorSelection.range(0, 5), EditorSelection.range(10, 15)];
+    const a = EditorSelection.create(ranges, 0);
+    const b = EditorSelection.create(ranges, 1);
+    expect(a.eq(b)).toBe(false);
+  });
+
+  it("eq returns false for different range count", () => {
+    const a = EditorSelection.create([EditorSelection.cursor(0)]);
+    const b = EditorSelection.create([EditorSelection.cursor(0), EditorSelection.cursor(5)]);
+    expect(a.eq(b)).toBe(false);
+  });
+
+  it("asSingle returns single-range selection from multi-range", () => {
+    const sel = EditorSelection.create([
+      EditorSelection.cursor(0),
+      EditorSelection.cursor(5),
+      EditorSelection.cursor(10),
+    ], 1);
+    const single = sel.asSingle();
+    expect(single.ranges.length).toBe(1);
+    expect(single.main.anchor).toBe(5);
+  });
+
+  it("asSingle returns self when already single", () => {
+    const sel = EditorSelection.single(3);
+    expect(sel.asSingle()).toBe(sel);
+  });
+
+  it("addRange appends a range and sets it as main", () => {
+    const sel = EditorSelection.single(0);
+    const extended = sel.addRange(EditorSelection.cursor(10));
+    expect(extended.ranges.length).toBe(2);
+    expect(extended.main.anchor).toBe(10);
+  });
+
+  it("addRange with main=false preserves original main", () => {
+    const sel = EditorSelection.single(0);
+    const extended = sel.addRange(EditorSelection.cursor(10), false);
+    expect(extended.ranges.length).toBe(2);
+    expect(extended.main.anchor).toBe(0);
+  });
+
+  it("replaceRange replaces the main range", () => {
+    const sel = EditorSelection.create([
+      EditorSelection.range(0, 5),
+      EditorSelection.range(10, 15),
+    ], 0);
+    const replaced = sel.replaceRange(EditorSelection.range(0, 3));
+    expect(replaced.ranges.length).toBe(2);
+    expect(replaced.main.to).toBe(3);
+  });
+
+  it("replaceRange replaces a specific range by index", () => {
+    const sel = EditorSelection.create([
+      EditorSelection.cursor(0),
+      EditorSelection.cursor(10),
+    ], 0);
+    const replaced = sel.replaceRange(EditorSelection.cursor(20), 1);
+    expect(replaced.ranges[1].anchor).toBe(20);
+    expect(replaced.mainIndex).toBe(0);
+  });
+
+  it("toJSON serializes ranges and mainIndex", () => {
+    const sel = EditorSelection.create([
+      EditorSelection.range(0, 5),
+      EditorSelection.range(10, 15),
+    ], 1);
+    const json = sel.toJSON();
+    expect(json.main).toBe(1);
+    expect(json.ranges.length).toBe(2);
+    expect(json.ranges[0].anchor).toBe(0);
+    expect(json.ranges[0].head).toBe(5);
+    expect(json.ranges[1].anchor).toBe(10);
+    expect(json.ranges[1].head).toBe(15);
+  });
+
+  it("fromJSON restores a selection from JSON", () => {
+    const json = {
+      ranges: [{ anchor: 0, head: 5 }, { anchor: 10, head: 15 }],
+      main: 1,
+    };
+    const sel = EditorSelection.fromJSON(json);
+    expect(sel.ranges.length).toBe(2);
+    expect(sel.mainIndex).toBe(1);
+    expect(sel.main.anchor).toBe(10);
+    expect(sel.main.head).toBe(15);
+  });
+
+  it("toJSON/fromJSON round-trips correctly", () => {
+    const original = EditorSelection.create([
+      EditorSelection.range(3, 8),
+      EditorSelection.cursor(20),
+    ], 1);
+    const restored = EditorSelection.fromJSON(original.toJSON());
+    expect(original.eq(restored)).toBe(true);
+  });
+
+  it("fromJSON throws on invalid input", () => {
+    expect(() => EditorSelection.fromJSON(null)).toThrow();
+    expect(() => EditorSelection.fromJSON({})).toThrow();
+    expect(() => EditorSelection.fromJSON({ ranges: [], main: 0 })).toThrow();
+    expect(() => EditorSelection.fromJSON({ ranges: [{ anchor: 0, head: 5 }], main: 5 })).toThrow();
   });
 });
 

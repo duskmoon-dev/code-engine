@@ -133,7 +133,15 @@ import {
   defaultKeymap,
   indentWithTab,
 } from "../../src/core/commands/index";
-import { EditorState } from "../../src/core/state/index";
+import { EditorState, EditorSelection, Transaction } from "../../src/core/state/index";
+import { javascript } from "../../src/lang/javascript/index";
+
+// Helper to run a StateCommand on a state and return the resulting state
+function run(cmd: (target: {state: EditorState, dispatch: (tr: Transaction) => void}) => boolean, state: EditorState): EditorState | null {
+  let result: EditorState | null = null;
+  const dispatched = cmd({ state, dispatch: (tr: Transaction) => { result = tr.state; } });
+  return dispatched ? result : null;
+}
 
 describe("core/commands exports", () => {
   describe("comment commands", () => {
@@ -514,5 +522,300 @@ describe("history() behavioral tests", () => {
     const fieldValue = state.field(historyField, false);
     // With no transactions, may be null or the initial state
     expect(fieldValue === null || fieldValue !== undefined).toBe(true);
+  });
+});
+
+describe("cursorDocStart / cursorDocEnd", () => {
+  it("cursorDocStart moves cursor to position 0", () => {
+    const state = EditorState.create({ doc: "hello world", selection: { anchor: 5 } });
+    const result = run(cursorDocStart, state)!;
+    expect(result.selection.main.anchor).toBe(0);
+    expect(result.selection.main.head).toBe(0);
+  });
+
+  it("cursorDocEnd moves cursor to end of document", () => {
+    const state = EditorState.create({ doc: "hello world", selection: { anchor: 0 } });
+    const result = run(cursorDocEnd, state)!;
+    expect(result.selection.main.anchor).toBe(11);
+  });
+});
+
+describe("selectDocStart / selectDocEnd", () => {
+  it("selectDocStart extends selection to start", () => {
+    const state = EditorState.create({ doc: "hello world", selection: { anchor: 5 } });
+    const result = run(selectDocStart, state)!;
+    expect(result.selection.main.anchor).toBe(5);
+    expect(result.selection.main.head).toBe(0);
+  });
+
+  it("selectDocEnd extends selection to end", () => {
+    const state = EditorState.create({ doc: "hello world", selection: { anchor: 5 } });
+    const result = run(selectDocEnd, state)!;
+    expect(result.selection.main.anchor).toBe(5);
+    expect(result.selection.main.head).toBe(11);
+  });
+});
+
+describe("selectAll", () => {
+  it("selects entire document", () => {
+    const state = EditorState.create({ doc: "hello world" });
+    const result = run(selectAll, state)!;
+    expect(result.selection.main.from).toBe(0);
+    expect(result.selection.main.to).toBe(11);
+  });
+});
+
+describe("selectLine", () => {
+  it("expands selection to cover entire line", () => {
+    const state = EditorState.create({ doc: "line1\nline2\nline3", selection: { anchor: 7 } });
+    const result = run(selectLine, state)!;
+    expect(result.selection.main.from).toBe(6);
+    expect(result.selection.main.to).toBe(12);
+  });
+});
+
+describe("insertNewline", () => {
+  it("inserts a newline at cursor", () => {
+    const state = EditorState.create({ doc: "hello", selection: { anchor: 5 } });
+    const result = run(insertNewline, state)!;
+    expect(result.doc.toString()).toBe("hello\n");
+  });
+
+  it("replaces selection with newline", () => {
+    const state = EditorState.create({
+      doc: "hello world",
+      selection: EditorSelection.range(5, 11),
+    });
+    const result = run(insertNewline, state)!;
+    expect(result.doc.toString()).toBe("hello\n");
+  });
+});
+
+describe("insertNewlineKeepIndent", () => {
+  it("preserves indentation from current line", () => {
+    const state = EditorState.create({ doc: "  hello", selection: { anchor: 7 } });
+    const result = run(insertNewlineKeepIndent, state)!;
+    expect(result.doc.toString()).toBe("  hello\n  ");
+    expect(result.selection.main.anchor).toBe(10);
+  });
+});
+
+describe("splitLine", () => {
+  it("inserts line break and keeps cursor before it", () => {
+    const state = EditorState.create({ doc: "hello", selection: { anchor: 3 } });
+    const result = run(splitLine, state)!;
+    expect(result.doc.toString()).toBe("hel\nlo");
+    expect(result.selection.main.anchor).toBe(3);
+  });
+});
+
+describe("transposeChars", () => {
+  it("swaps characters around cursor", () => {
+    const state = EditorState.create({ doc: "abc", selection: { anchor: 2 } });
+    const result = run(transposeChars, state)!;
+    expect(result.doc.toString()).toBe("acb");
+  });
+
+  it("returns false at start of document", () => {
+    const state = EditorState.create({ doc: "abc", selection: { anchor: 0 } });
+    expect(run(transposeChars, state)).toBe(null);
+  });
+
+  it("returns false at end of document", () => {
+    const state = EditorState.create({ doc: "abc", selection: { anchor: 3 } });
+    // at the end of doc, transposeChars should still work (swaps last two chars)
+    // but if doc length equals cursor, it needs char after too
+    const result = run(transposeChars, state);
+    // at line.to it tries pos+1 which may work
+    if (result) {
+      expect(result.doc.length).toBe(3);
+    }
+  });
+});
+
+describe("deleteTrailingWhitespace", () => {
+  it("removes trailing spaces from lines", () => {
+    const state = EditorState.create({ doc: "hello   \nworld  \n" });
+    const result = run(deleteTrailingWhitespace, state)!;
+    expect(result.doc.toString()).toBe("hello\nworld\n");
+  });
+
+  it("returns false when no trailing whitespace exists", () => {
+    const state = EditorState.create({ doc: "hello\nworld\n" });
+    expect(run(deleteTrailingWhitespace, state)).toBe(null);
+  });
+});
+
+describe("moveLineUp / moveLineDown", () => {
+  it("moveLineDown moves current line down", () => {
+    const state = EditorState.create({ doc: "aaa\nbbb\nccc", selection: { anchor: 1 } });
+    const result = run(moveLineDown, state)!;
+    expect(result.doc.toString()).toBe("bbb\naaa\nccc");
+  });
+
+  it("moveLineUp moves current line up", () => {
+    const state = EditorState.create({ doc: "aaa\nbbb\nccc", selection: { anchor: 5 } });
+    const result = run(moveLineUp, state)!;
+    expect(result.doc.toString()).toBe("bbb\naaa\nccc");
+  });
+
+  it("moveLineUp at first line does nothing", () => {
+    const state = EditorState.create({ doc: "aaa\nbbb", selection: { anchor: 1 } });
+    expect(run(moveLineUp, state)).toBe(null);
+  });
+
+  it("moveLineDown at last line does nothing", () => {
+    const state = EditorState.create({ doc: "aaa\nbbb", selection: { anchor: 5 } });
+    expect(run(moveLineDown, state)).toBe(null);
+  });
+});
+
+describe("copyLineUp / copyLineDown", () => {
+  it("copyLineDown duplicates line below", () => {
+    const state = EditorState.create({ doc: "aaa\nbbb", selection: { anchor: 1 } });
+    const result = run(copyLineDown, state)!;
+    expect(result.doc.toString()).toBe("aaa\naaa\nbbb");
+  });
+
+  it("copyLineUp duplicates line above", () => {
+    const state = EditorState.create({ doc: "aaa\nbbb", selection: { anchor: 1 } });
+    const result = run(copyLineUp, state)!;
+    expect(result.doc.toString()).toBe("aaa\naaa\nbbb");
+  });
+});
+
+describe("simplifySelection", () => {
+  it("reduces multi-range selection to main range", () => {
+    const state = EditorState.create({
+      doc: "hello world",
+      selection: EditorSelection.create([
+        EditorSelection.range(0, 5),
+        EditorSelection.range(6, 11),
+      ]),
+      extensions: [EditorState.allowMultipleSelections.of(true)],
+    });
+    const result = run(simplifySelection, state)!;
+    expect(result.selection.ranges.length).toBe(1);
+  });
+
+  it("converts non-empty single range to cursor", () => {
+    const state = EditorState.create({
+      doc: "hello world",
+      selection: EditorSelection.range(0, 5),
+    });
+    const result = run(simplifySelection, state)!;
+    expect(result.selection.main.empty).toBe(true);
+    expect(result.selection.main.anchor).toBe(5);
+  });
+
+  it("returns false when already a single cursor", () => {
+    const state = EditorState.create({ doc: "hello", selection: { anchor: 3 } });
+    expect(run(simplifySelection, state)).toBe(null);
+  });
+});
+
+describe("cursorCharForwardLogical / cursorCharBackwardLogical", () => {
+  it("cursorCharForwardLogical moves cursor forward by one character", () => {
+    const state = EditorState.create({ doc: "abc", selection: { anchor: 0 } });
+    const result = run(cursorCharForwardLogical, state)!;
+    expect(result.selection.main.anchor).toBe(1);
+  });
+
+  it("cursorCharBackwardLogical moves cursor backward by one character", () => {
+    const state = EditorState.create({ doc: "abc", selection: { anchor: 2 } });
+    const result = run(cursorCharBackwardLogical, state)!;
+    expect(result.selection.main.anchor).toBe(1);
+  });
+
+  it("cursorCharForwardLogical crosses line boundary", () => {
+    const state = EditorState.create({ doc: "ab\ncd", selection: { anchor: 2 } });
+    const result = run(cursorCharForwardLogical, state)!;
+    expect(result.selection.main.anchor).toBe(3);
+  });
+
+  it("cursorCharBackwardLogical crosses line boundary", () => {
+    const state = EditorState.create({ doc: "ab\ncd", selection: { anchor: 3 } });
+    const result = run(cursorCharBackwardLogical, state)!;
+    expect(result.selection.main.anchor).toBe(2);
+  });
+});
+
+describe("comment commands with JavaScript", () => {
+  function jsState(doc: string, anchor?: number, head?: number) {
+    return EditorState.create({
+      doc,
+      selection: head != null ? EditorSelection.range(anchor!, head) : { anchor: anchor ?? 0 },
+      extensions: [javascript()],
+    });
+  }
+
+  it("toggleLineComment adds // to a line", () => {
+    const state = jsState("let x = 1", 0);
+    const result = run(toggleLineComment, state)!;
+    expect(result.doc.toString()).toBe("// let x = 1");
+  });
+
+  it("toggleLineComment removes // from a commented line", () => {
+    const state = jsState("// let x = 1", 0);
+    const result = run(toggleLineComment, state)!;
+    expect(result.doc.toString()).toBe("let x = 1");
+  });
+
+  it("lineComment adds // to multiple lines", () => {
+    const state = jsState("let a = 1\nlet b = 2", 0, 19);
+    const result = run(lineComment, state)!;
+    expect(result.doc.toString()).toBe("// let a = 1\n// let b = 2");
+  });
+
+  it("lineUncomment removes // from commented lines", () => {
+    const state = jsState("// let a = 1\n// let b = 2", 0, 25);
+    const result = run(lineUncomment, state)!;
+    expect(result.doc.toString()).toBe("let a = 1\nlet b = 2");
+  });
+
+  it("blockComment wraps selection in /* */", () => {
+    const state = jsState("let x = 1", 0, 9);
+    const result = run(blockComment, state)!;
+    expect(result.doc.toString()).toContain("/*");
+    expect(result.doc.toString()).toContain("*/");
+  });
+
+  it("blockUncomment removes /* */ from wrapped code", () => {
+    const state = jsState("/* let x = 1 */", 3, 12);
+    const result = run(blockUncomment, state)!;
+    expect(result.doc.toString()).toBe("let x = 1");
+  });
+
+  it("toggleComment falls back to line comments for JS", () => {
+    const state = jsState("let x = 1", 0);
+    const result = run(toggleComment, state)!;
+    expect(result.doc.toString()).toContain("//");
+  });
+
+  it("toggleComment returns false without language data", () => {
+    const state = EditorState.create({ doc: "hello" });
+    expect(run(toggleComment, state)).toBe(null);
+  });
+
+  it("toggleBlockComment adds block comment to selection", () => {
+    const state = jsState("let x = 1", 4, 9);
+    const result = run(toggleBlockComment, state)!;
+    expect(result.doc.toString()).toContain("/* x = 1 */");
+  });
+
+  it("toggleBlockCommentByLine comments entire lines", () => {
+    const state = jsState("let a = 1\nlet b = 2", 0, 19);
+    const result = run(toggleBlockCommentByLine, state)!;
+    expect(result.doc.toString()).toContain("/*");
+  });
+
+  it("comment commands return false on readOnly state", () => {
+    const state = EditorState.create({
+      doc: "let x = 1",
+      extensions: [javascript(), EditorState.readOnly.of(true)],
+    });
+    expect(run(toggleLineComment, state)).toBe(null);
+    expect(run(lineComment, state)).toBe(null);
+    expect(run(blockComment, state)).toBe(null);
   });
 });

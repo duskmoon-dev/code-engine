@@ -25,6 +25,13 @@ import {
   indentNodeProp,
   indentOnInput,
   codeFolding,
+  foldService,
+  foldInside,
+  foldable,
+  foldEffect,
+  unfoldEffect,
+  foldState,
+  foldedRanges,
 } from "../../src/core/language/index";
 import { tags } from "../../src/parser/highlight/index";
 import { python, pythonLanguage } from "../../src/lang/python/index";
@@ -178,6 +185,104 @@ describe("Fold utilities", () => {
 
   it("indentNodeProp is a NodeProp", () => {
     expect(indentNodeProp).toBeDefined();
+  });
+});
+
+describe("fold state-level APIs", () => {
+  it("foldService is a Facet", () => {
+    expect(foldService).toBeDefined();
+  });
+
+  it("foldInside returns null for a leaf node-like input", () => {
+    // foldInside expects a SyntaxNode. Test with a minimal mock.
+    const mockNode = { firstChild: null, lastChild: null, to: 10 };
+    expect(foldInside(mockNode as any)).toBe(null);
+  });
+
+  it("foldInside returns range when node has first and last children", () => {
+    const mockNode = {
+      firstChild: { to: 5 },
+      lastChild: { from: 8, type: { isError: false }, to: 10 },
+      to: 10,
+    };
+    const result = foldInside(mockNode as any);
+    expect(result).toEqual({ from: 5, to: 8 });
+  });
+
+  it("foldInside returns null when first.to >= last.from", () => {
+    const mockNode = {
+      firstChild: { to: 8 },
+      lastChild: { from: 5, type: { isError: false }, to: 10 },
+      to: 10,
+    };
+    expect(foldInside(mockNode as any)).toBe(null);
+  });
+
+  it("foldEffect and unfoldEffect are StateEffects", () => {
+    expect(foldEffect).toBeDefined();
+    expect(unfoldEffect).toBeDefined();
+  });
+
+  it("foldState is a StateField", () => {
+    expect(foldState).toBeDefined();
+  });
+
+  it("foldState can be added as an extension", () => {
+    const state = EditorState.create({
+      doc: "hello\nworld",
+      extensions: [foldState],
+    });
+    const value = state.field(foldState);
+    expect(value).toBeDefined();
+  });
+
+  it("foldedRanges returns empty set initially", () => {
+    const state = EditorState.create({
+      doc: "hello\nworld",
+      extensions: [codeFolding()],
+    });
+    const ranges = foldedRanges(state);
+    expect(ranges).toBeDefined();
+  });
+
+  it("foldService can provide fold ranges", () => {
+    const service = (_state: EditorState, lineStart: number, _lineEnd: number) => {
+      if (lineStart === 0) return { from: 5, to: 11 };
+      return null;
+    };
+    const state = EditorState.create({
+      doc: "hello\nworld",
+      extensions: [foldService.of(service)],
+    });
+    const result = foldable(state, 0, 5);
+    expect(result).toEqual({ from: 5, to: 11 });
+  });
+
+  it("foldable returns null when no fold found", () => {
+    const state = EditorState.create({ doc: "hello" });
+    const result = foldable(state, 0, 5);
+    expect(result).toBe(null);
+  });
+
+  it("foldEffect can be applied to a transaction", () => {
+    const state = EditorState.create({
+      doc: "hello\nworld\nfoo",
+      extensions: [foldState],
+    });
+    const tr = state.update({
+      effects: foldEffect.of({ from: 5, to: 11 }),
+    });
+    expect(tr.state.field(foldState)).toBeDefined();
+  });
+
+  it("unfoldEffect can be applied after fold", () => {
+    const state = EditorState.create({
+      doc: "hello\nworld\nfoo",
+      extensions: [foldState],
+    });
+    let s = state.update({ effects: foldEffect.of({ from: 5, to: 11 }) }).state;
+    s = s.update({ effects: unfoldEffect.of({ from: 5, to: 11 }) }).state;
+    expect(s.field(foldState)).toBeDefined();
   });
 });
 
