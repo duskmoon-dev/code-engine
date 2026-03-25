@@ -237,4 +237,35 @@ describe("Rust language pack", () => {
     state = state.update({ changes: { from: 12, insert: "\nfn helper() {}" } }).state;
     expect(state.doc.lines).toBe(2);
   });
+
+  it("rust() state doc line text is accessible", () => {
+    const state = EditorState.create({
+      doc: "fn main() {}\nfn helper() {}",
+      extensions: [rust()],
+    });
+    expect(state.doc.line(1).text).toBe("fn main() {}");
+  });
+
+  it("rust() state allows multiple sequential transactions", () => {
+    let state = EditorState.create({ doc: "fn main() {}", extensions: [rust()] });
+    state = state.update({ changes: { from: 12, insert: "\nfn foo() {}" } }).state;
+    state = state.update({ changes: { from: state.doc.length, insert: "\nfn bar() {}" } }).state;
+    expect(state.doc.lines).toBe(3);
+  });
+
+  it("rust() extension handles replacement transaction", () => {
+    let state = EditorState.create({ doc: "let x: i32 = 1;", extensions: [rust()] });
+    state = state.update({ changes: { from: 4, to: 5, insert: "y" } }).state;
+    expect(state.doc.toString()).toBe("let y: i32 = 1;");
+  });
+
+  it("rust() state selection can span lines", () => {
+    const state = EditorState.create({
+      doc: "fn main() {}\nfn helper() {}",
+      selection: { anchor: 0, head: 12 },
+      extensions: [rust()],
+    });
+    expect(state.selection.main.from).toBe(0);
+    expect(state.selection.main.to).toBe(12);
+  });
 });

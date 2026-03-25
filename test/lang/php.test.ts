@@ -223,4 +223,31 @@ describe("PHP language pack", () => {
     });
     expect(state.doc.lines).toBe(5);
   });
+
+  it("php() state doc line text is accessible", () => {
+    const state = EditorState.create({
+      doc: "<?php\necho 'Hello';\n?>",
+      extensions: [php()],
+    });
+    expect(state.doc.line(2).text).toBe("echo 'Hello';");
+  });
+
+  it("php() state allows multiple sequential transactions", () => {
+    let state = EditorState.create({ doc: "<?php $x = 1;", extensions: [php()] });
+    state = state.update({ changes: { from: 13, insert: "\n$y = 2;" } }).state;
+    state = state.update({ changes: { from: state.doc.length, insert: "\n$z = 3;" } }).state;
+    expect(state.doc.lines).toBe(3);
+  });
+
+  it("php() extension handles replacement transaction", () => {
+    let state = EditorState.create({ doc: "<?php $x = 1;", extensions: [php()] });
+    state = state.update({ changes: { from: 6, to: 8, insert: "$y" } }).state;
+    expect(state.doc.toString()).toBe("<?php $y = 1;");
+  });
+
+  it("php() extension preserves doc length invariant", () => {
+    const doc = "<?php echo 'Hello'; ?>";
+    const state = EditorState.create({ doc, extensions: [php()] });
+    expect(state.doc.length).toBe(doc.length);
+  });
 });

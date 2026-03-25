@@ -247,4 +247,31 @@ describe("Go language pack", () => {
     });
     expect(state.doc.lines).toBe(5);
   });
+
+  it("go() state doc line text is accessible", () => {
+    const state = EditorState.create({
+      doc: "package main\nfunc main() {}",
+      extensions: [go()],
+    });
+    expect(state.doc.line(1).text).toBe("package main");
+  });
+
+  it("go() state allows multiple sequential transactions", () => {
+    let state = EditorState.create({ doc: "package main", extensions: [go()] });
+    state = state.update({ changes: { from: 12, insert: "\nimport \"fmt\"" } }).state;
+    state = state.update({ changes: { from: state.doc.length, insert: "\nfunc main() {}" } }).state;
+    expect(state.doc.lines).toBe(3);
+  });
+
+  it("go() extension handles replacement transaction", () => {
+    let state = EditorState.create({ doc: "var x int = 1", extensions: [go()] });
+    state = state.update({ changes: { from: 4, to: 5, insert: "y" } }).state;
+    expect(state.doc.toString()).toBe("var y int = 1");
+  });
+
+  it("go() extension preserves doc length invariant", () => {
+    const doc = "package main";
+    const state = EditorState.create({ doc, extensions: [go()] });
+    expect(state.doc.length).toBe(doc.length);
+  });
 });

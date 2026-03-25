@@ -270,5 +270,34 @@ describe("WAST language pack", () => {
       state = state.update({ changes: { from: 7, insert: " (func)" } }).state;
       expect(state.doc.toString()).toBe("(module (func))");
     });
+
+    it("wast() state doc line count is correct", () => {
+      const state = EditorState.create({
+        doc: "(module\n  (func (result i32)\n    i32.const 42))",
+        extensions: [wast()],
+      });
+      expect(state.doc.lines).toBe(3);
+    });
+
+    it("wast() state doc line text is accessible", () => {
+      const state = EditorState.create({
+        doc: "(module)\n(assert_return (invoke \"main\") (i32.const 42))",
+        extensions: [wast()],
+      });
+      expect(state.doc.line(1).text).toBe("(module)");
+    });
+
+    it("wast() state allows multiple sequential transactions", () => {
+      let state = EditorState.create({ doc: "(module)", extensions: [wast()] });
+      state = state.update({ changes: { from: 8, insert: "\n(module (func))" } }).state;
+      state = state.update({ changes: { from: state.doc.length, insert: "\n(module (memory 1))" } }).state;
+      expect(state.doc.lines).toBe(3);
+    });
+
+    it("wast() extension handles replacement transaction", () => {
+      let state = EditorState.create({ doc: "(module (memory 1))", extensions: [wast()] });
+      state = state.update({ changes: { from: 8, to: 18, insert: "(func)" } }).state;
+      expect(state.doc.toString()).toBe("(module (func))");
+    });
   });
 });

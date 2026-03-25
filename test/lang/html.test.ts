@@ -245,4 +245,39 @@ describe("HTML language pack", () => {
     tree.iterate({ enter: () => { count++; } });
     expect(count).toBeGreaterThan(5);
   });
+
+  it("html() state doc line count is correct", () => {
+    const state = EditorState.create({
+      doc: "<!DOCTYPE html>\n<html>\n<head></head>\n<body></body>\n</html>",
+      extensions: [html()],
+    });
+    expect(state.doc.lines).toBe(5);
+  });
+
+  it("html() state doc line text is accessible", () => {
+    const state = EditorState.create({
+      doc: "<!DOCTYPE html>\n<html lang=\"en\">",
+      extensions: [html()],
+    });
+    expect(state.doc.line(1).text).toBe("<!DOCTYPE html>");
+  });
+
+  it("html() state allows multiple sequential transactions", () => {
+    let state = EditorState.create({ doc: "<div></div>", extensions: [html()] });
+    state = state.update({ changes: { from: 11, insert: "\n<p></p>" } }).state;
+    state = state.update({ changes: { from: state.doc.length, insert: "\n<span></span>" } }).state;
+    expect(state.doc.lines).toBe(3);
+  });
+
+  it("html() extension handles replacement transaction", () => {
+    let state = EditorState.create({ doc: "<h1>Title</h1>", extensions: [html()] });
+    state = state.update({ changes: { from: 1, to: 3, insert: "h2" } }).state;
+    expect(state.doc.toString()).toBe("<h2>Title</h1>");
+  });
+
+  it("html() extension preserves doc length invariant", () => {
+    const doc = "<html><body>hello</body></html>";
+    const state = EditorState.create({ doc, extensions: [html()] });
+    expect(state.doc.length).toBe(doc.length);
+  });
 });

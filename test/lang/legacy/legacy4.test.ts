@@ -323,5 +323,49 @@ describe("Legacy language packs (batch 4)", () => {
       });
       expect(state.doc.toString()).toContain("Section Title");
     });
+
+    it("verilog integrates with EditorState more complex", () => {
+      const lang = StreamLanguage.define(verilog);
+      const state = EditorState.create({
+        doc: "module alu(input [7:0] a, b, input [2:0] op, output reg [7:0] result);\nalways @(*) begin\n  case (op)\n    3'b000: result = a + b;\n    3'b001: result = a - b;\n    default: result = 8'h00;\n  endcase\nend\nendmodule",
+        extensions: [new LanguageSupport(lang)],
+      });
+      expect(state.doc.toString()).toContain("module alu");
+    });
+
+    it("solr integrates with EditorState", () => {
+      const lang = StreamLanguage.define(solr);
+      const state = EditorState.create({
+        doc: "title:\"hello world\" AND (author:alice OR author:bob) NOT deleted:true",
+        extensions: [new LanguageSupport(lang)],
+      });
+      expect(state.doc.toString()).toContain("title:");
+    });
+
+    it("apl doc line count is correct", () => {
+      const lang = StreamLanguage.define(apl);
+      const state = EditorState.create({
+        doc: "sum ← +/⍳10\nproduct ← ×/1+⍳5\nfactorial ← !/⍳10",
+        extensions: [new LanguageSupport(lang)],
+      });
+      expect(state.doc.lines).toBe(3);
+    });
+
+    it("stex doc mutation via transaction works", () => {
+      const lang = StreamLanguage.define(stex);
+      let state = EditorState.create({
+        doc: "\\documentclass{article}",
+        extensions: [new LanguageSupport(lang)],
+      });
+      state = state.update({ changes: { from: 22, insert: "\n\\begin{document}" } }).state;
+      expect(state.doc.lines).toBe(2);
+    });
+
+    it("pig doc length is correct", () => {
+      const lang = StreamLanguage.define(pig);
+      const doc = "A = LOAD 'data.txt';";
+      const state = EditorState.create({ doc, extensions: [new LanguageSupport(lang)] });
+      expect(state.doc.length).toBe(doc.length);
+    });
   });
 });

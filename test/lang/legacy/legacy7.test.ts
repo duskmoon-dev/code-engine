@@ -314,5 +314,48 @@ describe("Legacy language packs (batch 7)", () => {
       do { count++; } while (cursor.next() && count < 50);
       expect(count).toBeGreaterThan(0);
     });
+
+    it("scala doc line count is correct", () => {
+      const lang = StreamLanguage.define(scala);
+      const state = EditorState.create({
+        doc: "object App extends App {\n  val x = 1\n  println(x)\n}",
+        extensions: [new LanguageSupport(lang)],
+      });
+      expect(state.doc.lines).toBe(4);
+    });
+
+    it("haxe integrates with EditorState", () => {
+      const lang = StreamLanguage.define(haxe);
+      const state = EditorState.create({
+        doc: "class Main { static function main() { trace(\"Hello, World!\"); } }",
+        extensions: [new LanguageSupport(lang)],
+      });
+      expect(state.doc.toString()).toContain("trace");
+    });
+
+    it("vbScript integrates with EditorState", () => {
+      const lang = StreamLanguage.define(vbScript);
+      const state = EditorState.create({
+        doc: "Dim x\nx = 42\nMsgBox \"Value: \" & x",
+        extensions: [new LanguageSupport(lang)],
+      });
+      expect(state.doc.toString()).toContain("MsgBox");
+    });
+
+    it("d integrates with EditorState", () => {
+      const lang = StreamLanguage.define(d);
+      const state = EditorState.create({
+        doc: "import std.stdio;\nvoid main() {\n  writeln(\"Hello, World!\");\n}",
+        extensions: [new LanguageSupport(lang)],
+      });
+      expect(state.doc.toString()).toContain("writeln");
+    });
+
+    it("stylus doc length is correct", () => {
+      const lang = StreamLanguage.define(stylus);
+      const doc = "body\n  color red\n  font-size 16px";
+      const state = EditorState.create({ doc, extensions: [new LanguageSupport(lang)] });
+      expect(state.doc.length).toBe(doc.length);
+    });
   });
 });

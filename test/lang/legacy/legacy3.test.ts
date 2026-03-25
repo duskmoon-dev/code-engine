@@ -330,5 +330,51 @@ describe("Legacy language packs (batch 3)", () => {
       });
       expect(state.doc.length).toBe(doc.length);
     });
+
+    it("vhdl integrates with EditorState", () => {
+      const lang = StreamLanguage.define(vhdl);
+      const state = EditorState.create({
+        doc: "entity counter is\n  port(clk : in bit; count : out integer);\nend entity counter;",
+        extensions: [new LanguageSupport(lang)],
+      });
+      expect(state.doc.toString()).toContain("entity counter");
+    });
+
+    it("sas integrates with EditorState", () => {
+      const lang = StreamLanguage.define(sas);
+      const state = EditorState.create({
+        doc: "data mydata;\n  set sashelp.class;\n  where age > 12;\nrun;",
+        extensions: [new LanguageSupport(lang)],
+      });
+      expect(state.doc.toString()).toContain("data mydata");
+    });
+
+    it("pug integrates with EditorState", () => {
+      const lang = StreamLanguage.define(pug);
+      const state = EditorState.create({
+        doc: "doctype html\nhtml(lang='en')\n  head\n    title Hello\n  body\n    h1 Hello World",
+        extensions: [new LanguageSupport(lang)],
+      });
+      expect(state.doc.toString()).toContain("doctype html");
+    });
+
+    it("gherkin doc line count is correct", () => {
+      const lang = StreamLanguage.define(gherkin);
+      const state = EditorState.create({
+        doc: "Feature: Login\n  Scenario: Success\n    Given I am on login page\n    When I enter credentials\n    Then I am logged in",
+        extensions: [new LanguageSupport(lang)],
+      });
+      expect(state.doc.lines).toBe(5);
+    });
+
+    it("diff doc mutation via transaction works", () => {
+      const lang = StreamLanguage.define(diff);
+      let state = EditorState.create({
+        doc: "--- a.txt",
+        extensions: [new LanguageSupport(lang)],
+      });
+      state = state.update({ changes: { from: 9, insert: "\n+++ b.txt" } }).state;
+      expect(state.doc.lines).toBe(2);
+    });
   });
 });

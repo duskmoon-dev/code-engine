@@ -274,5 +274,35 @@ describe("theme/duskmoon", () => {
       state = state.update({ changes: { from: 0, insert: "hello " } }).state;
       expect(state.doc.toString()).toBe("hello world");
     });
+
+    it("duskMoon allows deletion of entire content", () => {
+      let state = EditorState.create({ doc: "delete me", extensions: [duskMoon()] });
+      state = state.update({ changes: { from: 0, to: 9 } }).state;
+      expect(state.doc.toString()).toBe("");
+    });
+
+    it("duskMoon({ dark: true }) state doc line text is accessible", () => {
+      const state = EditorState.create({
+        doc: "hello\nworld",
+        extensions: [duskMoon({ dark: true })],
+      });
+      expect(state.doc.line(2).text).toBe("world");
+    });
+
+    it("duskMoon selection can span lines", () => {
+      const state = EditorState.create({
+        doc: "line1\nline2",
+        selection: { anchor: 0, head: 11 },
+        extensions: [duskMoon()],
+      });
+      expect(state.selection.main.from).toBe(0);
+      expect(state.selection.main.to).toBe(11);
+    });
+
+    it("duskMoon extension preserves doc length invariant", () => {
+      const doc = "test content";
+      const state = EditorState.create({ doc, extensions: [duskMoon()] });
+      expect(state.doc.length).toBe(doc.length);
+    });
   });
 });

@@ -257,5 +257,34 @@ describe("Angular language pack", () => {
       expect(tree.length).toBeGreaterThan(0);
       expect(tree.type.isTop).toBe(true);
     });
+
+    it("EditorState with angular() has correct doc line count", () => {
+      const state = EditorState.create({
+        doc: "<div>\n  <span>{{ title }}</span>\n  <p>{{ body }}</p>\n</div>",
+        extensions: [angular()],
+      });
+      expect(state.doc.lines).toBe(4);
+    });
+
+    it("angular() state doc line text is accessible", () => {
+      const state = EditorState.create({
+        doc: "<app-root></app-root>\n<router-outlet></router-outlet>",
+        extensions: [angular()],
+      });
+      expect(state.doc.line(1).text).toBe("<app-root></app-root>");
+    });
+
+    it("angular() state allows multiple sequential transactions", () => {
+      let state = EditorState.create({ doc: "<div></div>", extensions: [angular()] });
+      state = state.update({ changes: { from: 11, insert: "\n<span></span>" } }).state;
+      state = state.update({ changes: { from: state.doc.length, insert: "\n<p></p>" } }).state;
+      expect(state.doc.lines).toBe(3);
+    });
+
+    it("angular() extension preserves doc length invariant", () => {
+      const doc = "<app-root></app-root>";
+      const state = EditorState.create({ doc, extensions: [angular()] });
+      expect(state.doc.length).toBe(doc.length);
+    });
   });
 });
