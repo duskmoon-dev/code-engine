@@ -363,5 +363,39 @@ describe("Jinja language pack", () => {
       state = state.update({ changes: { from: 3, to: 6, insert: "new" } }).state;
       expect(state.doc.toString()).toBe("{{ new }}");
     });
+
+    it("jinja() state doc line text is accessible", () => {
+      const state = EditorState.create({
+        doc: "{% if user %}\n  Hello, {{ user.name }}!\n{% endif %}",
+        extensions: [jinja()],
+      });
+      expect(state.doc.line(1).text).toBe("{% if user %}");
+      expect(state.doc.line(3).text).toBe("{% endif %}");
+    });
+
+    it("jinja() state allows multiple sequential transactions", () => {
+      let state = EditorState.create({ doc: "{{ title }}", extensions: [jinja()] });
+      state = state.update({ changes: { from: 11, insert: "\n{{ body }}" } }).state;
+      state = state.update({ changes: { from: state.doc.length, insert: "\n{{ footer }}" } }).state;
+      expect(state.doc.lines).toBe(3);
+    });
+
+    it("jinja() extension preserves doc length invariant", () => {
+      const doc = "{% for item in items %}{{ item }}{% endfor %}";
+      const state = EditorState.create({ doc, extensions: [jinja()] });
+      expect(state.doc.length).toBe(doc.length);
+    });
+
+    it("jinja() state deletion transaction works", () => {
+      let state = EditorState.create({ doc: "{{ title }}\n{{ body }}", extensions: [jinja()] });
+      state = state.update({ changes: { from: 11, to: 22 } }).state;
+      expect(state.doc.toString()).toBe("{{ title }}");
+    });
+
+    it("jinja() state with unicode content works", () => {
+      const doc = "{# こんにちは #}\n{{ greeting }}";
+      const state = EditorState.create({ doc, extensions: [jinja()] });
+      expect(state.doc.toString()).toBe(doc);
+    });
   });
 });

@@ -294,4 +294,38 @@ describe("CSS language pack", () => {
     });
     expect(state.doc.lines).toBe(3);
   });
+
+  it("css() state doc line text is accessible (2nd line)", () => {
+    const state = EditorState.create({
+      doc: "body { margin: 0; }\n.container { padding: 20px; }",
+      extensions: [css()],
+    });
+    expect(state.doc.line(2).text).toBe(".container { padding: 20px; }");
+  });
+
+  it("css() state allows insert at position 0", () => {
+    let state = EditorState.create({ doc: ".box {}", extensions: [css()] });
+    state = state.update({ changes: { from: 0, insert: "/* header */\n" } }).state;
+    expect(state.doc.line(1).text).toBe("/* header */");
+  });
+
+  it("css() state deletion of entire second line works", () => {
+    let state = EditorState.create({ doc: "p {}\nh1 {}", extensions: [css()] });
+    state = state.update({ changes: { from: 4, to: 10 } }).state;
+    expect(state.doc.toString()).toBe("p {}");
+  });
+
+  it("css() state allows 4 sequential transactions", () => {
+    let state = EditorState.create({ doc: "", extensions: [css()] });
+    for (let i = 0; i < 4; i++) {
+      state = state.update({ changes: { from: state.doc.length, insert: (i > 0 ? "\n" : "") + `.c${i} {}` } }).state;
+    }
+    expect(state.doc.lines).toBe(4);
+  });
+
+  it("css() cssLanguage parser tree has correct length", () => {
+    const code = "body { color: red; font-size: 16px; }";
+    const tree = cssLanguage.parser.parse(code);
+    expect(tree.length).toBe(code.length);
+  });
 });

@@ -303,4 +303,38 @@ describe("Python language pack", () => {
     });
     expect(state.doc.lines).toBe(3);
   });
+
+  it("pythonLanguage parser tree has correct length", () => {
+    const code = "def greet(name):\n    return f'Hello, {name}!'";
+    const tree = pythonLanguage.parser.parse(code);
+    expect(tree.length).toBe(code.length);
+  });
+
+  it("python() state allows insert at start", () => {
+    let state = EditorState.create({ doc: "x = 1", extensions: [python()] });
+    state = state.update({ changes: { from: 0, insert: "# header\n" } }).state;
+    expect(state.doc.line(1).text).toBe("# header");
+  });
+
+  it("python() state allows 4 sequential transactions", () => {
+    let state = EditorState.create({ doc: "", extensions: [python()] });
+    for (let i = 0; i < 4; i++) {
+      state = state.update({ changes: { from: state.doc.length, insert: (i > 0 ? "\n" : "") + `x${i} = ${i}` } }).state;
+    }
+    expect(state.doc.lines).toBe(4);
+  });
+
+  it("python() state line(4) text is accessible", () => {
+    const state = EditorState.create({
+      doc: "a = 1\nb = 2\nc = 3\nd = 4",
+      extensions: [python()],
+    });
+    expect(state.doc.line(4).text).toBe("d = 4");
+  });
+
+  it("python() state allows deletion of entire content", () => {
+    let state = EditorState.create({ doc: "x = 1\ny = 2", extensions: [python()] });
+    state = state.update({ changes: { from: 0, to: 11 } }).state;
+    expect(state.doc.toString()).toBe("");
+  });
 });

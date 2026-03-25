@@ -311,4 +311,41 @@ describe("HTML language pack", () => {
     expect(state.selection.main.from).toBe(0);
     expect(state.selection.main.to).toBe(5);
   });
+
+  it("html() state doc line count is correct", () => {
+    const state = EditorState.create({
+      doc: "<html>\n<head></head>\n<body></body>\n</html>",
+      extensions: [html()],
+    });
+    expect(state.doc.lines).toBe(4);
+  });
+
+  it("htmlLanguage parser tree has correct length", () => {
+    const code = "<div class=\"box\"><p>Hello</p></div>";
+    const tree = htmlLanguage.parser.parse(code);
+    expect(tree.length).toBe(code.length);
+  });
+
+  it("html() state allows insert at position 0", () => {
+    let state = EditorState.create({ doc: "<p>body</p>", extensions: [html()] });
+    state = state.update({ changes: { from: 0, insert: "<!DOCTYPE html>\n" } }).state;
+    expect(state.doc.line(1).text).toBe("<!DOCTYPE html>");
+  });
+
+  it("html() state allows 4 sequential transactions", () => {
+    let state = EditorState.create({ doc: "<html>", extensions: [html()] });
+    state = state.update({ changes: { from: 6, insert: "<body>" } }).state;
+    state = state.update({ changes: { from: state.doc.length, insert: "<p/>" } }).state;
+    state = state.update({ changes: { from: state.doc.length, insert: "</body>" } }).state;
+    state = state.update({ changes: { from: state.doc.length, insert: "</html>" } }).state;
+    expect(state.doc.toString()).toBe("<html><body><p/></body></html>");
+  });
+
+  it("html() state doc line(3) text is accessible", () => {
+    const state = EditorState.create({
+      doc: "<html>\n<body>\n<p>hello</p>\n</body>\n</html>",
+      extensions: [html()],
+    });
+    expect(state.doc.line(3).text).toBe("<p>hello</p>");
+  });
 });

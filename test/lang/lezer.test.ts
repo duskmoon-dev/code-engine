@@ -331,5 +331,39 @@ describe("Lezer language pack", () => {
       });
       expect(state.doc.lines).toBe(3);
     });
+
+    it("lezerLanguage parser tree has correct length", () => {
+      const code = "@top P { e* }\n@tokens { Num { @digit+ } }";
+      const tree = lezerLanguage.parser.parse(code);
+      expect(tree.length).toBe(code.length);
+    });
+
+    it("lezer() state allows insert at start", () => {
+      let state = EditorState.create({ doc: "@top P { e* }", extensions: [lezer()] });
+      state = state.update({ changes: { from: 0, insert: "// grammar\n" } }).state;
+      expect(state.doc.line(1).text).toBe("// grammar");
+    });
+
+    it("lezer() state allows 4 sequential transactions", () => {
+      let state = EditorState.create({ doc: "@top P { e* }", extensions: [lezer()] });
+      state = state.update({ changes: { from: 13, insert: "\n@tokens {" } }).state;
+      state = state.update({ changes: { from: state.doc.length, insert: "\n  Num { @digit+ }" } }).state;
+      state = state.update({ changes: { from: state.doc.length, insert: "\n}" } }).state;
+      expect(state.doc.lines).toBe(4);
+    });
+
+    it("lezer() state doc line(2) text is accessible", () => {
+      const state = EditorState.create({
+        doc: "@top P { e* }\n@tokens { Num { @digit+ } }\ne { Num }",
+        extensions: [lezer()],
+      });
+      expect(state.doc.line(2).text).toBe("@tokens { Num { @digit+ } }");
+    });
+
+    it("lezer() state allows deletion of all content", () => {
+      let state = EditorState.create({ doc: "@top P { e* }", extensions: [lezer()] });
+      state = state.update({ changes: { from: 0, to: 13 } }).state;
+      expect(state.doc.toString()).toBe("");
+    });
   });
 });

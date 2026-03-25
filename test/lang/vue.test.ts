@@ -325,5 +325,41 @@ describe("Vue language pack", () => {
       });
       expect(state.doc.lines).toBe(3);
     });
+
+    it("vue() state doc line text accessible for line 3", () => {
+      const state = EditorState.create({
+        doc: "<template>\n  <p>Hello</p>\n</template>",
+        extensions: [vue()],
+      });
+      expect(state.doc.line(3).text).toBe("</template>");
+    });
+
+    it("vue() state allows insert at start of document", () => {
+      let state = EditorState.create({ doc: "<template/>", extensions: [vue()] });
+      state = state.update({ changes: { from: 0, insert: "<!-- vue -->\n" } }).state;
+      expect(state.doc.line(1).text).toBe("<!-- vue -->");
+    });
+
+    it("vue() state allows 4 sequential transactions", () => {
+      let state = EditorState.create({ doc: "<template>", extensions: [vue()] });
+      state = state.update({ changes: { from: 10, insert: "<div>" } }).state;
+      state = state.update({ changes: { from: state.doc.length, insert: "<p/>" } }).state;
+      state = state.update({ changes: { from: state.doc.length, insert: "</div>" } }).state;
+      state = state.update({ changes: { from: state.doc.length, insert: "</template>" } }).state;
+      expect(state.doc.toString()).toBe("<template><div><p/></div></template>");
+    });
+
+    it("vue() state deletion of all content works", () => {
+      const doc = "<template><div/></template>";
+      let state = EditorState.create({ doc, extensions: [vue()] });
+      state = state.update({ changes: { from: 0, to: doc.length } }).state;
+      expect(state.doc.toString()).toBe("");
+    });
+
+    it("vueLanguage parser tree has correct length", () => {
+      const code = "<template><span>Hi</span></template>";
+      const tree = vueLanguage.parser.parse(code);
+      expect(tree.length).toBe(code.length);
+    });
   });
 });

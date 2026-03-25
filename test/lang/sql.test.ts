@@ -291,4 +291,39 @@ describe("SQL language pack", () => {
     state = state.update({ changes: { from: 7, to: 8, insert: "id, name" } }).state;
     expect(state.doc.toString()).toContain("id, name");
   });
+
+  it("sql() state doc line text is accessible", () => {
+    const state = EditorState.create({
+      doc: "SELECT id\nFROM users\nWHERE active = 1",
+      extensions: [sql()],
+    });
+    expect(state.doc.line(1).text).toBe("SELECT id");
+    expect(state.doc.line(3).text).toBe("WHERE active = 1");
+  });
+
+  it("sql() state deletion transaction works", () => {
+    let state = EditorState.create({ doc: "SELECT id\nFROM users", extensions: [sql()] });
+    state = state.update({ changes: { from: 9, to: 20 } }).state;
+    expect(state.doc.toString()).toBe("SELECT id");
+  });
+
+  it("sql() state allows multiple sequential transactions", () => {
+    let state = EditorState.create({ doc: "SELECT *", extensions: [sql()] });
+    state = state.update({ changes: { from: 8, insert: "\nFROM users" } }).state;
+    state = state.update({ changes: { from: state.doc.length, insert: "\nWHERE id = 1" } }).state;
+    expect(state.doc.lines).toBe(3);
+    expect(state.doc.line(2).text).toBe("FROM users");
+  });
+
+  it("sql() state with unicode content works", () => {
+    const doc = "-- こんにちは\nSELECT 1;";
+    const state = EditorState.create({ doc, extensions: [sql()] });
+    expect(state.doc.toString()).toBe(doc);
+  });
+
+  it("sql() StandardSQL parser tree has correct length", () => {
+    const code = "SELECT id, name FROM users;";
+    const tree = StandardSQL.language.parser.parse(code);
+    expect(tree.length).toBe(code.length);
+  });
 });

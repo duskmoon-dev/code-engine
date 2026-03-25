@@ -337,4 +337,38 @@ describe("XML language pack", () => {
     });
     expect(state.doc.lines).toBe(4);
   });
+
+  it("xmlLanguage parser tree has correct length", () => {
+    const code = "<root><child attr=\"val\">text</child></root>";
+    const tree = xmlLanguage.parser.parse(code);
+    expect(tree.length).toBe(code.length);
+  });
+
+  it("xml() state allows insert at start of document", () => {
+    let state = EditorState.create({ doc: "<root/>", extensions: [xml()] });
+    state = state.update({ changes: { from: 0, insert: "<?xml version=\"1.0\"?>\n" } }).state;
+    expect(state.doc.line(1).text).toBe("<?xml version=\"1.0\"?>");
+  });
+
+  it("xml() state allows 4 sequential transactions", () => {
+    let state = EditorState.create({ doc: "<root>", extensions: [xml()] });
+    state = state.update({ changes: { from: 6, insert: "<a/>" } }).state;
+    state = state.update({ changes: { from: state.doc.length, insert: "<b/>" } }).state;
+    state = state.update({ changes: { from: state.doc.length, insert: "<c/>" } }).state;
+    state = state.update({ changes: { from: state.doc.length, insert: "</root>" } }).state;
+    expect(state.doc.toString()).toBe("<root><a/><b/><c/></root>");
+  });
+
+  it("xml() state deletion of all content works", () => {
+    const doc = "<root><child/></root>";
+    let state = EditorState.create({ doc, extensions: [xml()] });
+    state = state.update({ changes: { from: 0, to: doc.length } }).state;
+    expect(state.doc.toString()).toBe("");
+  });
+
+  it("xml() state line(2) text accessible after transaction", () => {
+    let state = EditorState.create({ doc: "<root>", extensions: [xml()] });
+    state = state.update({ changes: { from: 6, insert: "\n  <child/>\n</root>" } }).state;
+    expect(state.doc.line(2).text).toBe("  <child/>");
+  });
 });

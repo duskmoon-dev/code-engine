@@ -317,5 +317,42 @@ describe("Emacs keymap", () => {
       });
       expect(state.doc.lines).toBe(5);
     });
+
+    it("emacs() allows multiple sequential transactions building doc correctly", () => {
+      let state = EditorState.create({ doc: "x = 1", extensions: [emacs()] });
+      state = state.update({ changes: { from: 5, insert: "\ny = 2" } }).state;
+      state = state.update({ changes: { from: state.doc.length, insert: "\nz = 3" } }).state;
+      expect(state.doc.lines).toBe(3);
+      expect(state.doc.line(2).text).toBe("y = 2");
+    });
+
+    it("emacs() state selection within last line", () => {
+      const state = EditorState.create({
+        doc: "hello\nworld\nfoo",
+        selection: { anchor: 12, head: 15 },
+        extensions: [emacs()],
+      });
+      expect(state.selection.main.from).toBe(12);
+      expect(state.selection.main.to).toBe(15);
+    });
+
+    it("emacs() state allows insert at position 0", () => {
+      let state = EditorState.create({ doc: "world", extensions: [emacs()] });
+      state = state.update({ changes: { from: 0, insert: "hello " } }).state;
+      expect(state.doc.toString()).toBe("hello world");
+    });
+
+    it("emacs() state line(n).text correct after transactions", () => {
+      let state = EditorState.create({ doc: "a", extensions: [emacs()] });
+      state = state.update({ changes: { from: 1, insert: "\nb" } }).state;
+      state = state.update({ changes: { from: state.doc.length, insert: "\nc" } }).state;
+      expect(state.doc.line(3).text).toBe("c");
+    });
+
+    it("emacs() state allows deletion of all content", () => {
+      let state = EditorState.create({ doc: "delete me", extensions: [emacs()] });
+      state = state.update({ changes: { from: 0, to: 9 } }).state;
+      expect(state.doc.toString()).toBe("");
+    });
   });
 });
