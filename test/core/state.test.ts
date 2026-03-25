@@ -1049,3 +1049,84 @@ describe("charCategorizer and wordAt", () => {
     expect(range!.to).toBe(11);
   });
 });
+
+describe("EditorState.toJSON / fromJSON", () => {
+  it("toJSON serializes doc and selection", () => {
+    const state = EditorState.create({ doc: "hello", selection: { anchor: 3 } });
+    const json = state.toJSON();
+    expect(json.doc).toBe("hello");
+    expect(json.selection).toBeDefined();
+    expect(json.selection.ranges[0].anchor).toBe(3);
+  });
+
+  it("fromJSON restores state", () => {
+    const original = EditorState.create({ doc: "hello world", selection: { anchor: 5 } });
+    const json = original.toJSON();
+    const restored = EditorState.fromJSON(json);
+    expect(restored.doc.toString()).toBe("hello world");
+    expect(restored.selection.main.anchor).toBe(5);
+  });
+
+  it("toJSON/fromJSON round-trips correctly", () => {
+    const original = EditorState.create({
+      doc: "line1\nline2\nline3",
+      selection: EditorSelection.range(3, 8),
+    });
+    const restored = EditorState.fromJSON(original.toJSON());
+    expect(restored.doc.toString()).toBe(original.doc.toString());
+    expect(restored.selection.main.from).toBe(3);
+    expect(restored.selection.main.to).toBe(8);
+  });
+
+  it("fromJSON throws on invalid input", () => {
+    expect(() => EditorState.fromJSON(null)).toThrow();
+    expect(() => EditorState.fromJSON({})).toThrow();
+    expect(() => EditorState.fromJSON({ doc: 42 })).toThrow();
+  });
+
+  it("toJSON with custom StateField", () => {
+    const counter = StateField.define<number>({
+      create: () => 0,
+      update: (val, tr) => tr.docChanged ? val + 1 : val,
+      toJSON: (val) => val,
+      fromJSON: (json) => json as number,
+    });
+    let state = EditorState.create({ doc: "hi", extensions: [counter] });
+    state = state.update({ changes: { from: 2, insert: "!" } }).state;
+    const json = state.toJSON({ counter });
+    expect(json.counter).toBe(1);
+    const restored = EditorState.fromJSON(json, { extensions: [counter] }, { counter });
+    expect(restored.field(counter)).toBe(1);
+  });
+});
+
+describe("EditorState.phrase", () => {
+  it("returns the phrase when no translation is registered", () => {
+    const state = EditorState.create({ doc: "" });
+    expect(state.phrase("Hello")).toBe("Hello");
+  });
+
+  it("translates using phrases facet", () => {
+    const state = EditorState.create({
+      doc: "",
+      extensions: [EditorState.phrases.of({ "Hello": "Hola" })],
+    });
+    expect(state.phrase("Hello")).toBe("Hola");
+  });
+
+  it("supports $1 substitution", () => {
+    const state = EditorState.create({ doc: "" });
+    expect(state.phrase("Hello $1", "World")).toBe("Hello World");
+  });
+
+  it("supports $$ for literal dollar sign with args", () => {
+    const state = EditorState.create({ doc: "" });
+    // $$ is replaced with $ only when insert args are passed
+    expect(state.phrase("Price: $$", "unused")).toBe("Price: $");
+  });
+
+  it("supports multiple substitutions", () => {
+    const state = EditorState.create({ doc: "" });
+    expect(state.phrase("$1 and $2", "A", "B")).toBe("A and B");
+  });
+});
