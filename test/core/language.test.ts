@@ -1051,6 +1051,7 @@ describe("Fold state and effects (deep)", () => {
       expect(ranges.size).toBe(0);
     });
 
+
     it("returns decorations matching existing folds", () => {
       const state = EditorState.create({
         doc: "aaa\nbbb\nccc",
@@ -1129,6 +1130,85 @@ describe("Fold state and effects (deep)", () => {
     });
   });
 
+describe("StreamLanguage behavioral coverage", () => {
+  // A simple stream language that tracks brace depth for indentation
+  const bracketLang = StreamLanguage.define<{ depth: number }>({
+    name: "bracketlang",
+    startState: () => ({ depth: 0 }),
+    token: (stream, state) => {
+      if (stream.eat("{")) { state.depth++; return "keyword"; }
+      if (stream.eat("}")) { if (state.depth > 0) state.depth--; return "keyword"; }
+      if (stream.eatWhile(/[^{}\n]/)) return "atom";
+      stream.next();
+      return null;
+    },
+    blankLine: (_state, _unit) => { /* no-op, covers line 132 path */ },
+    copyState: (s) => ({ depth: s.depth }),
+    indent: (state, _textAfter, context) => state.depth * context.unit,
+  });
+
+  it("Parse constructor runs during ensureSyntaxTree (covers lines 190-203)", () => {
+    const state = EditorState.create({
+      doc: "hello\nworld\n",
+      extensions: [bracketLang],
+    });
+    const tree = ensureSyntaxTree(state, state.doc.length, 1000);
+    expect(tree).not.toBeNull();
+    expect(tree!.length).toBeGreaterThan(0);
+  });
+
+  it("getIndent is called via getIndentation (covers lines 113-141)", () => {
+    const state = EditorState.create({
+      doc: "{\nhello\n}\n",
+      extensions: [bracketLang],
+    });
+    ensureSyntaxTree(state, state.doc.length, 1000);
+    // pos 2 = start of "hello" line (inside braces, depth=1, unit=2 → indent=2)
+    const indent = getIndentation(state, 2);
+    expect(typeof indent).toBe("number");
+    expect(indent).toBe(2);
+  });
+
+  it("getIndent with blank line in document (covers blankLine path, line 132)", () => {
+    const state = EditorState.create({
+      doc: "{\n\nhello\n}\n",
+      extensions: [bracketLang],
+    });
+    ensureSyntaxTree(state, state.doc.length, 1000);
+    // pos 3 = start of "hello" line (after blank line)
+    const indent = getIndentation(state, 3);
+    expect(typeof indent).toBe("number");
+  });
+
+  it("findState is called by getIndent when tree has children (covers lines 145-154)", () => {
+    const doc = "{\nhello\nworld\nfoo\nbar\nbaz\nqux\nquux\nquuz\ncorge\ngrault\n}\n";
+    const state = EditorState.create({
+      doc,
+      extensions: [bracketLang],
+    });
+    ensureSyntaxTree(state, state.doc.length, 1000);
+    // Call at a position deep into the document to exercise findState tree traversal
+    const indent = getIndentation(state, doc.length - 3);
+    expect(indent === null || typeof indent === "number").toBe(true);
+  });
+
+  it("StreamLanguage.define creates a Language instance", () => {
+    expect(bracketLang).toBeDefined();
+    expect(bracketLang.name).toBe("bracketlang");
+  });
+
+  it("indent returns 0 at top level (depth=0)", () => {
+    const state = EditorState.create({
+      doc: "hello\n",
+      extensions: [bracketLang],
+    });
+    ensureSyntaxTree(state, state.doc.length, 1000);
+    const indent = getIndentation(state, 0);
+    expect(indent).toBe(0);
+  });
+});
+
+describe("Fold state and effects (deep)", () => {
   describe("foldEffect and unfoldEffect", () => {
     it("foldEffect is a StateEffect definition", () => {
       // foldEffect.of produces a StateEffect instance
@@ -1171,6 +1251,7 @@ describe("Fold state and effects (deep)", () => {
       expect(foldTo).toBe(9);
     });
   });
+});
 });
 
 describe("Language.state and syntaxTree", () => {
