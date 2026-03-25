@@ -7,7 +7,7 @@
       <label for="lang-select">
         Language
         <select id="lang-select" aria-label="Select programming language"></select>
-        <span id="lang-loading" class="loading" hidden aria-live="polite" aria-label="Loading language">…</span>
+        <span id="lang-loading" class="loading" hidden aria-live="polite" aria-label="Loading language"><span class="spinner" aria-hidden="true"></span> Loading…</span>
       </label>
       <label for="theme-select">
         Theme
@@ -1025,15 +1025,26 @@ BinaryExpression { expression !add "+" expression }
   }
 
   .loading {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
     font-size: 0.8rem;
     color: var(--color-text-muted);
     margin-left: 0.25rem;
-    animation: pulse 1s ease-in-out infinite;
   }
 
-  @keyframes pulse {
-    0%, 100% { opacity: 1; }
-    50% { opacity: 0.3; }
+  .spinner {
+    display: inline-block;
+    width: 0.75rem;
+    height: 0.75rem;
+    border: 2px solid var(--color-text-muted);
+    border-top-color: transparent;
+    border-radius: 50%;
+    animation: spin 0.6s linear infinite;
+  }
+
+  @keyframes spin {
+    to { transform: rotate(360deg); }
   }
 
   .controls input[type="checkbox"] {
