@@ -139,4 +139,66 @@ describe('playground build output', () => {
     const playground = readFileSync(join(distDir, 'playground/index.html'), 'utf-8')
     expect(playground).toContain('Interactive code editor playground')
   }))
+
+  it('playground has indent tabs control', requireBuild(() => {
+    const html = readFileSync(join(distDir, 'playground/index.html'), 'utf-8')
+    expect(html).toContain('ext-indent-tabs')
+    expect(html).toContain('Use Tabs')
+  }))
+
+  it('playground has grouped controls with dividers', requireBuild(() => {
+    const html = readFileSync(join(distDir, 'playground/index.html'), 'utf-8')
+    expect(html).toContain('control-group')
+    expect(html).toContain('divider')
+    expect(html).toContain('aria-hidden="true"')
+  }))
+
+  it('playground has keyboard shortcuts dialog', requireBuild(() => {
+    const html = readFileSync(join(distDir, 'playground/index.html'), 'utf-8')
+    expect(html).toContain('shortcuts-dialog')
+    expect(html).toContain('Keyboard Shortcuts')
+    expect(html).toContain('Ctrl')
+  }))
+
+  it('docs page has export search/filter', requireBuild(() => {
+    const html = readFileSync(join(distDir, 'docs/index.html'), 'utf-8')
+    expect(html).toContain('export-search')
+    expect(html).toContain('Filter exports')
+  }))
+
+  it('docs page has copy-import buttons', requireBuild(() => {
+    const html = readFileSync(join(distDir, 'docs/index.html'), 'utf-8')
+    expect(html).toContain('copy-import-btn')
+  }))
+
+  it('all pages have og:image meta tag', requireBuild(() => {
+    const pages = ['index.html', 'docs/index.html', 'playground/index.html']
+    for (const page of pages) {
+      const html = readFileSync(join(distDir, page), 'utf-8')
+      expect(html).toContain('og:image')
+      expect(html).toContain('og-image.svg')
+    }
+  }))
+
+  it('og-image.svg exists in dist', requireBuild(() => {
+    expect(existsSync(join(distDir, 'og-image.svg'))).toBe(true)
+  }))
+
+  it('robots.txt references correct sitemap URL', requireBuild(() => {
+    const robots = readFileSync(join(distDir, 'robots.txt'), 'utf-8')
+    expect(robots).toContain('sitemap-index.xml')
+    expect(robots).not.toContain('sitemap.xml\n')
+  }))
+
+  it('homepage has try-in-playground link', requireBuild(() => {
+    const html = readFileSync(join(distDir, 'index.html'), 'utf-8')
+    expect(html).toContain('Try in Playground')
+    expect(html).toContain('/code-engine/playground')
+  }))
+
+  it('docs changelog renders links as anchors', requireBuild(() => {
+    const html = readFileSync(join(distDir, 'docs/index.html'), 'utf-8')
+    // The changelog contains a link to the playground
+    expect(html).toContain('duskmoon-dev.github.io/code-engine')
+  }))
 })
