@@ -11,6 +11,10 @@ import {
   ChangeSet,
   Transaction,
   Annotation,
+  Prec,
+  RangeSet,
+  RangeSetBuilder,
+  RangeValue,
 } from "../../src/core/state/index";
 
 describe("EditorState", () => {
@@ -197,6 +201,37 @@ describe("ChangeSet", () => {
     const composed = cs1.compose(cs2);
     const state = EditorState.create({ doc: "hello world" });
     expect(composed.apply(state.doc).toString()).toBe("world! world");
+  });
+});
+
+describe("Prec", () => {
+  it("has highest/high/default/low/lowest levels", () => {
+    expect(Prec.highest).toBeDefined();
+    expect(Prec.high).toBeDefined();
+    expect(Prec.default).toBeDefined();
+    expect(Prec.low).toBeDefined();
+    expect(Prec.lowest).toBeDefined();
+  });
+
+  it("Prec levels are functions that wrap extensions", () => {
+    const myFacet = Facet.define<number>({ combine: (vs) => vs.reduce((a, b) => a + b, 0) });
+    const ext = myFacet.of(1);
+    const high = Prec.high(ext);
+    expect(high).toBeDefined();
+  });
+});
+
+describe("RangeSet", () => {
+  it("RangeSet.empty is defined", () => {
+    expect(RangeSet.empty).toBeDefined();
+  });
+
+  it("RangeSetBuilder can build a range set", () => {
+    class TestRange extends RangeValue {}
+    const builder = new RangeSetBuilder<TestRange>();
+    builder.add(0, 5, new TestRange());
+    const set = builder.finish();
+    expect(set).toBeDefined();
   });
 });
 

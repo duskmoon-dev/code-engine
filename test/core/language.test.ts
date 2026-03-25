@@ -7,6 +7,12 @@ import {
   defaultHighlightStyle,
   bracketMatching,
   StringStream,
+  syntaxTree,
+  foldCode,
+  unfoldCode,
+  toggleFold,
+  foldKeymap,
+  StreamLanguage,
 } from "../../src/core/language/index";
 import { tags } from "../../src/parser/highlight/index";
 import { python, pythonLanguage } from "../../src/lang/python/index";
@@ -73,6 +79,48 @@ describe("Language module", () => {
       const support = python();
       expect(support.language).toBeInstanceOf(LRLanguage);
     });
+  });
+});
+
+describe("syntaxTree", () => {
+  it("is a function", () => {
+    expect(typeof syntaxTree).toBe("function");
+  });
+
+  it("returns a parse tree from EditorState with a language extension", () => {
+    const state = EditorState.create({
+      doc: "x = 1",
+      extensions: [python()],
+    });
+    const tree = syntaxTree(state);
+    expect(tree).toBeDefined();
+    expect(tree.length).toBeGreaterThan(0);
+  });
+});
+
+describe("fold commands", () => {
+  it("foldCode is a command function", () => {
+    expect(typeof foldCode).toBe("function");
+  });
+
+  it("unfoldCode is a command function", () => {
+    expect(typeof unfoldCode).toBe("function");
+  });
+
+  it("toggleFold is a command function", () => {
+    expect(typeof toggleFold).toBe("function");
+  });
+
+  it("foldKeymap is an array of key bindings", () => {
+    expect(Array.isArray(foldKeymap)).toBe(true);
+    expect(foldKeymap.length).toBeGreaterThan(0);
+  });
+});
+
+describe("StreamLanguage", () => {
+  it("is a class with a define method", () => {
+    expect(StreamLanguage).toBeDefined();
+    expect(typeof StreamLanguage.define).toBe("function");
   });
 });
 
