@@ -359,5 +359,42 @@ describe("Liquid language pack", () => {
       const state = EditorState.create({ doc, extensions: [liquid()] });
       expect(state.doc.toString()).toBe(doc);
     });
+
+    it("liquidLanguage parser tree has correct length", () => {
+      const code = "{% if user %}Hello, {{ user.name }}!{% endif %}";
+      const tree = liquidLanguage.parser.parse(code);
+      expect(tree.length).toBe(code.length);
+    });
+
+    it("liquid() state allows insert at start of document", () => {
+      let state = EditorState.create({ doc: "{{ body }}", extensions: [liquid()] });
+      state = state.update({ changes: { from: 0, insert: "<!DOCTYPE html>\n" } }).state;
+      expect(state.doc.line(1).text).toBe("<!DOCTYPE html>");
+    });
+
+    it("liquid() state allows 4 sequential transactions", () => {
+      let state = EditorState.create({ doc: "", extensions: [liquid()] });
+      for (let i = 0; i < 4; i++) {
+        state = state.update({ changes: { from: state.doc.length, insert: (i > 0 ? "\n" : "") + `{{ var${i} }}` } }).state;
+      }
+      expect(state.doc.lines).toBe(4);
+    });
+
+    it("liquid() state allows deletion of all content", () => {
+      const doc = "{% if x %}{{ x }}{% endif %}";
+      let state = EditorState.create({ doc, extensions: [liquid()] });
+      state = state.update({ changes: { from: 0, to: doc.length } }).state;
+      expect(state.doc.toString()).toBe("");
+    });
+
+    it("liquid() state selection within single line", () => {
+      const state = EditorState.create({
+        doc: "{{ user.name }}",
+        selection: { anchor: 3, head: 12 },
+        extensions: [liquid()],
+      });
+      expect(state.selection.main.from).toBe(3);
+      expect(state.selection.main.to).toBe(12);
+    });
   });
 });

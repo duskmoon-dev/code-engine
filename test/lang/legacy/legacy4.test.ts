@@ -406,5 +406,44 @@ describe("Legacy language packs (batch 4)", () => {
       const state = EditorState.create({ doc, extensions: [new LanguageSupport(lang)] });
       expect(state.doc.length).toBe(doc.length);
     });
+
+    it("xQuery doc line count is correct", () => {
+      const lang = StreamLanguage.define(xQuery);
+      const state = EditorState.create({
+        doc: "for $x in /bookstore/book\nwhere $x/price > 30\nreturn $x/title",
+        extensions: [new LanguageSupport(lang)],
+      });
+      expect(state.doc.lines).toBe(3);
+    });
+
+    it("solr doc mutation via transaction works", () => {
+      const lang = StreamLanguage.define(solr);
+      let state = EditorState.create({ doc: "q=*:*", extensions: [new LanguageSupport(lang)] });
+      state = state.update({ changes: { from: 5, insert: "&rows=10" } }).state;
+      expect(state.doc.toString()).toBe("q=*:*&rows=10");
+    });
+
+    it("liveScript doc line text is accessible", () => {
+      const lang = StreamLanguage.define(liveScript);
+      const state = EditorState.create({
+        doc: "square = (x) -> x * x\ncube = (x) -> x * x * x",
+        extensions: [new LanguageSupport(lang)],
+      });
+      expect(state.doc.line(1).text).toBe("square = (x) -> x * x");
+    });
+
+    it("apl doc replacement transaction works", () => {
+      const lang = StreamLanguage.define(apl);
+      let state = EditorState.create({ doc: "A ← 1 2 3", extensions: [new LanguageSupport(lang)] });
+      state = state.update({ changes: { from: 7, to: 8, insert: "4" } }).state;
+      expect(state.doc.toString()).toContain("4");
+    });
+
+    it("yacas doc length is correct", () => {
+      const lang = StreamLanguage.define(yacas);
+      const doc = "Factorial(n) := If(n=0, 1, n*Factorial(n-1));";
+      const state = EditorState.create({ doc, extensions: [new LanguageSupport(lang)] });
+      expect(state.doc.length).toBe(doc.length);
+    });
   });
 });

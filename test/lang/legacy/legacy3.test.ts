@@ -415,5 +415,44 @@ describe("Legacy language packs (batch 3)", () => {
       state = state.update({ changes: { from: 4, to: 9, insert: "newvalue" } }).state;
       expect(state.doc.toString()).toBe("key=newvalue");
     });
+
+    it("protobuf doc length is correct", () => {
+      const lang = StreamLanguage.define(protobuf);
+      const doc = "syntax = \"proto3\";\nmessage Person { string name = 1; }";
+      const state = EditorState.create({ doc, extensions: [new LanguageSupport(lang)] });
+      expect(state.doc.length).toBe(doc.length);
+    });
+
+    it("octave doc mutation via transaction works", () => {
+      const lang = StreamLanguage.define(octave);
+      let state = EditorState.create({ doc: "x = 1;", extensions: [new LanguageSupport(lang)] });
+      state = state.update({ changes: { from: 6, insert: "\ny = 2;" } }).state;
+      expect(state.doc.lines).toBe(2);
+    });
+
+    it("vhdl doc line text is accessible", () => {
+      const lang = StreamLanguage.define(vhdl);
+      const state = EditorState.create({
+        doc: "library IEEE;\nuse IEEE.std_logic_1164.all;",
+        extensions: [new LanguageSupport(lang)],
+      });
+      expect(state.doc.line(1).text).toBe("library IEEE;");
+    });
+
+    it("sas doc line count is correct", () => {
+      const lang = StreamLanguage.define(sas);
+      const state = EditorState.create({
+        doc: "data work.example;\n  x = 1;\n  y = 2;\nrun;",
+        extensions: [new LanguageSupport(lang)],
+      });
+      expect(state.doc.lines).toBe(4);
+    });
+
+    it("puppet doc replacement transaction works", () => {
+      const lang = StreamLanguage.define(puppet);
+      let state = EditorState.create({ doc: "class foo {}", extensions: [new LanguageSupport(lang)] });
+      state = state.update({ changes: { from: 6, to: 9, insert: "bar" } }).state;
+      expect(state.doc.toString()).toBe("class bar {}");
+    });
   });
 });

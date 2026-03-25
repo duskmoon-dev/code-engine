@@ -290,4 +290,37 @@ describe("JavaScript language pack", () => {
     const state = EditorState.create({ doc, extensions: [javascript()] });
     expect(state.doc.length).toBe(doc.length);
   });
+
+  it("javascriptLanguage parser tree has correct length", () => {
+    const code = "const arr = [1, 2, 3].map(x => x * 2);";
+    const tree = javascriptLanguage.parser.parse(code);
+    expect(tree.length).toBe(code.length);
+  });
+
+  it("typescriptLanguage parser tree has correct length", () => {
+    const code = "type Fn<T> = (x: T) => T;";
+    const tree = typescriptLanguage.parser.parse(code);
+    expect(tree.length).toBe(code.length);
+  });
+
+  it("javascript() state allows 4 sequential transactions", () => {
+    let state = EditorState.create({ doc: "", extensions: [javascript()] });
+    for (let i = 0; i < 4; i++) {
+      state = state.update({ changes: { from: state.doc.length, insert: (i > 0 ? "\n" : "") + `const v${i} = ${i};` } }).state;
+    }
+    expect(state.doc.lines).toBe(4);
+  });
+
+  it("javascript() state allows deletion of all content", () => {
+    const doc = "const x = 1;\nconst y = 2;";
+    let state = EditorState.create({ doc, extensions: [javascript()] });
+    state = state.update({ changes: { from: 0, to: doc.length } }).state;
+    expect(state.doc.toString()).toBe("");
+  });
+
+  it("javascript() state allows insert at start", () => {
+    let state = EditorState.create({ doc: "const x = 1;", extensions: [javascript()] });
+    state = state.update({ changes: { from: 0, insert: "// header\n" } }).state;
+    expect(state.doc.line(1).text).toBe("// header");
+  });
 });

@@ -396,5 +396,40 @@ describe("Legacy language packs (batch 7)", () => {
       const state = EditorState.create({ doc, extensions: [new LanguageSupport(lang)] });
       expect(state.doc.length).toBe(doc.length);
     });
+
+    it("scala doc line count is correct", () => {
+      const lang = StreamLanguage.define(scala);
+      const state = EditorState.create({
+        doc: "object Hello {\n  def main(args: Array[String]) {\n    println(\"Hello, World!\")\n  }\n}",
+        extensions: [new LanguageSupport(lang)],
+      });
+      expect(state.doc.lines).toBe(5);
+    });
+
+    it("csharp doc mutation via transaction works", () => {
+      const lang = StreamLanguage.define(csharp);
+      let state = EditorState.create({ doc: "int x = 1;", extensions: [new LanguageSupport(lang)] });
+      state = state.update({ changes: { from: 10, insert: "\nint y = 2;" } }).state;
+      expect(state.doc.lines).toBe(2);
+    });
+
+    it("asn1 is defined and truthy", () => {
+      expect(asn1).toBeDefined();
+      expect(!!asn1).toBe(true);
+    });
+
+    it("vbScript doc replacement transaction works", () => {
+      const lang = StreamLanguage.define(vbScript);
+      let state = EditorState.create({ doc: "Dim x As Integer", extensions: [new LanguageSupport(lang)] });
+      state = state.update({ changes: { from: 4, to: 5, insert: "y" } }).state;
+      expect(state.doc.toString()).toBe("Dim y As Integer");
+    });
+
+    it("tiddlyWiki doc length is correct", () => {
+      const lang = StreamLanguage.define(tiddlyWiki);
+      const doc = "! Title\n\n''bold'' and //italic//";
+      const state = EditorState.create({ doc, extensions: [new LanguageSupport(lang)] });
+      expect(state.doc.length).toBe(doc.length);
+    });
   });
 });
