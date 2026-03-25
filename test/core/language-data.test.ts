@@ -43,6 +43,30 @@ describe("LanguageDescription.matchFilename", () => {
     expect(match!.name).toBe("Python");
   });
 
+  it("matches .ts to TypeScript", () => {
+    const match = LanguageDescription.matchFilename(languages, "app.ts");
+    expect(match).toBeDefined();
+    expect(match!.name).toBe("TypeScript");
+  });
+
+  it("matches .html to HTML", () => {
+    const match = LanguageDescription.matchFilename(languages, "index.html");
+    expect(match).toBeDefined();
+    expect(match!.name).toBe("HTML");
+  });
+
+  it("matches .rs to Rust", () => {
+    const match = LanguageDescription.matchFilename(languages, "main.rs");
+    expect(match).toBeDefined();
+    expect(match!.name).toBe("Rust");
+  });
+
+  it("matches .json to JSON", () => {
+    const match = LanguageDescription.matchFilename(languages, "data.json");
+    expect(match).toBeDefined();
+    expect(match!.name).toBe("JSON");
+  });
+
   it("returns null for unknown extensions", () => {
     const match = LanguageDescription.matchFilename(languages, "file.zzzzz");
     expect(match).toBeNull();
