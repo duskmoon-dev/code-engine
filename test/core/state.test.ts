@@ -406,3 +406,87 @@ describe("RangeSet iteration", () => {
     expect(iter.to).toBe(8);
   });
 });
+
+describe("AnnotationType", () => {
+  it("Annotation.define() returns an AnnotationType-like object", () => {
+    const type = Annotation.define<string>();
+    expect(type).toBeDefined();
+    expect(typeof type.of).toBe("function");
+  });
+
+  it("AnnotationType.of() creates an Annotation", () => {
+    const type = Annotation.define<number>();
+    const ann = type.of(42);
+    expect(ann).toBeDefined();
+  });
+});
+
+describe("ChangeDesc", () => {
+  it("ChangeSet is a subtype of ChangeDesc", () => {
+    const cs = ChangeSet.of([{ from: 0, to: 3, insert: "X" }], 5);
+    expect(cs.length).toBe(5);
+    expect(cs.newLength).toBe(3);
+  });
+
+  it("ChangeDesc.iterChanges iterates changes", () => {
+    const cs = ChangeSet.of([{ from: 0, to: 3, insert: "hello" }], 5);
+    const changes: Array<{fromA: number; toA: number}> = [];
+    cs.iterChanges((fromA, toA) => { changes.push({ fromA, toA }); });
+    expect(changes.length).toBe(1);
+    expect(changes[0].fromA).toBe(0);
+    expect(changes[0].toA).toBe(3);
+  });
+});
+
+describe("StateEffectType", () => {
+  it("StateEffect.define() returns a StateEffectType-like object", () => {
+    const type = StateEffect.define<string>();
+    expect(type).toBeDefined();
+    expect(typeof type.of).toBe("function");
+  });
+
+  it("StateEffectType.of() creates a StateEffect", () => {
+    const type = StateEffect.define<number>();
+    const effect = type.of(99);
+    expect(effect).toBeDefined();
+    expect(effect.value).toBe(99);
+  });
+
+  it("StateEffect.is() correctly identifies effect type", () => {
+    const myType = StateEffect.define<string>();
+    const otherType = StateEffect.define<string>();
+    const effect = myType.of("test");
+    expect(effect.is(myType)).toBe(true);
+    expect(effect.is(otherType)).toBe(false);
+  });
+});
+
+describe("Range", () => {
+  it("RangeValue.range() creates a Range", () => {
+    class TestValue extends RangeValue {}
+    const val = new TestValue();
+    const range = val.range(0, 5);
+    expect(range).toBeDefined();
+    expect(range.from).toBe(0);
+    expect(range.to).toBe(5);
+  });
+});
+
+describe("combineConfig", () => {
+  it("combineConfig merges non-conflicting config objects", () => {
+    const result = combineConfig([{ a: 1 }, { b: 3, c: 4 }], { a: 0, b: 0, c: 0 });
+    expect(result.a).toBe(1);
+    expect(result.b).toBe(3);
+    expect(result.c).toBe(4);
+  });
+
+  it("combineConfig uses default for missing keys", () => {
+    const result = combineConfig([{ a: 5 }], { a: 0, b: 99 });
+    expect(result.a).toBe(5);
+    expect(result.b).toBe(99);
+  });
+
+  it("combineConfig throws on conflicting values", () => {
+    expect(() => combineConfig([{ a: 1 }, { a: 2 }], { a: 0 })).toThrow();
+  });
+});
