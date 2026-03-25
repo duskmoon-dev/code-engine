@@ -43,7 +43,7 @@ import {
 } from "../../src/core/language/index";
 import { tags } from "../../src/parser/highlight/index";
 import { python, pythonLanguage } from "../../src/lang/python/index";
-import { EditorState } from "../../src/core/state/index";
+import { EditorState, StateEffect } from "../../src/core/state/index";
 
 describe("Language module", () => {
   describe("exports", () => {
@@ -907,6 +907,256 @@ describe("highlightingFor", () => {
   describe("flatIndent", () => {
     it("is a function", () => {
       expect(typeof flatIndent).toBe("function");
+    });
+  });
+});
+
+describe("Fold state and effects (deep)", () => {
+  describe("foldState field", () => {
+    it("reflects a fold after applying foldEffect", () => {
+      const state = EditorState.create({
+        doc: "line one\nline two\nline three",
+        extensions: [codeFolding()],
+      });
+      const next = state.update({
+        effects: foldEffect.of({ from: 8, to: 17 }),
+      }).state;
+      const ranges = foldedRanges(next);
+      let count = 0;
+      ranges.between(0, next.doc.length, () => { count++; });
+      expect(count).toBe(1);
+    });
+
+    it("removes fold after applying unfoldEffect", () => {
+      const state = EditorState.create({
+        doc: "line one\nline two\nline three",
+        extensions: [codeFolding()],
+      });
+      let s = state.update({
+        effects: foldEffect.of({ from: 8, to: 17 }),
+      }).state;
+      s = s.update({
+        effects: unfoldEffect.of({ from: 8, to: 17 }),
+      }).state;
+      let count = 0;
+      foldedRanges(s).between(0, s.doc.length, () => { count++; });
+      expect(count).toBe(0);
+    });
+
+    it("supports multiple folds simultaneously", () => {
+      const state = EditorState.create({
+        doc: "aaa\nbbb\nccc\nddd\neee",
+        extensions: [codeFolding()],
+      });
+      let s = state.update({
+        effects: foldEffect.of({ from: 3, to: 7 }),
+      }).state;
+      s = s.update({
+        effects: foldEffect.of({ from: 11, to: 15 }),
+      }).state;
+      let count = 0;
+      foldedRanges(s).between(0, s.doc.length, () => { count++; });
+      expect(count).toBe(2);
+    });
+
+    it("does not add duplicate fold for the same range", () => {
+      const state = EditorState.create({
+        doc: "aaa\nbbb\nccc",
+        extensions: [codeFolding()],
+      });
+      let s = state.update({
+        effects: foldEffect.of({ from: 3, to: 7 }),
+      }).state;
+      s = s.update({
+        effects: foldEffect.of({ from: 3, to: 7 }),
+      }).state;
+      let count = 0;
+      foldedRanges(s).between(0, s.doc.length, () => { count++; });
+      expect(count).toBe(1);
+    });
+
+    it("toJSON/fromJSON round-trips fold state", () => {
+      const state = EditorState.create({
+        doc: "hello\nworld\nfoo\nbar",
+        extensions: [codeFolding()],
+      });
+      const folded = state.update({
+        effects: foldEffect.of({ from: 5, to: 11 }),
+      }).state;
+      const json = folded.toJSON({ fold: foldState });
+      expect(json.fold).toEqual([5, 11]);
+
+      const restored = EditorState.fromJSON(json, {
+        doc: folded.doc.toString(),
+        extensions: [codeFolding()],
+      }, { fold: foldState });
+      let count = 0;
+      let savedFrom = -1, savedTo = -1;
+      foldedRanges(restored).between(0, restored.doc.length, (from, to) => {
+        savedFrom = from;
+        savedTo = to;
+        count++;
+      });
+      expect(count).toBe(1);
+      expect(savedFrom).toBe(5);
+      expect(savedTo).toBe(11);
+    });
+
+    it("toJSON returns empty array when no folds", () => {
+      const state = EditorState.create({
+        doc: "hello\nworld",
+        extensions: [codeFolding()],
+      });
+      const json = state.toJSON({ fold: foldState });
+      expect(json.fold).toEqual([]);
+    });
+
+    it("fromJSON throws on non-array data", () => {
+      expect(() => {
+        EditorState.fromJSON(
+          { doc: "hello\nworld", selection: { ranges: [{ anchor: 0 }], main: 0 }, fold: "bad" },
+          { extensions: [codeFolding()] },
+          { fold: foldState },
+        );
+      }).toThrow();
+    });
+
+    it("fromJSON throws on odd-length array", () => {
+      expect(() => {
+        EditorState.fromJSON(
+          { doc: "hello\nworld", selection: { ranges: [{ anchor: 0 }], main: 0 }, fold: [1, 2, 3] },
+          { extensions: [codeFolding()] },
+          { fold: foldState },
+        );
+      }).toThrow();
+    });
+  });
+
+  describe("foldedRanges", () => {
+    it("returns empty set when no foldState is configured", () => {
+      const state = EditorState.create({ doc: "hello\nworld" });
+      const ranges = foldedRanges(state);
+      expect(ranges.size).toBe(0);
+    });
+
+    it("returns decorations matching existing folds", () => {
+      const state = EditorState.create({
+        doc: "aaa\nbbb\nccc",
+        extensions: [codeFolding()],
+      });
+      const s = state.update({
+        effects: foldEffect.of({ from: 3, to: 7 }),
+      }).state;
+      const ranges = foldedRanges(s);
+      expect(ranges.size).toBeGreaterThan(0);
+    });
+
+    it("size reflects the correct number of folds", () => {
+      const state = EditorState.create({
+        doc: "aaa\nbbb\nccc\nddd",
+        extensions: [codeFolding()],
+      });
+      let s = state.update({
+        effects: foldEffect.of({ from: 3, to: 7 }),
+      }).state;
+      s = s.update({
+        effects: foldEffect.of({ from: 7, to: 11 }),
+      }).state;
+      expect(foldedRanges(s).size).toBe(2);
+    });
+  });
+
+  describe("foldable with foldService", () => {
+    it("returns range from a custom foldService", () => {
+      const state = EditorState.create({
+        doc: "function foo() {\n  return 1;\n}",
+        extensions: [
+          foldService.of((_state, lineStart, _lineEnd) => {
+            if (lineStart === 0) return { from: 16, to: 29 };
+            return null;
+          }),
+        ],
+      });
+      const result = foldable(state, 0, 16);
+      expect(result).toEqual({ from: 16, to: 29 });
+    });
+
+    it("returns null when foldService returns null for all lines", () => {
+      const state = EditorState.create({
+        doc: "no folds here",
+        extensions: [
+          foldService.of(() => null),
+        ],
+      });
+      const result = foldable(state, 0, 13);
+      expect(result).toBeNull();
+    });
+
+    it("returns null with no foldService registered and no syntax tree", () => {
+      const state = EditorState.create({ doc: "plain text" });
+      const result = foldable(state, 0, 10);
+      expect(result).toBeNull();
+    });
+
+    it("first matching foldService wins", () => {
+      const state = EditorState.create({
+        doc: "aaaa\nbbbb",
+        extensions: [
+          foldService.of((_state, lineStart) => {
+            if (lineStart === 0) return { from: 4, to: 9 };
+            return null;
+          }),
+          foldService.of((_state, lineStart) => {
+            if (lineStart === 0) return { from: 2, to: 8 };
+            return null;
+          }),
+        ],
+      });
+      const result = foldable(state, 0, 4);
+      expect(result).toEqual({ from: 4, to: 9 });
+    });
+  });
+
+  describe("foldEffect and unfoldEffect", () => {
+    it("foldEffect is a StateEffect definition", () => {
+      // foldEffect.of produces a StateEffect instance
+      const eff = foldEffect.of({ from: 0, to: 5 });
+      expect(eff).toBeDefined();
+      expect(eff.is(foldEffect)).toBe(true);
+    });
+
+    it("unfoldEffect is a StateEffect definition", () => {
+      const eff = unfoldEffect.of({ from: 0, to: 5 });
+      expect(eff).toBeDefined();
+      expect(eff.is(unfoldEffect)).toBe(true);
+    });
+
+    it("foldEffect is not unfoldEffect", () => {
+      const eff = foldEffect.of({ from: 0, to: 5 });
+      expect(eff.is(unfoldEffect)).toBe(false);
+    });
+
+    it("effects map through document changes", () => {
+      const state = EditorState.create({
+        doc: "abcdefghij",
+        extensions: [codeFolding()],
+      });
+      // Fold positions 3..7, then insert text before the fold
+      const s1 = state.update({
+        effects: foldEffect.of({ from: 3, to: 7 }),
+      }).state;
+      // Insert "XX" at position 0, shifting all positions by 2
+      const s2 = s1.update({
+        changes: { from: 0, insert: "XX" },
+      }).state;
+      let foldFrom = -1, foldTo = -1;
+      foldedRanges(s2).between(0, s2.doc.length, (from, to) => {
+        foldFrom = from;
+        foldTo = to;
+      });
+      // Positions should be shifted by 2
+      expect(foldFrom).toBe(5);
+      expect(foldTo).toBe(9);
     });
   });
 });

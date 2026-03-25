@@ -133,7 +133,7 @@ import {
   defaultKeymap,
   indentWithTab,
 } from "../../src/core/commands/index";
-import { EditorState, EditorSelection, Transaction } from "../../src/core/state/index";
+import { EditorState, EditorSelection, Transaction, StateEffect } from "../../src/core/state/index";
 import { javascript } from "../../src/lang/javascript/index";
 import { indentUnit } from "../../src/core/language/index";
 
@@ -1176,6 +1176,245 @@ describe("history undo/redo functional", () => {
         extensions: [EditorState.readOnly.of(true)],
       });
       expect(run(insertBlankLine, state)).toBe(null);
+    });
+  });
+
+  describe("historyField serialization", () => {
+    it("serializes and deserializes history state via toJSON/fromJSON", () => {
+      let state = EditorState.create({ doc: "hello", extensions: [history()] });
+      state = state.update({ changes: { from: 5, insert: " world" } }).state;
+      state = state.update({ changes: { from: 11, insert: "!" } }).state;
+      expect(undoDepth(state)).toBeGreaterThan(0);
+
+      const json = state.toJSON({ history: historyField });
+      const restored = EditorState.fromJSON(
+        json,
+        { extensions: [history()] },
+        { history: historyField },
+      );
+      expect(restored.doc.toString()).toBe("hello world!");
+      expect(undoDepth(restored)).toBeGreaterThan(0);
+    });
+
+    it("undo works after deserialization", () => {
+      let state = EditorState.create({ doc: "abc", extensions: [history()] });
+      state = state.update({ changes: { from: 3, insert: "d" } }).state;
+      const json = state.toJSON({ history: historyField });
+      let restored = EditorState.fromJSON(
+        json,
+        { extensions: [history()] },
+        { history: historyField },
+      );
+      const undone = run(undo, restored);
+      expect(undone).not.toBe(null);
+      expect(undone!.doc.toString()).toBe("abc");
+    });
+
+    it("preserves undoDepth across serialization round-trip", () => {
+      let state = EditorState.create({ doc: "", extensions: [history()] });
+      state = state.update({ changes: { from: 0, insert: "a" } }).state;
+      state = state.update({ changes: { from: 1, insert: "b" } }).state;
+      const depthBefore = undoDepth(state);
+      const json = state.toJSON({ history: historyField });
+      const restored = EditorState.fromJSON(
+        json,
+        { extensions: [history()] },
+        { history: historyField },
+      );
+      expect(undoDepth(restored)).toBe(depthBefore);
+    });
+  });
+
+  describe("redoSelection", () => {
+    it("redoes a selection change after undoSelection", () => {
+      let state = EditorState.create({
+        doc: "hello world",
+        selection: { anchor: 0 },
+        extensions: [history()],
+      });
+      // Change selection
+      state = state.update({ selection: { anchor: 5 } }).state;
+      expect(state.selection.main.head).toBe(5);
+
+      // Undo the selection change
+      const undone = run(undoSelection, state);
+      expect(undone).not.toBe(null);
+      expect(undone!.selection.main.head).toBe(0);
+
+      // Redo the selection change
+      const redone = run(redoSelection, undone!);
+      expect(redone).not.toBe(null);
+      expect(redone!.selection.main.head).toBe(5);
+    });
+
+    it("returns false when there is nothing to redo", () => {
+      const state = EditorState.create({
+        doc: "test",
+        extensions: [history()],
+      });
+      expect(run(redoSelection, state)).toBe(null);
+    });
+  });
+
+  describe("isolateHistory annotation", () => {
+    it("isolateHistory 'full' separates adjacent changes into different undo groups", () => {
+      let state = EditorState.create({ doc: "", extensions: [history()] });
+      state = state.update({ changes: { from: 0, insert: "a" } }).state;
+      state = state.update({
+        changes: { from: 1, insert: "b" },
+        annotations: isolateHistory.of("full"),
+      }).state;
+      expect(state.doc.toString()).toBe("ab");
+      // Undo should only undo the isolated "b" change
+      const undone = run(undo, state);
+      expect(undone).not.toBe(null);
+      expect(undone!.doc.toString()).toBe("a");
+    });
+
+    it("isolateHistory 'after' groups current change with previous but isolates next", () => {
+      let state = EditorState.create({ doc: "", extensions: [history()] });
+      state = state.update({ changes: { from: 0, insert: "a" } }).state;
+      state = state.update({
+        changes: { from: 1, insert: "b" },
+        annotations: isolateHistory.of("after"),
+      }).state;
+      state = state.update({ changes: { from: 2, insert: "c" } }).state;
+      expect(state.doc.toString()).toBe("abc");
+      // Undo should undo "c" alone (it was isolated from the previous group)
+      const undone1 = run(undo, state);
+      expect(undone1).not.toBe(null);
+      expect(undone1!.doc.toString()).toBe("ab");
+    });
+  });
+
+  describe("invertedEffects", () => {
+    it("allows custom effects to be inverted on undo", () => {
+      const myEffect = StateEffect.define<number>();
+      const invertEffect = StateEffect.define<number>();
+      let lastInvertedValue: number | null = null;
+
+      let state = EditorState.create({
+        doc: "hello",
+        extensions: [
+          history(),
+          invertedEffects.of((tr) => {
+            const effects: StateEffect<number>[] = [];
+            for (const e of tr.effects) {
+              if (e.is(myEffect)) {
+                effects.push(invertEffect.of(-e.value));
+              }
+            }
+            return effects;
+          }),
+          EditorState.transactionExtender.of((tr) => {
+            for (const e of tr.effects) {
+              if (e.is(invertEffect)) {
+                lastInvertedValue = e.value;
+              }
+            }
+            return null;
+          }),
+        ],
+      });
+
+      // Dispatch a change with our custom effect
+      state = state.update({
+        changes: { from: 5, insert: "!" },
+        effects: myEffect.of(42),
+      }).state;
+      expect(state.doc.toString()).toBe("hello!");
+
+      // Undo should trigger the inverted effect
+      const undone = run(undo, state);
+      expect(undone).not.toBe(null);
+      expect(undone!.doc.toString()).toBe("hello");
+    });
+
+    it("inverted effects are included in undo transactions", () => {
+      const myEffect = StateEffect.define<string>();
+      const collected: string[] = [];
+
+      let state = EditorState.create({
+        doc: "test",
+        extensions: [
+          history(),
+          invertedEffects.of((tr) => {
+            const effects: StateEffect<string>[] = [];
+            for (const e of tr.effects) {
+              if (e.is(myEffect)) {
+                effects.push(myEffect.of("inverted-" + e.value));
+              }
+            }
+            return effects;
+          }),
+        ],
+      });
+
+      state = state.update({
+        changes: { from: 4, insert: "!" },
+        effects: myEffect.of("forward"),
+      }).state;
+
+      // Undo — the undo transaction should contain our inverted effect
+      let undoTr: Transaction | null = null;
+      undo({ state, dispatch: (tr) => { undoTr = tr; } });
+      expect(undoTr).not.toBe(null);
+      const hasInverted = undoTr!.effects.some(
+        (e: StateEffect<any>) => e.is(myEffect) && e.value === "inverted-forward",
+      );
+      expect(hasInverted).toBe(true);
+    });
+  });
+
+  describe("history with minDepth config", () => {
+    it("accepts minDepth configuration", () => {
+      const state = EditorState.create({
+        doc: "hello",
+        extensions: [history({ minDepth: 2 })],
+      });
+      expect(state).toBeDefined();
+      expect(undoDepth(state)).toBe(0);
+    });
+
+    it("accepts newGroupDelay configuration", () => {
+      const state = EditorState.create({
+        doc: "hello",
+        extensions: [history({ minDepth: 50, newGroupDelay: 300 })],
+      });
+      expect(state).toBeDefined();
+    });
+  });
+
+  describe("undoSelection with only selection changes", () => {
+    it("undoes a pure selection change without doc changes", () => {
+      let state = EditorState.create({
+        doc: "hello world",
+        selection: { anchor: 0 },
+        extensions: [history()],
+      });
+      state = state.update({ selection: { anchor: 5 } }).state;
+      state = state.update({ selection: { anchor: 11 } }).state;
+      expect(state.selection.main.head).toBe(11);
+
+      const undone = run(undoSelection, state);
+      expect(undone).not.toBe(null);
+      // Should go back to a previous selection position
+      expect(undone!.selection.main.head).not.toBe(11);
+      expect(undone!.doc.toString()).toBe("hello world");
+    });
+
+    it("does not modify doc content when undoing selection-only changes", () => {
+      let state = EditorState.create({
+        doc: "abcdef",
+        selection: { anchor: 0 },
+        extensions: [history()],
+      });
+      state = state.update({ selection: { anchor: 3 } }).state;
+      state = state.update({ selection: { anchor: 6 } }).state;
+
+      const undone = run(undoSelection, state);
+      expect(undone).not.toBe(null);
+      expect(undone!.doc.toString()).toBe("abcdef");
     });
   });
 });
