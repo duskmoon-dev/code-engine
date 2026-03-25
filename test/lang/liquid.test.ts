@@ -250,5 +250,13 @@ describe("Liquid language pack", () => {
       const tree = syntaxTree(state);
       expect(tree.length).toBeGreaterThan(0);
     });
+
+    it("liquid parse tree cursor traversal works", () => {
+      const tree = liquidLanguage.parser.parse("{% if user %}{{ user.name }}{% endif %}");
+      const cursor = tree.cursor();
+      let nodeCount = 0;
+      do { nodeCount++; } while (cursor.next() && nodeCount < 100);
+      expect(nodeCount).toBeGreaterThan(1);
+    });
   });
 });

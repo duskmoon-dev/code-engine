@@ -49,4 +49,12 @@ describe("Java language pack", () => {
     const tree = syntaxTree(state);
     expect(tree.length).toBeGreaterThan(0);
   });
+
+  it("java parse tree cursor traversal works", () => {
+    const tree = javaLanguage.parser.parse("public class Fibonacci { public static int fib(int n) { return n <= 1 ? n : fib(n-1) + fib(n-2); } }");
+    const cursor = tree.cursor();
+    let nodeCount = 0;
+    do { nodeCount++; } while (cursor.next() && nodeCount < 100);
+    expect(nodeCount).toBeGreaterThan(1);
+  });
 });

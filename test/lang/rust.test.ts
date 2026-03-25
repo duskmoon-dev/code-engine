@@ -56,4 +56,12 @@ describe("Rust language pack", () => {
     const tree = syntaxTree(state);
     expect(tree.length).toBeGreaterThan(0);
   });
+
+  it("rust parse tree cursor traversal works", () => {
+    const tree = rustLanguage.parser.parse("fn factorial(n: u64) -> u64 { if n == 0 { 1 } else { n * factorial(n - 1) } }");
+    const cursor = tree.cursor();
+    let nodeCount = 0;
+    do { nodeCount++; } while (cursor.next() && nodeCount < 100);
+    expect(nodeCount).toBeGreaterThan(1);
+  });
 });

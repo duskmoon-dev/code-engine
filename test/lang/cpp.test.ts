@@ -50,4 +50,12 @@ describe("C++ language pack", () => {
     const tree = syntaxTree(state);
     expect(tree.length).toBeGreaterThan(0);
   });
+
+  it("cpp parse tree cursor traversal works", () => {
+    const tree = cppLanguage.parser.parse("template<typename T> T max(T a, T b) { return a > b ? a : b; }");
+    const cursor = tree.cursor();
+    let nodeCount = 0;
+    do { nodeCount++; } while (cursor.next() && nodeCount < 100);
+    expect(nodeCount).toBeGreaterThan(1);
+  });
 });
