@@ -43,6 +43,10 @@
       <span>Loading editor...</span>
     </div>
   </div>
+  <div class="status-bar" role="status" aria-live="polite" aria-label="Editor status">
+    <span id="status-pos">Ln 1, Col 1</span>
+    <span id="status-lang">JavaScript</span>
+  </div>
   <noscript>
     <div class="noscript-msg">
       <p>JavaScript is required for the interactive editor.</p>
@@ -381,6 +385,19 @@ BinaryExpression { expression !add "+" expression }
     langSelect.appendChild(opt)
   }
 
+  // Status bar elements
+  const statusPos = document.getElementById('status-pos')!
+  const statusLang = document.getElementById('status-lang')!
+
+  const statusBarUpdater = EditorView.updateListener.of((update) => {
+    if (update.selectionSet || update.docChanged) {
+      const pos = update.state.selection.main.head
+      const line = update.state.doc.lineAt(pos)
+      const col = pos - line.from + 1
+      statusPos.textContent = `Ln ${line.number}, Col ${col}`
+    }
+  })
+
   function getActiveExtensions() {
     const exts: any[] = []
     if (lineNumbersCheckbox.checked) exts.push(lineNumbersExt())
@@ -406,6 +423,7 @@ BinaryExpression { expression !add "+" expression }
         languageCompartment.of(javascript()),
         themeCompartment.of(oneDark),
         extensionCompartment.of(getActiveExtensions()),
+        statusBarUpdater,
       ],
     }),
     parent: document.getElementById('editor')!,
@@ -434,6 +452,7 @@ BinaryExpression { expression !add "+" expression }
         changes: { from: 0, to: view.state.doc.length, insert: sampleCode[key] ?? '' },
         effects: languageCompartment.reconfigure(factory()),
       })
+      statusLang.textContent = languageLabels[key] ?? key
     } catch {
       loadError.hidden = false
       // Revert select to previous value
@@ -564,7 +583,7 @@ BinaryExpression { expression !add "+" expression }
     .editor-demo {
       display: grid;
       grid-template-columns: 240px 1fr;
-      grid-template-rows: 1fr;
+      grid-template-rows: 1fr auto;
       gap: 0;
     }
     .controls {
@@ -576,7 +595,7 @@ BinaryExpression { expression !add "+" expression }
       overflow-y: auto;
     }
     #editor {
-      border-radius: 0 var(--radius) var(--radius) 0;
+      border-radius: 0;
       border-left: none;
     }
     .load-error {
@@ -599,7 +618,7 @@ BinaryExpression { expression !add "+" expression }
     #editor {
       flex: 1;
       border-top: none;
-      border-radius: 0 0 var(--radius) var(--radius);
+      border-radius: 0;
     }
   }
 
@@ -710,6 +729,26 @@ BinaryExpression { expression !add "+" expression }
     color: var(--color-text-muted);
     font-size: 0.9rem;
     font-family: var(--font-sans);
+  }
+
+  .status-bar {
+    display: flex;
+    justify-content: space-between;
+    padding: 0.2rem var(--space-md);
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-top: none;
+    border-radius: 0 0 var(--radius) var(--radius);
+    font-size: 0.75rem;
+    font-family: var(--font-mono);
+    color: var(--color-text-muted);
+  }
+
+  @media (min-width: 768px) {
+    .status-bar {
+      grid-column: 1 / -1;
+      border-radius: 0 0 var(--radius) var(--radius);
+    }
   }
 
   .noscript-msg {

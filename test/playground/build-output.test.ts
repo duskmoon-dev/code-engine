@@ -121,7 +121,7 @@ describe('playground build output', () => {
 
   it('homepage has correct export count', requireBuild(() => {
     const html = readFileSync(join(distDir, 'index.html'), 'utf-8')
-    expect(html).toContain('22 languages')
+    expect(html).toContain('23 languages')
     expect(html).toContain('43 exports')
   }))
 })
