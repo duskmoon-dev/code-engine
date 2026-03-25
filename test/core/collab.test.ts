@@ -304,4 +304,36 @@ describe("collab extra behavioral tests", () => {
     state = state.update({ changes: { from: 4, insert: "!" } }).state;
     expect(getClientID(state)).toBe("c1");
   });
+
+  it("collab works with empty string insertion", () => {
+    let state = EditorState.create({ doc: "hello", extensions: [collab()] });
+    state = state.update({ changes: { from: 5, insert: "" } }).state;
+    expect(state.doc.toString()).toBe("hello");
+  });
+
+  it("sendableUpdates is not empty after insertion at position 0", () => {
+    let state = EditorState.create({ doc: "world", extensions: [collab()] });
+    state = state.update({ changes: { from: 0, insert: "hello " } }).state;
+    expect(sendableUpdates(state).length).toBeGreaterThan(0);
+  });
+
+  it("getSyncedVersion does not change after local edits", () => {
+    const state0 = EditorState.create({ doc: "abc", extensions: [collab({ startVersion: 7 })] });
+    let state = state0.update({ changes: { from: 3, insert: "d" } }).state;
+    expect(getSyncedVersion(state)).toBe(7);
+  });
+
+  it("collab works with deletion transaction", () => {
+    let state = EditorState.create({ doc: "hello world", extensions: [collab()] });
+    state = state.update({ changes: { from: 5, to: 11 } }).state;
+    expect(state.doc.toString()).toBe("hello");
+    expect(sendableUpdates(state).length).toBeGreaterThan(0);
+  });
+
+  it("collab clientID is stable across multiple transactions", () => {
+    let state = EditorState.create({ doc: "a", extensions: [collab({ clientID: "stable" })] });
+    state = state.update({ changes: { from: 1, insert: "b" } }).state;
+    state = state.update({ changes: { from: 2, insert: "c" } }).state;
+    expect(getClientID(state)).toBe("stable");
+  });
 });

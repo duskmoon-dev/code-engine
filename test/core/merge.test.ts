@@ -287,4 +287,52 @@ describe("diff behavioral tests", () => {
     expect(c.fromB).toBe(5);
     expect(c.toB).toBe(8);
   });
+
+  it("diff handles empty string a", () => {
+    const changes = diff("", "hello");
+    expect(changes.length).toBeGreaterThan(0);
+    expect(changes[0].fromA).toBe(0);
+    expect(changes[0].toA).toBe(0);
+  });
+
+  it("diff handles empty string b", () => {
+    const changes = diff("hello", "");
+    expect(changes.length).toBeGreaterThan(0);
+  });
+
+  it("diff handles both empty strings", () => {
+    const changes = diff("", "");
+    expect(changes.length).toBe(0);
+  });
+
+  it("presentableDiff handles multiline", () => {
+    const a = "line1\nline2\nline3";
+    const b = "line1\nLINE2\nline3";
+    const changes = presentableDiff(a, b);
+    expect(Array.isArray(changes)).toBe(true);
+    expect(changes.length).toBeGreaterThan(0);
+  });
+
+  it("diff changes can reconstruct target string", () => {
+    const a = "one two three four";
+    const b = "one TWO three FOUR";
+    const changes = diff(a, b);
+    let result = "";
+    let pos = 0;
+    for (const c of changes) {
+      result += a.slice(pos, c.fromA);
+      result += b.slice(c.fromB, c.toB);
+      pos = c.toA;
+    }
+    result += a.slice(pos);
+    expect(result).toBe(b);
+  });
+
+  it("Change fromA and toA are numbers", () => {
+    const c = new Change(0, 5, 0, 7);
+    expect(typeof c.fromA).toBe("number");
+    expect(typeof c.toA).toBe("number");
+    expect(typeof c.fromB).toBe("number");
+    expect(typeof c.toB).toBe("number");
+  });
 });

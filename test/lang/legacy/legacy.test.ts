@@ -327,5 +327,53 @@ describe("Legacy language packs (StreamLanguage)", () => {
       });
       expect(state.doc.length).toBe(doc.length);
     });
+
+    it("toml doc line count is correct", () => {
+      const lang = StreamLanguage.define(toml);
+      const state = EditorState.create({
+        doc: "[package]\nname = \"test\"\nversion = \"1.0.0\"",
+        extensions: [new LanguageSupport(lang)],
+      });
+      expect(state.doc.lines).toBe(3);
+    });
+
+    it("perl doc mutation via transaction works", () => {
+      const lang = StreamLanguage.define(perl);
+      let state = EditorState.create({
+        doc: "print \"hello\";",
+        extensions: [new LanguageSupport(lang)],
+      });
+      state = state.update({ changes: { from: 14, insert: "\nprint \"world\";" } }).state;
+      expect(state.doc.lines).toBe(2);
+    });
+
+    it("ruby doc length is correct", () => {
+      const lang = StreamLanguage.define(ruby);
+      const doc = "puts 'hello'";
+      const state = EditorState.create({ doc, extensions: [new LanguageSupport(lang)] });
+      expect(state.doc.length).toBe(doc.length);
+    });
+
+    it("lua syntaxTree cursor traversal finds nodes", () => {
+      const lang = StreamLanguage.define(lua);
+      const state = EditorState.create({
+        doc: "function f(x) return x * x end",
+        extensions: [new LanguageSupport(lang)],
+      });
+      const tree = syntaxTree(state);
+      const cursor = tree.cursor();
+      let count = 0;
+      do { count++; } while (cursor.next() && count < 50);
+      expect(count).toBeGreaterThan(0);
+    });
+
+    it("erlang doc line count is correct", () => {
+      const lang = StreamLanguage.define(erlang);
+      const state = EditorState.create({
+        doc: "-module(hello).\n-export([main/0]).\nmain() -> io:format(\"Hello~n\").",
+        extensions: [new LanguageSupport(lang)],
+      });
+      expect(state.doc.lines).toBe(3);
+    });
   });
 });

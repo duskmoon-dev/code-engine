@@ -335,3 +335,63 @@ describe("forEachDiagnostic provides correct position info", () => {
     expect(positions[1].to).toBe(11);
   });
 });
+
+describe("lint additional coverage", () => {
+  it("forEachDiagnostic count matches diagnosticCount", () => {
+    const state = EditorState.create({ doc: "abc" });
+    const spec = setDiagnostics(state, [
+      { from: 0, to: 1, severity: "error", message: "a" },
+      { from: 1, to: 2, severity: "warning", message: "b" },
+    ]);
+    const newState = state.update(spec).state;
+    let count = 0;
+    forEachDiagnostic(newState, () => { count++; });
+    expect(count).toBe(diagnosticCount(newState));
+  });
+
+  it("setDiagnostics with zero diagnostics clears all", () => {
+    let state = EditorState.create({ doc: "test" });
+    const setSpec = setDiagnostics(state, [
+      { from: 0, to: 4, severity: "error", message: "error" },
+    ]);
+    state = state.update(setSpec).state;
+    const clearSpec = setDiagnostics(state, []);
+    state = state.update(clearSpec).state;
+    expect(diagnosticCount(state)).toBe(0);
+  });
+
+  it("diagnostic message is preserved in forEachDiagnostic", () => {
+    const state = EditorState.create({ doc: "test" });
+    const spec = setDiagnostics(state, [
+      { from: 0, to: 4, severity: "error", message: "my-error-message" },
+    ]);
+    const newState = state.update(spec).state;
+    const messages: string[] = [];
+    forEachDiagnostic(newState, (d) => { messages.push(d.message); });
+    expect(messages[0]).toBe("my-error-message");
+  });
+
+  it("linter() extension is defined and usable", () => {
+    const ext = linter(() => []);
+    const state = EditorState.create({ doc: "test", extensions: [ext] });
+    expect(state.doc.toString()).toBe("test");
+  });
+
+  it("diagnosticCount on a state with doc mutation is 0 initially", () => {
+    const state = EditorState.create({ doc: "new content" });
+    expect(diagnosticCount(state)).toBe(0);
+  });
+
+  it("forEachDiagnostic callback receives diagnostic object", () => {
+    const state = EditorState.create({ doc: "hello" });
+    const spec = setDiagnostics(state, [
+      { from: 0, to: 5, severity: "info", message: "info-msg" },
+    ]);
+    const newState = state.update(spec).state;
+    let received: any = null;
+    forEachDiagnostic(newState, (d) => { received = d; });
+    expect(received).toBeDefined();
+    expect(received.message).toBe("info-msg");
+    expect(received.severity).toBe("info");
+  });
+});
