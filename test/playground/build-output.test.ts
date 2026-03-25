@@ -523,4 +523,17 @@ describe('playground build output', () => {
     const html = readFileSync(join(distDir, 'docs/index.html'), 'utf-8')
     expect(html).toContain(`${exportCount} subpath exports`)
   }))
+
+  it('404 page has base path hint', requireBuild(() => {
+    const html = readFileSync(join(distDir, '404.html'), 'utf-8')
+    expect(html).toContain('/code-engine/')
+  }))
+
+  it('404 page has suggested pages section', requireBuild(() => {
+    const html = readFileSync(join(distDir, '404.html'), 'utf-8')
+    expect(html).toContain('suggested-heading')
+    expect(html).toContain('Project overview')
+    expect(html).toContain('Full API reference')
+    expect(html).toContain('Live editor')
+  }))
 })
