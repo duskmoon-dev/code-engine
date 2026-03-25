@@ -99,7 +99,12 @@ const categories = categoryOrder
       <tbody>
         {cat.exports.map(exp => (
           <tr>
-            <td><code>{exp.path === '.' ? pkgName : `${pkgName}/${exp.path}`}</code></td>
+            <td>
+              <code>{exp.path === '.' ? pkgName : `${pkgName}/${exp.path}`}</code>
+              {exp.path !== 'lang/legacy/*' && (
+                <button class="copy-import-btn" data-import={`import { } from '${exp.path === '.' ? pkgName : `${pkgName}/${exp.path}`}'`} aria-label={`Copy import for ${exp.path}`} title="Copy import">⧉</button>
+              )}
+            </td>
             <td class="desc">
               {exp.description ?? ''}
               {exp.path === 'lang/legacy/*' && (
@@ -121,6 +126,19 @@ const categories = categoryOrder
   const searchInput = document.getElementById('export-search') as HTMLInputElement
   const matchCount = document.getElementById('export-match-count')!
   const categories = document.querySelectorAll('.category')
+
+  // Copy import button handlers
+  document.querySelectorAll('.copy-import-btn').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      const text = (btn as HTMLElement).dataset.import ?? ''
+      try {
+        await navigator.clipboard.writeText(text)
+        const orig = btn.textContent
+        btn.textContent = '✓'
+        setTimeout(() => { btn.textContent = orig }, 1000)
+      } catch { /* clipboard not available */ }
+    })
+  })
 
   searchInput.addEventListener('input', () => {
     const query = searchInput.value.toLowerCase().trim()
@@ -221,6 +239,26 @@ const categories = categoryOrder
   }
   .desc {
     color: var(--color-text-muted);
+  }
+  .copy-import-btn {
+    background: none;
+    border: none;
+    color: var(--color-text-muted);
+    cursor: pointer;
+    font-size: 0.8rem;
+    padding: 0.1rem 0.3rem;
+    margin-left: 0.3rem;
+    border-radius: 3px;
+    vertical-align: middle;
+    transition: color 0.15s, background 0.15s;
+  }
+  .copy-import-btn:hover {
+    color: var(--color-accent);
+    background: var(--color-surface-alt, var(--color-surface));
+  }
+  .copy-import-btn:focus-visible {
+    outline: 2px solid var(--color-accent);
+    outline-offset: 1px;
   }
   .legacy-note {
     display: block;

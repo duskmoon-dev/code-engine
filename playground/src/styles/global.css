@@ -97,3 +97,28 @@ pre code {
     transition-duration: 0.01ms !important;
   }
 }
+
+@media print {
+  nav, footer, .controls, .status-bar, .toolbar-btn, .export-filter {
+    display: none !important;
+  }
+  body {
+    background: white;
+    color: black;
+  }
+  a {
+    color: black;
+    text-decoration: underline;
+  }
+  code {
+    background: #f0f0f0;
+  }
+  pre {
+    background: #f0f0f0;
+    border: 1px solid #ccc;
+  }
+  main {
+    max-width: 100% !important;
+    padding: 0 !important;
+  }
+}
