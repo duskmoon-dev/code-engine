@@ -131,12 +131,14 @@ const categories = categoryOrder
   document.querySelectorAll('.copy-import-btn').forEach(btn => {
     btn.addEventListener('click', async () => {
       const text = (btn as HTMLElement).dataset.import ?? ''
+      const orig = btn.textContent
       try {
         await navigator.clipboard.writeText(text)
-        const orig = btn.textContent
-        btn.textContent = '✓'
-        setTimeout(() => { btn.textContent = orig }, 1000)
-      } catch { /* clipboard not available */ }
+        btn.textContent = 'Copied!'
+      } catch {
+        btn.textContent = 'Failed'
+      }
+      setTimeout(() => { btn.textContent = orig }, 1500)
     })
   })
 
