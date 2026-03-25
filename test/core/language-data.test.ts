@@ -86,3 +86,48 @@ describe("LanguageDescription.matchLanguageName", () => {
     expect(match!.name).toBe("TypeScript");
   });
 });
+
+describe("LanguageDescription.load()", () => {
+  it("JavaScript load() returns a LanguageSupport", async () => {
+    const desc = languages.find(l => l.name === "JavaScript")!;
+    const support = await desc.load();
+    expect(support).toBeDefined();
+    expect(typeof support).toBe("object");
+  });
+
+  it("Python load() returns a LanguageSupport", async () => {
+    const desc = languages.find(l => l.name === "Python")!;
+    const support = await desc.load();
+    expect(support).toBeDefined();
+  });
+
+  it("TypeScript load() returns a LanguageSupport", async () => {
+    const desc = languages.find(l => l.name === "TypeScript")!;
+    const support = await desc.load();
+    expect(support).toBeDefined();
+  });
+
+  it("CSS load() returns a LanguageSupport", async () => {
+    const desc = languages.find(l => l.name === "CSS")!;
+    const support = await desc.load();
+    expect(support).toBeDefined();
+  });
+
+  it("HTML load() returns a LanguageSupport", async () => {
+    const desc = languages.find(l => l.name === "HTML")!;
+    const support = await desc.load();
+    expect(support).toBeDefined();
+  });
+
+  it("JSON load() returns a LanguageSupport", async () => {
+    const desc = languages.find(l => l.name === "JSON")!;
+    const support = await desc.load();
+    expect(support).toBeDefined();
+  });
+
+  it("Rust load() returns a LanguageSupport", async () => {
+    const desc = languages.find(l => l.name === "Rust")!;
+    const support = await desc.load();
+    expect(support).toBeDefined();
+  });
+});
