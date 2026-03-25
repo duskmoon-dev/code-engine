@@ -517,8 +517,12 @@ BinaryExpression { expression !add "+" expression }
   const shareBtn = document.getElementById('btn-share')!
   shareBtn.addEventListener('click', async () => {
     updateHash()
-    await navigator.clipboard.writeText(location.href)
-    shareBtn.textContent = 'Copied!'
+    try {
+      await navigator.clipboard.writeText(location.href)
+      shareBtn.textContent = 'Copied!'
+    } catch {
+      shareBtn.textContent = 'Failed'
+    }
     setTimeout(() => { shareBtn.textContent = 'Share' }, 1500)
   })
 

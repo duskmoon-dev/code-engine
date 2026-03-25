@@ -55,8 +55,12 @@ new EditorView({
     btn.className = 'copy-btn'
     btn.addEventListener('click', async () => {
       const code = pre.querySelector('code')?.textContent ?? ''
-      await navigator.clipboard.writeText(code)
-      btn.textContent = 'Copied!'
+      try {
+        await navigator.clipboard.writeText(code)
+        btn.textContent = 'Copied!'
+      } catch {
+        btn.textContent = 'Failed'
+      }
       setTimeout(() => { btn.textContent = 'Copy' }, 1500)
     })
     pre.style.position = 'relative'
@@ -116,9 +120,14 @@ new EditorView({
     border-radius: var(--radius);
     transition: border-color 0.15s;
   }
-  .link-card:hover {
+  .link-card:hover,
+  .link-card:focus-visible {
     border-color: var(--color-accent);
     text-decoration: none;
+  }
+  .link-card:focus-visible {
+    outline: 2px solid var(--color-accent);
+    outline-offset: 2px;
   }
   .link-card h3 {
     color: var(--color-text);
