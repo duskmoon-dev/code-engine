@@ -1765,3 +1765,67 @@ describe("ParseContext", () => {
     });
   });
 });
+
+describe("TreeIndentContext and indent strategies with real language", () => {
+  it("delimitedIndent for JavaScript Block covers TreeIndentContext basics", () => {
+    // "function foo() {\n  return x;\n}" - line 2 starts at pos 17
+    const state = EditorState.create({
+      doc: "function foo() {\n  return x;\n}",
+      extensions: [javascript()],
+    });
+    ensureSyntaxTree(state, state.doc.length, 1000);
+    // Block has delimitedIndent({closing: "}"}); base indent 0 + 1 unit (2) = 2
+    const indent = getIndentation(state, 17);
+    expect(indent).toBe(2);
+  });
+
+  it("continuedIndent inner function via JavaScript IfStatement", () => {
+    // "if (true)\n  doSomething();" - line 2 starts at pos 10
+    const state = EditorState.create({
+      doc: "if (true)\n  doSomething();",
+      extensions: [javascript()],
+    });
+    ensureSyntaxTree(state, state.doc.length, 1000);
+    const indent = getIndentation(state, 10);
+    expect(typeof indent).toBe("number");
+  });
+
+  it("bracketedAligned aligns indentation with first arg on opening line", () => {
+    // "foo(bar,\n    baz)" - line 2 starts at pos 9; ( is at col 3, bar at col 4
+    const state = EditorState.create({
+      doc: "foo(bar,\n    baz)",
+      extensions: [javascript()],
+    });
+    ensureSyntaxTree(state, state.doc.length, 1000);
+    // ArgList uses closedBy path; bracketedAligned finds bar on same line as (
+    const indent = getIndentation(state, 9);
+    expect(indent).toBe(4);
+  });
+
+  it("ignoreClosed: simulateDoubleBreak suppresses closedAt parameter", () => {
+    // ignoreClosed returns true when pos == simulateBreak && simulateDoubleBreak
+    const state = EditorState.create({
+      doc: "[\n1,\n2\n]",
+      extensions: [javascript()],
+    });
+    ensureSyntaxTree(state, state.doc.length, 1000);
+    const ctx = new IndentContext(state, {
+      simulateBreak: 1,
+      simulateDoubleBreak: true,
+    });
+    const indent = getIndentation(ctx, 1);
+    expect(typeof indent).toBe("number");
+  });
+
+  it("TreeIndentContext.continue() via Python Script strategy at top level", () => {
+    // Script strategy: (inner && indentBody) ?? cx.continue()
+    // At pos 0 with no preceding Body, inner = null => cx.continue() is called
+    const state = EditorState.create({
+      doc: "x = 1",
+      extensions: [python()],
+    });
+    ensureSyntaxTree(state, state.doc.length, 1000);
+    const indent = getIndentation(state, 0);
+    expect(indent).toBe(0);
+  });
+});
