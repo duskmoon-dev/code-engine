@@ -4,6 +4,7 @@ import {
   MergeView, unifiedMergeView, acceptChunk, rejectChunk, getOriginalDoc,
   getChunks, goToNextChunk, goToPreviousChunk,
   Chunk, uncollapseUnchanged, mergeViewSiblings,
+  originalDocChangeEffect, updateOriginalDoc,
 } from "../../src/core/merge/index";
 
 describe("Change", () => {
@@ -170,6 +171,17 @@ describe("Merge module exports", () => {
 
   it("exports mergeViewSiblings as a function", () => {
     expect(typeof mergeViewSiblings).toBe("function");
+  });
+});
+
+describe("Additional merge exports", () => {
+  it("exports originalDocChangeEffect as a StateEffectType constructor", () => {
+    expect(originalDocChangeEffect).toBeDefined();
+    expect(typeof originalDocChangeEffect).toBe("function");
+  });
+
+  it("exports updateOriginalDoc as a defined value", () => {
+    expect(updateOriginalDoc).toBeDefined();
   });
 });
 
