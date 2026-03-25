@@ -133,6 +133,7 @@ import {
   defaultKeymap,
   indentWithTab,
 } from "../../src/core/commands/index";
+import { EditorState } from "../../src/core/state/index";
 
 describe("core/commands exports", () => {
   describe("comment commands", () => {
@@ -419,5 +420,42 @@ describe("core/commands exports", () => {
         expect(typeof binding.run).toBe("function");
       }
     });
+  });
+});
+
+describe("history() behavioral tests", () => {
+  it("undoDepth returns 0 for a fresh state", () => {
+    const state = EditorState.create({
+      doc: "hello",
+      extensions: [history()],
+    });
+    expect(undoDepth(state)).toBe(0);
+  });
+
+  it("redoDepth returns 0 for a fresh state", () => {
+    const state = EditorState.create({
+      doc: "hello",
+      extensions: [history()],
+    });
+    expect(redoDepth(state)).toBe(0);
+  });
+
+  it("undoDepth increases after a transaction", () => {
+    let state = EditorState.create({
+      doc: "hello",
+      extensions: [history()],
+    });
+    state = state.update({ changes: { from: 5, insert: " world" } }).state;
+    expect(undoDepth(state)).toBe(1);
+  });
+
+  it("history() returns an extension", () => {
+    const ext = history();
+    expect(ext).toBeDefined();
+  });
+
+  it("history() accepts a config", () => {
+    const ext = history({ minDepth: 50, newGroupDelay: 300 });
+    expect(ext).toBeDefined();
   });
 });
