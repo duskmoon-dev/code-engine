@@ -1,5 +1,5 @@
 import { describe, it, expect } from "bun:test";
-import { Tree, NodeType, NodeSet, TreeBuffer, NodeProp, Parser, TreeFragment } from "../../src/parser/common/index";
+import { Tree, NodeType, NodeSet, TreeBuffer, NodeProp, Parser, TreeFragment, parseMixed } from "../../src/parser/common/index";
 import { pythonLanguage } from "../../src/lang/python/index";
 import { EditorState } from "../../src/core/state/index";
 
@@ -33,6 +33,10 @@ describe("Parser common module", () => {
 
     it("exports TreeFragment", () => {
       expect(TreeFragment).toBeDefined();
+    });
+
+    it("exports parseMixed", () => {
+      expect(typeof parseMixed).toBe("function");
     });
   });
 
@@ -71,6 +75,20 @@ describe("Parser common module", () => {
       const tree = pythonLanguage.parser.parse("x = 1");
       expect(tree.type).toBeDefined();
       expect(tree.type.isTop).toBe(true);
+    });
+
+    it("tree cursor can iterate nodes", () => {
+      const tree = pythonLanguage.parser.parse("x = 1");
+      const cursor = tree.cursor();
+      expect(cursor).toBeDefined();
+      expect(cursor.type).toBeDefined();
+    });
+
+    it("TreeFragment.addTree creates fragments from a tree", () => {
+      const tree = pythonLanguage.parser.parse("x = 1");
+      const fragments = TreeFragment.addTree(tree);
+      expect(Array.isArray(fragments)).toBe(true);
+      expect(fragments.length).toBeGreaterThan(0);
     });
   });
 });
