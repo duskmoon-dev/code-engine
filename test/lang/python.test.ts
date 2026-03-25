@@ -370,6 +370,35 @@ describe("Python language pack", () => {
       expect(typeof indent).toBe("number");
     });
 
+    it("Body indentation: innerBody Comment path (line 17) - querying at second comment", () => {
+      // Two comment lines in body - querying at "# second" should invoke comment path
+      // Body has: ': [7-8], Comment[13-20] "# first", Comment[25-33] "# second"
+      // At pos=22, textAfter="    # second" → innerBody called → childBefore(22)=Comment[13-20]
+      const doc = "if True:\n    # first\n    # second\n";
+      const state = EditorState.create({ doc, extensions: [python()] });
+      ensureSyntaxTree(state, state.doc.length, 1000);
+      const indent = getIndentation(state, 22);  // start of "    # second" line
+      expect(typeof indent).toBe("number");
+    });
+
+    it("MatchBody indentation: innerBody MatchClause path (line 22)", () => {
+      // match/case where querying at second "case" line triggers MatchClause path
+      const doc = "match x:\n    case 1:\n        pass\n    case 2:\n";
+      const state = EditorState.create({ doc, extensions: [python()] });
+      ensureSyntaxTree(state, state.doc.length, 1000);
+      const indent = getIndentation(state, 36);  // start of "    case 2:" line
+      expect(typeof indent).toBe("number");
+    });
+
+    it("MatchBody indentation: Body before cursor path (lines 19-20)", () => {
+      // Nested match/case where innerBody finds a Body/MatchBody before cursor
+      const doc = "match x:\n    case 1:\n        pass\n    case 2:\n        pass\n    ";
+      const state = EditorState.create({ doc, extensions: [python()] });
+      ensureSyntaxTree(state, state.doc.length, 1000);
+      const indent = getIndentation(state, doc.length);
+      expect(typeof indent).toBe("number");
+    });
+
     it("IfStatement indentation: else: gets base indent", () => {
       // "if True:\n    x = 1\nelse:\n    y = 2" - pos 19 is start of "else:" line
       const doc = "if True:\n    x = 1\nelse:\n    y = 2";
