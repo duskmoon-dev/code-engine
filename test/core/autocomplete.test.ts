@@ -31,7 +31,7 @@ import {
   clearSnippet,
   snippetKeymap,
 } from "../../src/core/autocomplete/index";
-import { EditorState } from "../../src/core/state/index";
+import { EditorState, Text } from "../../src/core/state/index";
 import { FuzzyMatcher, StrictMatcher } from "../../src/core/autocomplete/filter";
 
 describe("autocomplete module exports", () => {
@@ -392,15 +392,35 @@ describe("completeAnyWord", () => {
     expect(labels.length).toBeGreaterThan(0);
   });
 
-  it("handles a large document (> 1000 chars) that may have doc.children", () => {
-    // Create a document long enough to potentially trigger the doc.children path
-    const words = Array.from({length: 100}, (_, i) => `word${i}`).join(" ");
-    const longDoc = words.repeat(3); // > 1000 chars
-    const state = EditorState.create({ doc: longDoc });
-    const ctx = new CompletionContext(state, longDoc.length, true);
+  it("handles a large document (many lines) that triggers doc.children tree structure", () => {
+    // Text.of() with many lines creates a TextNode tree (doc.children is populated)
+    const lines = Array.from({length: 300}, (_, i) => `uniqueWord${i} commonWord`);
+    const doc = Text.of(lines);
+    const state = EditorState.create({ doc });
+    const ctx = new CompletionContext(state, doc.length, true);
     const result = completeAnyWord(ctx);
     expect(result).not.toBeNull();
     expect(result!.options.length).toBeGreaterThan(0);
+    // "commonWord" should appear once (deduped across all lines)
+    const commonMatches = result!.options.filter(o => o.label === "commonWord");
+    expect(commonMatches.length).toBe(1);
+  });
+
+  it("handles a large document with large children (triggers deep collectWords recursion)", () => {
+    // Use long lines (~100 chars each) so children in the Text tree exceed MinCacheLen (1000 chars)
+    // This triggers the recursive collectWords path (doc.children[i].length >= MinCacheLen)
+    const lines = Array.from({length: 100}, (_, i) =>
+      "x".repeat(50) + " uniqueToken" + i + " " + "y".repeat(50)
+    );
+    const doc = Text.of(lines);
+    const state = EditorState.create({ doc });
+    const ctx = new CompletionContext(state, doc.length, true);
+    const result = completeAnyWord(ctx);
+    expect(result).not.toBeNull();
+    expect(result!.options.length).toBeGreaterThan(0);
+    // "x" and "y" repeated strings won't be words (no alphanumeric breaks) but uniqueToken{i} will
+    const labels = result!.options.map(o => o.label);
+    expect(labels.some(l => l.startsWith("uniqueToken"))).toBe(true);
   });
 
   it("returns null for non-explicit completion when cursor is not after a word char", () => {
