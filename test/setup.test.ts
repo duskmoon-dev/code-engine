@@ -1,6 +1,13 @@
 import { describe, it, expect } from "bun:test";
-import { basicSetup, minimalSetup } from "../src/setup";
+import { basicSetup, minimalSetup, EditorView } from "../src/setup";
 import { EditorState } from "../src/core/state/index";
+
+describe("Setup module re-exports", () => {
+  it("re-exports EditorView from setup", () => {
+    expect(EditorView).toBeDefined();
+    expect(typeof EditorView).toBe("function");
+  });
+});
 
 describe("Setup extensions", () => {
   describe("basicSetup", () => {
