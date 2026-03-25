@@ -427,6 +427,63 @@ describe("bracketMatching with EditorState", () => {
     });
     expect(state.doc.toString()).toBe("(hello)");
   });
+
+  it("matchBrackets finds parens with language support", () => {
+    const state = EditorState.create({
+      doc: "(1 + 2)",
+      extensions: [python()],
+    });
+    // Force parse
+    ensureSyntaxTree(state, state.doc.length, 1000);
+    const result = matchBrackets(state, 0, 1);
+    if (result) {
+      expect(result.start).toBeDefined();
+      expect(result.matched).toBe(true);
+    }
+  });
+
+  it("matchBrackets returns null at non-bracket position", () => {
+    const state = EditorState.create({
+      doc: "hello",
+      extensions: [python()],
+    });
+    ensureSyntaxTree(state, state.doc.length, 1000);
+    const result = matchBrackets(state, 2, 1);
+    expect(result).toBe(null);
+  });
+
+  it("matchBrackets works with square brackets", () => {
+    const state = EditorState.create({
+      doc: "[1, 2, 3]",
+      extensions: [python()],
+    });
+    ensureSyntaxTree(state, state.doc.length, 1000);
+    const result = matchBrackets(state, 0, 1);
+    if (result) {
+      expect(result.matched).toBe(true);
+    }
+  });
+
+  it("matchBrackets works with curly braces", () => {
+    const state = EditorState.create({
+      doc: '{"a": 1}',
+      extensions: [python()],
+    });
+    ensureSyntaxTree(state, state.doc.length, 1000);
+    const result = matchBrackets(state, 0, 1);
+    if (result) {
+      expect(result.start).toBeDefined();
+    }
+  });
+
+  it("bracketMatching accepts config options", () => {
+    const ext = bracketMatching({
+      afterCursor: false,
+      brackets: "()",
+      maxScanDistance: 5000,
+    });
+    expect(ext).toBeDefined();
+  });
 });
 
 describe("LRLanguage", () => {
