@@ -433,6 +433,18 @@ describe("Python language pack", () => {
       const fold = foldable(state, 0, 9);
       expect(fold === null || typeof fold!.from === "number").toBe(true);
     });
+
+    it("foldInside: ArrayExpression in Python is foldable (covers foldInside in fold.ts)", () => {
+      // "x = [\n    1,\n    2,\n]" - line 1 "x = [" ends at pos 5
+      // foldable(state, 0, 5) triggers ArrayExpression.foldInside → {from: '['.to, to: ']'.from}
+      const doc = "x = [\n    1,\n    2,\n]";
+      const state = EditorState.create({ doc, extensions: [python()] });
+      ensureSyntaxTree(state, state.doc.length, 1000);
+      const fold = foldable(state, 0, 5);
+      expect(fold).not.toBeNull();
+      expect(fold!.from).toBe(5);  // after '['
+      expect(fold!.to).toBe(20);   // before ']'
+    });
   });
 
   describe("localCompletionSource behavioral", () => {
