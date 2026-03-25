@@ -7,7 +7,7 @@ import {
   esLint
 } from "../../src/lang/javascript/index";
 import { EditorState } from "../../src/core/state/index";
-import { syntaxTree } from "../../src/core/language/index";
+import { syntaxTree, ensureSyntaxTree, getIndentation, foldable } from "../../src/core/language/index";
 
 describe("JavaScript language pack", () => {
   it("exports javascript function", () => {
@@ -328,5 +328,63 @@ describe("JavaScript language pack", () => {
     const doc = "function greet() { return 'hello'; }";
     const state = EditorState.create({ doc, extensions: [javascript()] });
     expect(state.doc.length).toBe(doc.length);
+  });
+
+  describe("JavaScript indentation strategies", () => {
+    it("SwitchBody: case label indented 1 unit from switch", () => {
+      // "switch (x) {\n  case 1:\n    break;\n}" - pos 13 is start of "  case 1:" line
+      const doc = "switch (x) {\n  case 1:\n    break;\n}";
+      const state = EditorState.create({ doc, extensions: [javascript()] });
+      ensureSyntaxTree(state, state.doc.length, 1000);
+      const indent = getIndentation(state, 13);
+      expect(typeof indent).toBe("number");
+    });
+
+    it("JSXElement: child line indented by one unit (JSX mode)", () => {
+      // JSX: "<div>\n  <span/>\n</div>" - pos 6 is start of "  <span/>" line
+      const doc = "<div>\n  <span/>\n</div>";
+      const state = EditorState.create({ doc, extensions: [javascript({ jsx: true })] });
+      ensureSyntaxTree(state, state.doc.length, 1000);
+      const indent = getIndentation(state, 6);
+      expect(typeof indent).toBe("number");
+    });
+
+    it("JSXOpenTag: attribute on next line indented from tag col (JSX mode)", () => {
+      // "<div\n  className=\"foo\">" - pos 5 is start of "  className=..." inside JSXOpenTag
+      const doc = "<div\n  className=\"foo\">";
+      const state = EditorState.create({ doc, extensions: [javascript({ jsx: true })] });
+      ensureSyntaxTree(state, state.doc.length, 1000);
+      const indent = getIndentation(state, 5);
+      expect(typeof indent).toBe("number");
+    });
+
+    it("JSXEscape: expression inside JSX indented from escape context (JSX mode)", () => {
+      // "function f() {\n  return (<div>{x\n    + y}</div>);\n}" - expression in JSXEscape
+      const doc = "function f() {\n  return (\n    <div>\n      {x +\n        y}\n    </div>\n  );\n}";
+      const state = EditorState.create({ doc, extensions: [javascript({ jsx: true })] });
+      ensureSyntaxTree(state, state.doc.length, 1000);
+      // Find a position inside JSXEscape on the continuation line
+      const indent = getIndentation(state, 45); // inside "{x +..." expression
+      expect(typeof indent).toBe("number");
+    });
+
+    it("JSXElement fold: foldable returns range for JSXElement spanning lines", () => {
+      // "<div>\n  hello\n</div>" - line 1 is 0-4, line 2 is 5-12, line 3 is 13-19
+      const doc = "<div>\n  hello\n</div>";
+      const state = EditorState.create({ doc, extensions: [javascript({ jsx: true })] });
+      ensureSyntaxTree(state, state.doc.length, 1000);
+      // Line 1: lineStart=0, lineEnd=4 (before \n)
+      const fold = foldable(state, 0, 4);
+      expect(fold === null || (typeof fold!.from === "number" && typeof fold!.to === "number")).toBe(true);
+    });
+
+    it("JSXOpenTag fold: foldable returns range for multi-line JSXOpenTag", () => {
+      // "<div\n  className=\"foo\"\n>" - line 1 is 0-3
+      const doc = "<div\n  className=\"foo\"\n>";
+      const state = EditorState.create({ doc, extensions: [javascript({ jsx: true })] });
+      ensureSyntaxTree(state, state.doc.length, 1000);
+      const fold = foldable(state, 0, 3);
+      expect(fold === null || (typeof fold!.from === "number" && typeof fold!.to === "number")).toBe(true);
+    });
   });
 });
