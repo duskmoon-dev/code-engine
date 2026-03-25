@@ -898,9 +898,11 @@ BinaryExpression { expression !add "+" expression }
           lineNumbers: lineNumbersCheckbox.checked,
           autocomplete: autocompleteCheckbox.checked,
           wordWrap: wordWrapCheckbox.checked,
+          readOnly: readOnlyCheckbox.checked,
           highlightLine: highlightLineCheckbox.checked,
           brackets: bracketsCheckbox.checked,
           fold: foldCheckbox.checked,
+          whitespace: whitespaceCheckbox.checked,
           vim: vimCheckbox.checked,
           emacs: emacsCheckbox.checked,
         }))
@@ -915,8 +917,8 @@ BinaryExpression { expression !add "+" expression }
       if (saved) {
         const state = JSON.parse(saved)
         const { lang, doc, theme, fontSize, tabSize, useTabs,
-                lineNumbers, autocomplete, wordWrap, highlightLine,
-                brackets, fold, vim, emacs } = state
+                lineNumbers, autocomplete, wordWrap, readOnly, highlightLine,
+                brackets, fold, whitespace, vim, emacs } = state
         // Restore settings controls
         if (theme && themes[theme]) {
           themeSelect.value = theme
@@ -928,9 +930,11 @@ BinaryExpression { expression !add "+" expression }
         if (typeof lineNumbers === 'boolean') lineNumbersCheckbox.checked = lineNumbers
         if (typeof autocomplete === 'boolean') autocompleteCheckbox.checked = autocomplete
         if (typeof wordWrap === 'boolean') wordWrapCheckbox.checked = wordWrap
+        if (typeof readOnly === 'boolean') readOnlyCheckbox.checked = readOnly
         if (typeof highlightLine === 'boolean') highlightLineCheckbox.checked = highlightLine
         if (typeof brackets === 'boolean') bracketsCheckbox.checked = brackets
         if (typeof fold === 'boolean') foldCheckbox.checked = fold
+        if (typeof whitespace === 'boolean') whitespaceCheckbox.checked = whitespace
         if (vim === true) { vimCheckbox.checked = true; emacsCheckbox.checked = false }
         else if (emacs === true) { emacsCheckbox.checked = true; vimCheckbox.checked = false }
         reconfigureIndent()
