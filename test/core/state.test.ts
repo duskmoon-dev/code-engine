@@ -280,3 +280,45 @@ describe("Text utilities", () => {
     expect(pos).toBeGreaterThanOrEqual(0);
   });
 });
+
+describe("EditorState multi-line document", () => {
+  it("correctly counts lines in a multi-line document", () => {
+    const state = EditorState.create({ doc: "line 1\nline 2\nline 3" });
+    expect(state.doc.lines).toBe(3);
+  });
+
+  it("lineAt returns correct line info", () => {
+    const state = EditorState.create({ doc: "line 1\nline 2\nline 3" });
+    const line = state.doc.lineAt(0);
+    expect(line.number).toBe(1);
+    expect(line.text).toBe("line 1");
+  });
+
+  it("line(n) returns correct line by number", () => {
+    const state = EditorState.create({ doc: "line 1\nline 2\nline 3" });
+    const line = state.doc.line(2);
+    expect(line.text).toBe("line 2");
+  });
+});
+
+describe("ChangeSet.map", () => {
+  it("maps a position through a changeset", () => {
+    const state = EditorState.create({ doc: "hello world" });
+    const changes = ChangeSet.of([{ from: 0, to: 5, insert: "goodbye" }], 11);
+    const mapped = changes.mapPos(6);
+    expect(typeof mapped).toBe("number");
+    expect(mapped).toBeGreaterThan(0);
+  });
+});
+
+describe("SelectionRange properties", () => {
+  it("empty property is true for cursor", () => {
+    const range = EditorSelection.cursor(5);
+    expect(range.empty).toBe(true);
+  });
+
+  it("empty property is false for non-empty range", () => {
+    const range = EditorSelection.range(3, 8);
+    expect(range.empty).toBe(false);
+  });
+});
