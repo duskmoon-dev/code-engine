@@ -177,6 +177,29 @@ describe("Transaction", () => {
   });
 });
 
+describe("ChangeSet", () => {
+  it("ChangeSet.of creates a change set", () => {
+    const state = EditorState.create({ doc: "hello world" });
+    const changes = ChangeSet.of([{ from: 6, to: 11, insert: "there" }], 11);
+    expect(changes).toBeDefined();
+    expect(changes.apply(state.doc).toString()).toBe("hello there");
+  });
+
+  it("ChangeSet.empty has no changes", () => {
+    const empty = ChangeSet.empty(10);
+    expect(empty).toBeDefined();
+    expect(empty.length).toBe(10);
+  });
+
+  it("can compose changeSets", () => {
+    const cs1 = ChangeSet.of([{ from: 0, to: 5, insert: "world" }], 11);
+    const cs2 = ChangeSet.of([{ from: 5, insert: "!" }], cs1.newLength);
+    const composed = cs1.compose(cs2);
+    const state = EditorState.create({ doc: "hello world" });
+    expect(composed.apply(state.doc).toString()).toBe("world! world");
+  });
+});
+
 describe("Annotation", () => {
   it("defines an annotation type", () => {
     const myAnnotation = Annotation.define<string>();
