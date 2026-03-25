@@ -5,11 +5,27 @@ import Layout from '../layouts/Layout.astro'
   <div class="not-found">
     <h1>404</h1>
     <p>This page doesn't exist.</p>
-    <nav class="not-found-links" aria-label="Helpful links">
-      <a href={import.meta.env.BASE_URL}>Home</a>
-      <a href={`${import.meta.env.BASE_URL}docs`}>API Docs</a>
-      <a href={`${import.meta.env.BASE_URL}playground`}>Playground</a>
-    </nav>
+    <p class="base-path-hint">
+      This site is served under <code>/code-engine/</code>. Make sure your URL starts
+      with <code>{import.meta.env.BASE_URL}</code>.
+    </p>
+    <section class="suggested-pages" aria-labelledby="suggested-heading">
+      <h2 id="suggested-heading">Suggested Pages</h2>
+      <nav class="not-found-links" aria-label="Suggested pages">
+        <a href={import.meta.env.BASE_URL}>
+          <span class="link-title">Home</span>
+          <span class="link-desc">Project overview and getting started</span>
+        </a>
+        <a href={`${import.meta.env.BASE_URL}docs`}>
+          <span class="link-title">API Docs</span>
+          <span class="link-desc">Full API reference for all modules</span>
+        </a>
+        <a href={`${import.meta.env.BASE_URL}playground`}>
+          <span class="link-title">Playground</span>
+          <span class="link-desc">Live editor to try the code engine</span>
+        </a>
+      </nav>
+    </section>
   </div>
 </Layout>
 
@@ -27,6 +43,28 @@ import Layout from '../layouts/Layout.astro'
     color: var(--color-text-muted);
     margin-bottom: var(--space-md);
   }
+  .base-path-hint {
+    font-size: 0.9rem;
+    color: var(--color-text-muted);
+    margin-bottom: var(--space-lg);
+  }
+  .base-path-hint code {
+    background: var(--color-surface);
+    padding: 0.15rem 0.4rem;
+    border-radius: var(--radius);
+    font-size: 0.85em;
+    border: 1px solid var(--color-border);
+  }
+  .suggested-pages {
+    max-width: 36rem;
+    margin: 0 auto;
+  }
+  .suggested-pages h2 {
+    font-size: 1.1rem;
+    color: var(--color-text-muted);
+    margin-bottom: var(--space-md);
+    font-weight: 500;
+  }
   .not-found-links {
     display: flex;
     gap: var(--space-md);
@@ -34,18 +72,32 @@ import Layout from '../layouts/Layout.astro'
     flex-wrap: wrap;
   }
   .not-found-links a {
-    padding: 0.4rem 1rem;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.25rem;
+    padding: 0.75rem 1.25rem;
     background: var(--color-surface);
     border: 1px solid var(--color-border);
     border-radius: var(--radius);
-    transition: border-color 0.15s;
+    transition: border-color 0.15s, box-shadow 0.15s;
+    min-width: 9rem;
   }
   .not-found-links a:hover {
     border-color: var(--color-accent);
+    box-shadow: 0 0 0 1px var(--color-accent);
     text-decoration: none;
   }
   .not-found-links a:focus-visible {
     outline: 2px solid var(--color-accent);
     outline-offset: 2px;
+  }
+  .link-title {
+    font-weight: 600;
+    color: var(--color-text);
+  }
+  .link-desc {
+    font-size: 0.8rem;
+    color: var(--color-text-muted);
   }
 </style>
