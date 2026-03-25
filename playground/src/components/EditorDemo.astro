@@ -83,6 +83,7 @@
         <button id="btn-font-increase" class="toolbar-btn" aria-label="Increase font size">A+</button>
       </div>
       <button id="btn-fullscreen" class="toolbar-btn" aria-label="Toggle fullscreen">Fullscreen</button>
+      <button id="btn-copy" class="toolbar-btn" aria-label="Copy code to clipboard">Copy</button>
       <button id="btn-download" class="toolbar-btn" aria-label="Download editor content">Download</button>
       <button id="btn-share" class="toolbar-btn" aria-label="Copy share link">Share</button>
       <button id="btn-shortcuts" class="toolbar-btn" aria-label="Show keyboard shortcuts" title="Keyboard shortcuts">?</button>
@@ -776,6 +777,18 @@ BinaryExpression { expression !add "+" expression }
     yaml: 'yaml', angular: 'html', vue: 'vue', liquid: 'liquid', wast: 'wat',
     jinja: 'html', lezer: 'grammar',
   }
+  // Copy code button
+  const copyBtn = document.getElementById('btn-copy')!
+  copyBtn.addEventListener('click', async () => {
+    try {
+      await navigator.clipboard.writeText(view.state.doc.toString())
+      copyBtn.textContent = 'Copied!'
+    } catch {
+      copyBtn.textContent = 'Failed'
+    }
+    setTimeout(() => { copyBtn.textContent = 'Copy' }, 1500)
+  })
+
   const downloadBtn = document.getElementById('btn-download')!
   downloadBtn.addEventListener('click', () => {
     const ext = fileExtensions[langSelect.value] ?? 'txt'
