@@ -9,7 +9,7 @@
   },
   "dependencies": {
     "@astrojs/sitemap": "^3.7.1",
-    "@duskmoon-dev/code-engine": "workspace:*"
+    "@duskmoon-dev/code-engine": "file:.."
   },
   "devDependencies": {
     "astro": "^5.x"
