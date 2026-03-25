@@ -237,4 +237,31 @@ describe("CSS language pack", () => {
     state = state.update({ changes: { from: 17, insert: "\nh1 { color: blue; }" } }).state;
     expect(state.doc.lines).toBe(2);
   });
+
+  it("css() state doc line text is accessible", () => {
+    const state = EditorState.create({
+      doc: "body { margin: 0; }\n.container { display: flex; }",
+      extensions: [css()],
+    });
+    expect(state.doc.line(1).text).toBe("body { margin: 0; }");
+  });
+
+  it("css() state allows multiple sequential transactions", () => {
+    let state = EditorState.create({ doc: "p { color: red; }", extensions: [css()] });
+    state = state.update({ changes: { from: 17, insert: "\nh1 { font-size: 2em; }" } }).state;
+    state = state.update({ changes: { from: state.doc.length, insert: "\n.btn { cursor: pointer; }" } }).state;
+    expect(state.doc.lines).toBe(3);
+  });
+
+  it("css() state allows replacement transaction", () => {
+    let state = EditorState.create({ doc: "p { color: red; }", extensions: [css()] });
+    state = state.update({ changes: { from: 12, to: 15, insert: "blue" } }).state;
+    expect(state.doc.toString()).toContain("blue");
+  });
+
+  it("css() doc length invariant holds", () => {
+    const doc = ".box { width: 100px; }";
+    const state = EditorState.create({ doc, extensions: [css()] });
+    expect(state.doc.length).toBe(doc.length);
+  });
 });

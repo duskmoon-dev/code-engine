@@ -260,5 +260,42 @@ describe("Setup extensions", () => {
       state = state.update({ changes: { from: 5, insert: "!" } }).state;
       expect(state.doc.toString()).toBe("hello! world");
     });
+
+    it("basicSetup selection within first line works", () => {
+      const state = EditorState.create({
+        doc: "hello world",
+        selection: { anchor: 0, head: 5 },
+        extensions: basicSetup,
+      });
+      expect(state.selection.main.from).toBe(0);
+      expect(state.selection.main.to).toBe(5);
+    });
+
+    it("basicSetup doc length invariant holds", () => {
+      const doc = "fixed length string";
+      const state = EditorState.create({ doc, extensions: basicSetup });
+      expect(state.doc.length).toBe(doc.length);
+    });
+
+    it("minimalSetup doc length invariant holds", () => {
+      const doc = "short";
+      const state = EditorState.create({ doc, extensions: minimalSetup });
+      expect(state.doc.length).toBe(doc.length);
+    });
+
+    it("basicSetup sequential transactions update doc correctly", () => {
+      let state = EditorState.create({ doc: "x", extensions: basicSetup });
+      state = state.update({ changes: { from: 1, insert: "y" } }).state;
+      state = state.update({ changes: { from: 2, insert: "z" } }).state;
+      expect(state.doc.toString()).toBe("xyz");
+      expect(state.doc.length).toBe(3);
+    });
+
+    it("minimalSetup replacement transaction preserves doc length invariant", () => {
+      let state = EditorState.create({ doc: "abc", extensions: minimalSetup });
+      state = state.update({ changes: { from: 0, to: 3, insert: "xyz" } }).state;
+      expect(state.doc.toString()).toBe("xyz");
+      expect(state.doc.length).toBe(3);
+    });
   });
 });

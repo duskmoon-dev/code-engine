@@ -274,5 +274,32 @@ describe("Lezer language pack", () => {
       state = state.update({ changes: { from: 13, insert: "\ne { Number }" } }).state;
       expect(state.doc.lines).toBe(2);
     });
+
+    it("lezer() state doc line text is accessible", () => {
+      const state = EditorState.create({
+        doc: "@top Program { stmt* }\nstmt { id \";\"}",
+        extensions: [lezer()],
+      });
+      expect(state.doc.line(1).text).toBe("@top Program { stmt* }");
+    });
+
+    it("lezer() state allows multiple sequential transactions", () => {
+      let state = EditorState.create({ doc: "@top P { e* }", extensions: [lezer()] });
+      state = state.update({ changes: { from: 13, insert: "\ne { Number }" } }).state;
+      state = state.update({ changes: { from: state.doc.length, insert: "\n@tokens { Number { @digit+ } }" } }).state;
+      expect(state.doc.lines).toBe(3);
+    });
+
+    it("lezer() state allows replacement transaction", () => {
+      let state = EditorState.create({ doc: "@top P { e* }", extensions: [lezer()] });
+      state = state.update({ changes: { from: 9, to: 11, insert: "expr+" } }).state;
+      expect(state.doc.toString()).toContain("expr+");
+    });
+
+    it("lezer() doc length invariant holds", () => {
+      const doc = "@top P { e* }";
+      const state = EditorState.create({ doc, extensions: [lezer()] });
+      expect(state.doc.length).toBe(doc.length);
+    });
   });
 });

@@ -244,4 +244,33 @@ describe("Python language pack", () => {
     state = state.update({ changes: { from: 5, insert: "\ny = 2" } }).state;
     expect(state.doc.lines).toBe(2);
   });
+
+  it("python() state doc line text is accessible", () => {
+    const state = EditorState.create({
+      doc: "import os\nimport sys",
+      extensions: [python()],
+    });
+    expect(state.doc.line(1).text).toBe("import os");
+    expect(state.doc.line(2).text).toBe("import sys");
+  });
+
+  it("python() state allows multiple sequential transactions", () => {
+    let state = EditorState.create({ doc: "x = 1", extensions: [python()] });
+    state = state.update({ changes: { from: 5, insert: "\ny = 2" } }).state;
+    state = state.update({ changes: { from: state.doc.length, insert: "\nz = 3" } }).state;
+    expect(state.doc.lines).toBe(3);
+    expect(state.doc.line(3).text).toBe("z = 3");
+  });
+
+  it("python() state allows replacement transaction", () => {
+    let state = EditorState.create({ doc: "x = 1", extensions: [python()] });
+    state = state.update({ changes: { from: 4, to: 5, insert: "42" } }).state;
+    expect(state.doc.toString()).toBe("x = 42");
+  });
+
+  it("python() doc length invariant holds", () => {
+    const doc = "def foo(): pass";
+    const state = EditorState.create({ doc, extensions: [python()] });
+    expect(state.doc.length).toBe(doc.length);
+  });
 });

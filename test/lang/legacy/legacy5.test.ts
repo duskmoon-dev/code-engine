@@ -336,5 +336,50 @@ describe("Legacy language packs (batch 5)", () => {
       const state = EditorState.create({ doc, extensions: [new LanguageSupport(lang)] });
       expect(state.doc.length).toBe(doc.length);
     });
+
+    it("modelica doc line count is correct", () => {
+      const lang = StreamLanguage.define(modelica);
+      const state = EditorState.create({
+        doc: "model Test\n  Real x;\nequation\n  x = 1;\nend Test;",
+        extensions: [new LanguageSupport(lang)],
+      });
+      expect(state.doc.lines).toBe(5);
+    });
+
+    it("crystal doc mutation via transaction works", () => {
+      const lang = StreamLanguage.define(crystal);
+      let state = EditorState.create({
+        doc: "puts \"hello\"",
+        extensions: [new LanguageSupport(lang)],
+      });
+      state = state.update({ changes: { from: 12, insert: "\nputs \"world\"" } }).state;
+      expect(state.doc.lines).toBe(2);
+    });
+
+    it("pegjs doc length is correct", () => {
+      const lang = StreamLanguage.define(pegjs);
+      const doc = "start = word+";
+      const state = EditorState.create({ doc, extensions: [new LanguageSupport(lang)] });
+      expect(state.doc.length).toBe(doc.length);
+    });
+
+    it("asterisk doc mutation via transaction works", () => {
+      const lang = StreamLanguage.define(asterisk);
+      let state = EditorState.create({
+        doc: "[general]",
+        extensions: [new LanguageSupport(lang)],
+      });
+      state = state.update({ changes: { from: 9, insert: "\ncontext=default" } }).state;
+      expect(state.doc.lines).toBe(2);
+    });
+
+    it("smalltalk doc line count is correct", () => {
+      const lang = StreamLanguage.define(smalltalk);
+      const state = EditorState.create({
+        doc: "| x y |\nx := 10.\ny := 20.\nTranscript show: (x + y) printString.",
+        extensions: [new LanguageSupport(lang)],
+      });
+      expect(state.doc.lines).toBe(4);
+    });
   });
 });

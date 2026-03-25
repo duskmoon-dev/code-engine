@@ -279,4 +279,32 @@ describe("XML language pack", () => {
     state = state.update({ changes: { from: 5, to: 7, insert: "><child/></root>" } }).state;
     expect(state.doc.toString()).toBe("<root><child/></root>");
   });
+
+  it("xml() state doc line text is accessible", () => {
+    const state = EditorState.create({
+      doc: "<root>\n  <item>text</item>\n</root>",
+      extensions: [xml()],
+    });
+    expect(state.doc.line(1).text).toBe("<root>");
+    expect(state.doc.line(3).text).toBe("</root>");
+  });
+
+  it("xml() state allows multiple sequential transactions", () => {
+    let state = EditorState.create({ doc: "<root/>", extensions: [xml()] });
+    state = state.update({ changes: { from: 5, to: 7, insert: "><a/></root>" } }).state;
+    state = state.update({ changes: { from: state.doc.length - 7, insert: "<b/>" } }).state;
+    expect(state.doc.toString()).toContain("<b/>");
+  });
+
+  it("xml() state allows replacement transaction", () => {
+    let state = EditorState.create({ doc: "<root><old/></root>", extensions: [xml()] });
+    state = state.update({ changes: { from: 6, to: 12, insert: "<new/>" } }).state;
+    expect(state.doc.toString()).toBe("<root><new/></root>");
+  });
+
+  it("xml() doc length invariant holds", () => {
+    const doc = "<root><child/></root>";
+    const state = EditorState.create({ doc, extensions: [xml()] });
+    expect(state.doc.length).toBe(doc.length);
+  });
 });

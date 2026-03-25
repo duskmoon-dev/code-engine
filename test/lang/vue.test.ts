@@ -267,5 +267,33 @@ describe("Vue language pack", () => {
       state = state.update({ changes: { from: 27, insert: "\n<script>export default {};</script>" } }).state;
       expect(state.doc.lines).toBe(2);
     });
+
+    it("vue() state doc line text is accessible", () => {
+      const state = EditorState.create({
+        doc: "<template>\n  <div>hello</div>\n</template>",
+        extensions: [vue()],
+      });
+      expect(state.doc.line(1).text).toBe("<template>");
+      expect(state.doc.line(3).text).toBe("</template>");
+    });
+
+    it("vue() state allows multiple sequential transactions", () => {
+      let state = EditorState.create({ doc: "<template><div/></template>", extensions: [vue()] });
+      state = state.update({ changes: { from: 27, insert: "\n<script>\nexport default {};\n</script>" } }).state;
+      state = state.update({ changes: { from: state.doc.length, insert: "\n<style scoped>\n</style>" } }).state;
+      expect(state.doc.lines).toBeGreaterThan(3);
+    });
+
+    it("vue() state allows replacement transaction", () => {
+      let state = EditorState.create({ doc: "<template><p>hello</p></template>", extensions: [vue()] });
+      state = state.update({ changes: { from: 13, to: 18, insert: "world" } }).state;
+      expect(state.doc.toString()).toContain("world");
+    });
+
+    it("vue() doc length invariant holds", () => {
+      const doc = "<template><span/></template>";
+      const state = EditorState.create({ doc, extensions: [vue()] });
+      expect(state.doc.length).toBe(doc.length);
+    });
   });
 });

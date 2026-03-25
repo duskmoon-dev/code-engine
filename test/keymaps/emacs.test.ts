@@ -251,5 +251,36 @@ describe("Emacs keymap", () => {
       state = state.update({ changes: { from: 0, to: 9 } }).state;
       expect(state.doc.toString()).toBe("");
     });
+
+    it("emacs() doc length invariant holds after creation", () => {
+      const doc = "exact length";
+      const state = EditorState.create({ doc, extensions: [emacs()] });
+      expect(state.doc.length).toBe(doc.length);
+    });
+
+    it("emacs() allows insertion at middle of document", () => {
+      let state = EditorState.create({ doc: "helloworld", extensions: [emacs()] });
+      state = state.update({ changes: { from: 5, insert: " " } }).state;
+      expect(state.doc.toString()).toBe("hello world");
+    });
+
+    it("emacs() state selection within single line", () => {
+      const state = EditorState.create({
+        doc: "select here",
+        selection: { anchor: 7, head: 11 },
+        extensions: [emacs()],
+      });
+      expect(state.selection.main.from).toBe(7);
+      expect(state.selection.main.to).toBe(11);
+    });
+
+    it("emacs() sequential transactions build up the document correctly", () => {
+      let state = EditorState.create({ doc: "", extensions: [emacs()] });
+      state = state.update({ changes: { from: 0, insert: "line1" } }).state;
+      state = state.update({ changes: { from: 5, insert: "\nline2" } }).state;
+      expect(state.doc.lines).toBe(2);
+      expect(state.doc.line(1).text).toBe("line1");
+      expect(state.doc.line(2).text).toBe("line2");
+    });
   });
 });
