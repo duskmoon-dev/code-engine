@@ -294,4 +294,38 @@ describe("Rust language pack", () => {
     const state = EditorState.create({ doc, extensions: [rust()] });
     expect(state.doc.toString()).toBe(doc);
   });
+
+  it("rust() state doc line count is correct", () => {
+    const state = EditorState.create({
+      doc: "use std::io;\nuse std::fs;\nfn main() {}",
+      extensions: [rust()],
+    });
+    expect(state.doc.lines).toBe(3);
+  });
+
+  it("rust() state allows multiple sequential transactions", () => {
+    let state = EditorState.create({ doc: "fn foo() {}", extensions: [rust()] });
+    state = state.update({ changes: { from: 11, insert: "\nfn bar() {}" } }).state;
+    state = state.update({ changes: { from: state.doc.length, insert: "\nfn baz() {}" } }).state;
+    expect(state.doc.lines).toBe(3);
+  });
+
+  it("rust() state selection can span lines", () => {
+    const state = EditorState.create({
+      doc: "fn foo() {}\nfn bar() {}",
+      selection: { anchor: 0, head: 11 },
+      extensions: [rust()],
+    });
+    expect(state.selection.main.from).toBe(0);
+    expect(state.selection.main.to).toBe(11);
+  });
+
+  it("rust() state doc line text is accessible", () => {
+    const state = EditorState.create({
+      doc: "fn main() {}\nfn helper() {}",
+      extensions: [rust()],
+    });
+    expect(state.doc.line(1).text).toBe("fn main() {}");
+    expect(state.doc.line(2).text).toBe("fn helper() {}");
+  });
 });

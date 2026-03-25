@@ -329,5 +329,39 @@ describe("theme/duskmoon", () => {
       const state = EditorState.create({ doc, extensions: [duskMoon()] });
       expect(state.doc.toString()).toBe(doc);
     });
+
+    it("duskMoon state doc line count is correct", () => {
+      const state = EditorState.create({
+        doc: "first\nsecond\nthird\nfourth\nfifth",
+        extensions: [duskMoon()],
+      });
+      expect(state.doc.lines).toBe(5);
+    });
+
+    it("duskMoon state doc line text is accessible", () => {
+      const state = EditorState.create({
+        doc: "alpha\nbeta\ngamma",
+        extensions: [duskMoon()],
+      });
+      expect(state.doc.line(1).text).toBe("alpha");
+      expect(state.doc.line(2).text).toBe("beta");
+    });
+
+    it("duskMoon allows multiple sequential transactions", () => {
+      let state = EditorState.create({ doc: "x", extensions: [duskMoon()] });
+      state = state.update({ changes: { from: 1, insert: "y" } }).state;
+      state = state.update({ changes: { from: 2, insert: "z" } }).state;
+      expect(state.doc.toString()).toBe("xyz");
+    });
+
+    it("duskMoon state selection can span lines", () => {
+      const state = EditorState.create({
+        doc: "hello\nworld",
+        selection: { anchor: 0, head: 5 },
+        extensions: [duskMoon()],
+      });
+      expect(state.selection.main.from).toBe(0);
+      expect(state.selection.main.to).toBe(5);
+    });
   });
 });

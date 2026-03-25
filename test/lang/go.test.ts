@@ -301,4 +301,38 @@ describe("Go language pack", () => {
     const state = EditorState.create({ doc, extensions: [go()] });
     expect(state.doc.toString()).toBe(doc);
   });
+
+  it("go() state doc line count is correct", () => {
+    const state = EditorState.create({
+      doc: "package main\n\nimport \"fmt\"\n\nfunc main() {}",
+      extensions: [go()],
+    });
+    expect(state.doc.lines).toBe(5);
+  });
+
+  it("go() state allows multiple sequential transactions", () => {
+    let state = EditorState.create({ doc: "package main", extensions: [go()] });
+    state = state.update({ changes: { from: 12, insert: "\nfunc foo() {}" } }).state;
+    state = state.update({ changes: { from: state.doc.length, insert: "\nfunc bar() {}" } }).state;
+    expect(state.doc.lines).toBe(3);
+  });
+
+  it("go() state selection can span lines", () => {
+    const state = EditorState.create({
+      doc: "package main\nfunc main() {}",
+      selection: { anchor: 0, head: 12 },
+      extensions: [go()],
+    });
+    expect(state.selection.main.from).toBe(0);
+    expect(state.selection.main.to).toBe(12);
+  });
+
+  it("go() state doc line text is accessible", () => {
+    const state = EditorState.create({
+      doc: "package main\nimport \"fmt\"\nfunc main() {}",
+      extensions: [go()],
+    });
+    expect(state.doc.line(1).text).toBe("package main");
+    expect(state.doc.line(2).text).toBe("import \"fmt\"");
+  });
 });

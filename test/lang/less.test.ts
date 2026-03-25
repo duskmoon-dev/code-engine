@@ -303,5 +303,36 @@ describe("Less language pack", () => {
       const state = EditorState.create({ doc, extensions: [less()] });
       expect(state.doc.toString()).toBe(doc);
     });
+
+    it("less() state doc line count is correct", () => {
+      const state = EditorState.create({
+        doc: "@primary: blue;\n@secondary: red;\n.btn { color: @primary; }",
+        extensions: [less()],
+      });
+      expect(state.doc.lines).toBe(3);
+    });
+
+    it("less() state allows multiple sequential transactions", () => {
+      let state = EditorState.create({ doc: "@x: 1;", extensions: [less()] });
+      state = state.update({ changes: { from: 6, insert: "\n@y: 2;" } }).state;
+      state = state.update({ changes: { from: state.doc.length, insert: "\n@z: 3;" } }).state;
+      expect(state.doc.lines).toBe(3);
+    });
+
+    it("less() state selection can span lines", () => {
+      const state = EditorState.create({
+        doc: "@a: 1;\n@b: 2;",
+        selection: { anchor: 0, head: 6 },
+        extensions: [less()],
+      });
+      expect(state.selection.main.from).toBe(0);
+      expect(state.selection.main.to).toBe(6);
+    });
+
+    it("less() extension preserves doc length invariant", () => {
+      const doc = ".nav { a { color: blue; } }";
+      const state = EditorState.create({ doc, extensions: [less()] });
+      expect(state.doc.length).toBe(doc.length);
+    });
   });
 });

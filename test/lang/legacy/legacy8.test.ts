@@ -378,5 +378,44 @@ describe("Legacy language packs (batch 8 - coverage completion)", () => {
       state = state.update({ changes: { from: state.doc.length, insert: "\nSubject: test" } }).state;
       expect(state.doc.lines).toBe(2);
     });
+
+    it("legacyRust doc length is correct", () => {
+      const lang = StreamLanguage.define(legacyRust);
+      const doc = "fn main() { println!(\"Hello, world!\"); }";
+      const state = EditorState.create({ doc, extensions: [new LanguageSupport(lang)] });
+      expect(state.doc.length).toBe(doc.length);
+    });
+
+    it("legacyXml doc mutation via transaction works", () => {
+      const lang = StreamLanguage.define(legacyXml);
+      let state = EditorState.create({ doc: "<root/>", extensions: [new LanguageSupport(lang)] });
+      state = state.update({ changes: { from: 5, to: 7, insert: "><child/></root>" } }).state;
+      expect(state.doc.toString()).toContain("<child/>");
+    });
+
+    it("q doc line text is accessible", () => {
+      const lang = StreamLanguage.define(q);
+      const state = EditorState.create({
+        doc: "t:([]a:1 2 3;b:4 5 6)\nselect from t",
+        extensions: [new LanguageSupport(lang)],
+      });
+      expect(state.doc.line(1).text).toBe("t:([]a:1 2 3;b:4 5 6)");
+    });
+
+    it("mirc doc replacement transaction works", () => {
+      const lang = StreamLanguage.define(mirc);
+      let state = EditorState.create({ doc: "on !*:TEXT:*:#:", extensions: [new LanguageSupport(lang)] });
+      state = state.update({ changes: { from: 3, to: 4, insert: "*" } }).state;
+      expect(state.doc.toString()).toBe("on !*:TEXT:*:#:");
+    });
+
+    it("legacySql doc line count is correct", () => {
+      const lang = StreamLanguage.define(legacySql);
+      const state = EditorState.create({
+        doc: "SELECT id\nFROM users\nWHERE active = 1",
+        extensions: [new LanguageSupport(lang)],
+      });
+      expect(state.doc.lines).toBe(3);
+    });
   });
 });
