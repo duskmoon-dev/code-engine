@@ -31,6 +31,9 @@
       <input type="checkbox" id="ext-emacs" aria-label="Toggle Emacs keymap">
       Emacs
     </label>
+    <span class="spacer"></span>
+    <button id="btn-share" class="toolbar-btn" aria-label="Copy share link">Share</button>
+    <button id="btn-reset" class="toolbar-btn" aria-label="Reset to defaults">Reset</button>
   </div>
   <p id="load-error" class="load-error" role="alert" hidden>
     Failed to load language pack. Check your network connection.
@@ -500,6 +503,30 @@ BinaryExpression { expression !add "+" expression }
   vimCheckbox.addEventListener('change', updateHash)
   emacsCheckbox.addEventListener('change', updateHash)
 
+  // Share button — copy current URL with hash state
+  const shareBtn = document.getElementById('btn-share')!
+  shareBtn.addEventListener('click', async () => {
+    updateHash()
+    await navigator.clipboard.writeText(location.href)
+    shareBtn.textContent = 'Copied!'
+    setTimeout(() => { shareBtn.textContent = 'Share' }, 1500)
+  })
+
+  // Reset button — restore all defaults
+  const resetBtn = document.getElementById('btn-reset')!
+  resetBtn.addEventListener('click', () => {
+    langSelect.value = 'javascript'
+    themeSelect.value = 'one-dark'
+    lineNumbersCheckbox.checked = true
+    autocompleteCheckbox.checked = true
+    vimCheckbox.checked = false
+    emacsCheckbox.checked = false
+    switchLanguage('javascript')
+    view.dispatch({ effects: themeCompartment.reconfigure(themes['one-dark']) })
+    reconfigureExtensions()
+    history.replaceState(null, '', location.pathname)
+  })
+
   // Restore state from URL hash on load
   if (location.hash.length > 1) restoreState()
 
@@ -607,6 +634,26 @@ BinaryExpression { expression !add "+" expression }
 
   .controls input[type="checkbox"] {
     accent-color: var(--color-accent);
+  }
+
+  .spacer {
+    flex: 1;
+  }
+
+  .toolbar-btn {
+    padding: 0.25rem 0.6rem;
+    background: var(--color-bg);
+    color: var(--color-text-muted);
+    border: 1px solid var(--color-border);
+    border-radius: 4px;
+    font-size: 0.8rem;
+    font-family: var(--font-sans);
+    cursor: pointer;
+    transition: color 0.15s, border-color 0.15s;
+  }
+  .toolbar-btn:hover {
+    color: var(--color-text);
+    border-color: var(--color-accent);
   }
 
   .load-error {
