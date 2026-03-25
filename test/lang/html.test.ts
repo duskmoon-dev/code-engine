@@ -198,4 +198,51 @@ describe("HTML language pack", () => {
     const tree = htmlLanguage.parser.parse(code);
     expect(tree.length).toBe(code.length);
   });
+
+  it("htmlLanguage can parse inline SVG", () => {
+    const code = "<svg width=\"100\" height=\"100\"><circle cx=\"50\" cy=\"50\" r=\"40\" fill=\"red\"/><text x=\"10\" y=\"20\">hello</text></svg>";
+    const tree = htmlLanguage.parser.parse(code);
+    expect(tree.length).toBe(code.length);
+    expect(tree.type.isTop).toBe(true);
+  });
+
+  it("htmlLanguage can parse picture element with sources", () => {
+    const code = "<picture><source srcset=\"photo.avif\" type=\"image/avif\"><source srcset=\"photo.webp\" type=\"image/webp\"><img src=\"photo.jpg\" alt=\"photo\"></picture>";
+    const tree = htmlLanguage.parser.parse(code);
+    expect(tree.length).toBe(code.length);
+  });
+
+  it("htmlLanguage can parse details and summary", () => {
+    const code = "<details open><summary>Click to expand</summary><p>Hidden content here</p></details>";
+    const tree = htmlLanguage.parser.parse(code);
+    expect(tree.length).toBe(code.length);
+    expect(tree.type.isTop).toBe(true);
+  });
+
+  it("htmlLanguage tree.toString() returns non-empty string", () => {
+    const tree = htmlLanguage.parser.parse("<p>hello</p>");
+    expect(typeof tree.toString()).toBe("string");
+    expect(tree.toString().length).toBeGreaterThan(0);
+  });
+
+  it("tree.resolveInner() finds innermost node in HTML", () => {
+    const tree = htmlLanguage.parser.parse("<div class=\"main\">text</div>");
+    const node = tree.resolveInner(5);
+    expect(node).toBeDefined();
+    expect(node.from).toBeLessThanOrEqual(5);
+    expect(node.to).toBeGreaterThanOrEqual(5);
+  });
+
+  it("htmlLanguage can parse form with various inputs", () => {
+    const code = "<form action=\"/submit\" method=\"POST\"><input type=\"email\" name=\"email\" required><input type=\"password\" name=\"pass\" minlength=\"8\"><select name=\"role\"><option value=\"admin\">Admin</option></select><button type=\"submit\">Submit</button></form>";
+    const tree = htmlLanguage.parser.parse(code);
+    expect(tree.length).toBe(code.length);
+  });
+
+  it("htmlLanguage cursor iteration counts reasonable nodes", () => {
+    const tree = htmlLanguage.parser.parse("<div><p>one</p><p>two</p><p>three</p></div>");
+    let count = 0;
+    tree.iterate({ enter: () => { count++; } });
+    expect(count).toBeGreaterThan(5);
+  });
 });

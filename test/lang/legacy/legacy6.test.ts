@@ -238,5 +238,60 @@ describe("Legacy language packs (batch 6)", () => {
       do { count++; } while (cursor.next() && count < 50);
       expect(count).toBeGreaterThan(0);
     });
+
+    it("fSharp integrates with EditorState", () => {
+      const lang = StreamLanguage.define(fSharp);
+      const state = EditorState.create({
+        doc: "let greet name = printfn \"Hello, %s!\" name\ngreet \"World\"",
+        extensions: [new LanguageSupport(lang)],
+      });
+      expect(state.doc.toString()).toContain("let greet");
+    });
+
+    it("oCaml integrates with EditorState", () => {
+      const lang = StreamLanguage.define(oCaml);
+      const state = EditorState.create({
+        doc: "let rec factorial n =\n  if n = 0 then 1\n  else n * factorial (n - 1)",
+        extensions: [new LanguageSupport(lang)],
+      });
+      expect(state.doc.toString()).toContain("factorial");
+    });
+
+    it("eiffel integrates with EditorState", () => {
+      const lang = StreamLanguage.define(eiffel);
+      const state = EditorState.create({
+        doc: "class HELLO_WORLD\ncreate make\nfeature\n  make do\n    io.put_string (\"Hello, World!%N\")\n  end\nend",
+        extensions: [new LanguageSupport(lang)],
+      });
+      expect(state.doc.toString()).toContain("class HELLO_WORLD");
+    });
+
+    it("fSharp doc line count is correct", () => {
+      const lang = StreamLanguage.define(fSharp);
+      const state = EditorState.create({
+        doc: "let x = 1\nlet y = 2\nlet z = x + y",
+        extensions: [new LanguageSupport(lang)],
+      });
+      expect(state.doc.lines).toBe(3);
+    });
+
+    it("mumps doc mutation via transaction works", () => {
+      const lang = StreamLanguage.define(mumps);
+      let state = EditorState.create({
+        doc: "SET x=1",
+        extensions: [new LanguageSupport(lang)],
+      });
+      state = state.update({ changes: { from: 7, insert: "\nWRITE x" } }).state;
+      expect(state.doc.lines).toBe(2);
+    });
+
+    it("sml integrates with EditorState", () => {
+      const lang = StreamLanguage.define(sml);
+      const state = EditorState.create({
+        doc: "fun factorial 0 = 1\n  | factorial n = n * factorial (n - 1)",
+        extensions: [new LanguageSupport(lang)],
+      });
+      expect(state.doc.toString()).toContain("factorial");
+    });
   });
 });

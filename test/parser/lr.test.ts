@@ -184,5 +184,40 @@ describe("LR Parser module", () => {
         expect(typeof t.id).toBe("number");
       }
     });
+
+    it("javascriptLanguage LRParser has nodeSet", () => {
+      const parser = javascriptLanguage.parser as LRParser;
+      expect(parser.nodeSet).toBeDefined();
+      expect(parser.nodeSet.types.length).toBeGreaterThan(0);
+    });
+
+    it("rustLanguage LRParser has positive nodeSet length", () => {
+      const parser = rustLanguage.parser as LRParser;
+      expect(parser.nodeSet.types.length).toBeGreaterThan(10);
+    });
+
+    it("pythonLanguage LRParser nodeSet has unique ids", () => {
+      const parser = pythonLanguage.parser as LRParser;
+      const ids = parser.nodeSet.types.map(t => t.id);
+      const uniqueIds = new Set(ids);
+      expect(uniqueIds.size).toBe(ids.length);
+    });
+
+    it("LRParser tree from javascript has correct length", () => {
+      const code = "const x = 42;";
+      const tree = javascriptLanguage.parser.parse(code);
+      expect(tree.length).toBe(code.length);
+    });
+
+    it("LRParser tree cursor from rust finds nodes", () => {
+      const tree = rustLanguage.parser.parse("fn main() {}");
+      let count = 0;
+      tree.iterate({ enter: () => { count++; } });
+      expect(count).toBeGreaterThan(1);
+    });
+
+    it("LRParser Stack is constructable or defined", () => {
+      expect(Stack).toBeDefined();
+    });
   });
 });

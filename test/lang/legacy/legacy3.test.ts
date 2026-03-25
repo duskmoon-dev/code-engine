@@ -237,5 +237,60 @@ describe("Legacy language packs (batch 3)", () => {
       });
       expect(syntaxTree(state).length).toBeGreaterThan(0);
     });
+
+    it("protobuf integrates with EditorState", () => {
+      const lang = StreamLanguage.define(protobuf);
+      const state = EditorState.create({
+        doc: "syntax = \"proto3\";\nmessage User {\n  string name = 1;\n  int32 age = 2;\n}",
+        extensions: [new LanguageSupport(lang)],
+      });
+      expect(state.doc.toString()).toContain("message User");
+    });
+
+    it("puppet integrates with EditorState", () => {
+      const lang = StreamLanguage.define(puppet);
+      const state = EditorState.create({
+        doc: "class nginx {\n  package { 'nginx': ensure => installed }\n  service { 'nginx': ensure => running }\n}",
+        extensions: [new LanguageSupport(lang)],
+      });
+      expect(state.doc.toString()).toContain("class nginx");
+    });
+
+    it("protobuf syntaxTree is non-empty", () => {
+      const lang = StreamLanguage.define(protobuf);
+      const state = EditorState.create({
+        doc: "syntax = \"proto3\";\nmessage Hello { string text = 1; }",
+        extensions: [new LanguageSupport(lang)],
+      });
+      expect(syntaxTree(state).length).toBeGreaterThan(0);
+    });
+
+    it("puppet syntaxTree is non-empty", () => {
+      const lang = StreamLanguage.define(puppet);
+      const state = EditorState.create({
+        doc: "class myclass { package { 'vim': ensure => installed } }",
+        extensions: [new LanguageSupport(lang)],
+      });
+      expect(syntaxTree(state).length).toBeGreaterThan(0);
+    });
+
+    it("diff doc line count is correct", () => {
+      const lang = StreamLanguage.define(diff);
+      const state = EditorState.create({
+        doc: "--- a.txt\n+++ b.txt\n@@ -1 +1 @@\n-old\n+new",
+        extensions: [new LanguageSupport(lang)],
+      });
+      expect(state.doc.lines).toBe(5);
+    });
+
+    it("cmake doc mutation via transaction works", () => {
+      const lang = StreamLanguage.define(cmake);
+      let state = EditorState.create({
+        doc: "project(MyProject)",
+        extensions: [new LanguageSupport(lang)],
+      });
+      state = state.update({ changes: { from: 18, insert: "\nadd_executable(main main.cpp)" } }).state;
+      expect(state.doc.lines).toBe(2);
+    });
   });
 });

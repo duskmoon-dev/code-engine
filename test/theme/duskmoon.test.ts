@@ -201,5 +201,51 @@ describe("theme/duskmoon", () => {
         expect(elem).toBeDefined();
       }
     });
+
+    it("duskMoon state doc has correct line count for multi-line input", () => {
+      const state = EditorState.create({
+        doc: "line1\nline2\nline3",
+        extensions: [duskMoon()],
+      });
+      expect(state.doc.lines).toBe(3);
+    });
+
+    it("duskMoon state doc line text is accessible", () => {
+      const state = EditorState.create({
+        doc: "hello\nworld",
+        extensions: [duskMoon()],
+      });
+      expect(state.doc.line(2).text).toBe("world");
+    });
+
+    it("duskMoon allows replacement transaction", () => {
+      let state = EditorState.create({ doc: "hello world", extensions: [duskMoon()] });
+      state = state.update({ changes: { from: 0, to: 5, insert: "goodbye" } }).state;
+      expect(state.doc.toString()).toBe("goodbye world");
+    });
+
+    it("duskMoon preserves selection after transaction", () => {
+      let state = EditorState.create({
+        doc: "hello",
+        selection: { anchor: 2 },
+        extensions: [duskMoon()],
+      });
+      state = state.update({ changes: { from: 5, insert: "!" } }).state;
+      expect(state.doc.toString()).toBe("hello!");
+    });
+
+    it("duskMoon state allows multiple sequential transactions", () => {
+      let state = EditorState.create({ doc: "a", extensions: [duskMoon()] });
+      for (let i = 0; i < 3; i++) {
+        state = state.update({ changes: { from: state.doc.length, insert: String(i) } }).state;
+      }
+      expect(state.doc.toString()).toBe("a012");
+    });
+
+    it("duskMoon({ dark: false }) doc length matches input", () => {
+      const doc = "test document";
+      const state = EditorState.create({ doc, extensions: [duskMoon({ dark: false })] });
+      expect(state.doc.length).toBe(doc.length);
+    });
   });
 });

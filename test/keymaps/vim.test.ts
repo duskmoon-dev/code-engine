@@ -174,5 +174,45 @@ describe("Vim keymap", () => {
         Vim.setOption("filetype", "javascript");
       }).not.toThrow();
     });
+
+    it("vim() state doc line count is correct", () => {
+      const state = EditorState.create({
+        doc: "line1\nline2\nline3",
+        extensions: [vim()],
+      });
+      expect(state.doc.lines).toBe(3);
+    });
+
+    it("vim() state doc line text is accessible", () => {
+      const state = EditorState.create({
+        doc: "hello\nworld",
+        extensions: [vim()],
+      });
+      expect(state.doc.line(2).text).toBe("world");
+    });
+
+    it("vim() state allows multiple sequential transactions", () => {
+      let state = EditorState.create({ doc: "a", extensions: [vim()] });
+      for (let i = 0; i < 3; i++) {
+        state = state.update({ changes: { from: state.doc.length, insert: String(i) } }).state;
+      }
+      expect(state.doc.toString()).toBe("a012");
+    });
+
+    it("vim() extension handles replacement transaction", () => {
+      let state = EditorState.create({ doc: "foo bar", extensions: [vim()] });
+      state = state.update({ changes: { from: 4, to: 7, insert: "baz" } }).state;
+      expect(state.doc.toString()).toBe("foo baz");
+    });
+
+    it("getCM is a function", () => {
+      expect(typeof getCM).toBe("function");
+    });
+
+    it("vim() state doc length matches input", () => {
+      const doc = "hello world";
+      const state = EditorState.create({ doc, extensions: [vim()] });
+      expect(state.doc.length).toBe(doc.length);
+    });
   });
 });

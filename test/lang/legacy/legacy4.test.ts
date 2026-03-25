@@ -233,5 +233,60 @@ describe("Legacy language packs (batch 4)", () => {
       });
       expect(syntaxTree(state).length).toBeGreaterThan(0);
     });
+
+    it("xQuery integrates with EditorState", () => {
+      const lang = StreamLanguage.define(xQuery);
+      const state = EditorState.create({
+        doc: "for $book in doc('books.xml')//book\nwhere $book/price < 30\nreturn $book/title",
+        extensions: [new LanguageSupport(lang)],
+      });
+      expect(state.doc.toString()).toContain("for $book");
+    });
+
+    it("apl integrates with EditorState", () => {
+      const lang = StreamLanguage.define(apl);
+      const state = EditorState.create({
+        doc: "sum ← +/⍳10\nproduct ← ×/1+⍳5",
+        extensions: [new LanguageSupport(lang)],
+      });
+      expect(state.doc.toString()).toContain("sum");
+    });
+
+    it("ebnf doc line count is correct", () => {
+      const lang = StreamLanguage.define(ebnf);
+      const state = EditorState.create({
+        doc: "digit = '0' | '1' ;\nletter = 'a' | 'b' ;\nword = letter+ ;",
+        extensions: [new LanguageSupport(lang)],
+      });
+      expect(state.doc.lines).toBe(3);
+    });
+
+    it("cobol doc mutation via transaction works", () => {
+      const lang = StreamLanguage.define(cobol);
+      let state = EditorState.create({
+        doc: "IDENTIFICATION DIVISION.",
+        extensions: [new LanguageSupport(lang)],
+      });
+      state = state.update({ changes: { from: 24, insert: "\nPROGRAM-ID. TEST." } }).state;
+      expect(state.doc.lines).toBe(2);
+    });
+
+    it("yacas syntaxTree is non-empty", () => {
+      const lang = StreamLanguage.define(yacas);
+      const state = EditorState.create({
+        doc: "Factorial(n) := If(n = 0, 1, n * Factorial(n-1))",
+        extensions: [new LanguageSupport(lang)],
+      });
+      expect(syntaxTree(state).length).toBeGreaterThan(0);
+    });
+
+    it("pig integrates with EditorState", () => {
+      const lang = StreamLanguage.define(pig);
+      const state = EditorState.create({
+        doc: "A = LOAD 'input.txt' AS (id: int, name: chararray);\nB = FILTER A BY id > 0;\nDUMP B;",
+        extensions: [new LanguageSupport(lang)],
+      });
+      expect(state.doc.toString()).toContain("LOAD");
+    });
   });
 });

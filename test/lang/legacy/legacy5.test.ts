@@ -237,5 +237,60 @@ describe("Legacy language packs (batch 5)", () => {
       do { count++; } while (cursor.next() && count < 50);
       expect(count).toBeGreaterThan(0);
     });
+
+    it("crystal integrates with EditorState", () => {
+      const lang = StreamLanguage.define(crystal);
+      const state = EditorState.create({
+        doc: "def greet(name : String) : String\n  \"Hello, #{name}!\"\nend\nputs greet(\"World\")",
+        extensions: [new LanguageSupport(lang)],
+      });
+      expect(state.doc.toString()).toContain("def greet");
+    });
+
+    it("elm integrates with EditorState", () => {
+      const lang = StreamLanguage.define(elm);
+      const state = EditorState.create({
+        doc: "module Main exposing (..)\nimport Html exposing (text)\nmain = text \"Hello, World!\"",
+        extensions: [new LanguageSupport(lang)],
+      });
+      expect(state.doc.toString()).toContain("module Main");
+    });
+
+    it("cypher integrates with EditorState", () => {
+      const lang = StreamLanguage.define(cypher);
+      const state = EditorState.create({
+        doc: "MATCH (n:Person)-[:KNOWS]->(m:Person)\nWHERE n.name = 'Alice'\nRETURN m.name",
+        extensions: [new LanguageSupport(lang)],
+      });
+      expect(state.doc.toString()).toContain("MATCH");
+    });
+
+    it("mathematica integrates with EditorState", () => {
+      const lang = StreamLanguage.define(mathematica);
+      const state = EditorState.create({
+        doc: "f[x_] := x^2 + 2x + 1\nSolve[f[x] == 0, x]",
+        extensions: [new LanguageSupport(lang)],
+      });
+      expect(state.doc.toString()).toContain("Solve");
+    });
+
+    it("http doc line count is correct", () => {
+      const lang = StreamLanguage.define(http);
+      const state = EditorState.create({
+        doc: "GET /api/v1/users HTTP/1.1\nHost: api.example.com\nAccept: application/json",
+        extensions: [new LanguageSupport(lang)],
+      });
+      expect(state.doc.lines).toBe(3);
+    });
+
+    it("webIDL doc mutation via transaction works", () => {
+      const lang = StreamLanguage.define(webIDL);
+      let state = EditorState.create({
+        doc: "interface Foo {};",
+        extensions: [new LanguageSupport(lang)],
+      });
+      state = state.update({ changes: { from: 17, insert: "\ninterface Bar {};" } }).state;
+      expect(state.doc.lines).toBe(2);
+    });
   });
 });

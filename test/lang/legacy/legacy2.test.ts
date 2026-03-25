@@ -242,5 +242,60 @@ describe("Legacy language packs (batch 2)", () => {
       });
       expect(syntaxTree(state).length).toBeGreaterThan(0);
     });
+
+    it("haskell integrates with EditorState", () => {
+      const lang = StreamLanguage.define(haskell);
+      const state = EditorState.create({
+        doc: "module Main where\nimport Data.List (sort)\nmain :: IO ()\nmain = print (sort [3,1,2])",
+        extensions: [new LanguageSupport(lang)],
+      });
+      expect(state.doc.toString()).toContain("module Main");
+    });
+
+    it("groovy integrates with EditorState", () => {
+      const lang = StreamLanguage.define(groovy);
+      const state = EditorState.create({
+        doc: "def greet = { name -> \"Hello, $name!\" }\nprintln greet('World')",
+        extensions: [new LanguageSupport(lang)],
+      });
+      expect(state.doc.toString()).toContain("greet");
+    });
+
+    it("julia integrates with EditorState", () => {
+      const lang = StreamLanguage.define(julia);
+      const state = EditorState.create({
+        doc: "function fib(n)\n  n <= 1 ? n : fib(n-1) + fib(n-2)\nend\nprintln(fib(10))",
+        extensions: [new LanguageSupport(lang)],
+      });
+      expect(state.doc.toString()).toContain("fib");
+    });
+
+    it("haskell doc line count is correct", () => {
+      const lang = StreamLanguage.define(haskell);
+      const state = EditorState.create({
+        doc: "module Main where\nmain = putStrLn \"Hello\"",
+        extensions: [new LanguageSupport(lang)],
+      });
+      expect(state.doc.lines).toBe(2);
+    });
+
+    it("scheme doc mutation via transaction works", () => {
+      const lang = StreamLanguage.define(scheme);
+      let state = EditorState.create({
+        doc: "(+ 1 2)",
+        extensions: [new LanguageSupport(lang)],
+      });
+      state = state.update({ changes: { from: 7, insert: "\n(* 3 4)" } }).state;
+      expect(state.doc.lines).toBe(2);
+    });
+
+    it("brainfuck integrates with EditorState", () => {
+      const lang = StreamLanguage.define(brainfuck);
+      const state = EditorState.create({
+        doc: "++++++++[>++++[>++>+++>+++>+<<<<-]>+>+>->>+[<]<-]>>.>---.+++++++..+++.>>.<-.<.+++.------.--------.>>+.>++.",
+        extensions: [new LanguageSupport(lang)],
+      });
+      expect(state.doc.toString()).toContain("[>++++");
+    });
   });
 });

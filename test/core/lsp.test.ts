@@ -176,4 +176,50 @@ describe("LSP factory functions", () => {
   it("jumpToDefinitionKeymap has at least one entry", () => {
     expect(jumpToDefinitionKeymap.length).toBeGreaterThan(0);
   });
+
+  it("EditorState with serverCompletion() extension works", () => {
+    const state = EditorState.create({
+      doc: "function foo() {}",
+      extensions: [serverCompletion()],
+    });
+    expect(state.doc.toString()).toBe("function foo() {}");
+  });
+
+  it("EditorState with hoverTooltips() extension works", () => {
+    const state = EditorState.create({
+      doc: "const x = 1;",
+      extensions: [hoverTooltips()],
+    });
+    expect(state.doc.length).toBe(12);
+  });
+
+  it("EditorState with signatureHelp() extension works", () => {
+    const state = EditorState.create({
+      doc: "console.log(",
+      extensions: [signatureHelp()],
+    });
+    expect(state.doc.toString()).toBe("console.log(");
+  });
+
+  it("serverDiagnostics() returns a defined value", () => {
+    const ext = serverDiagnostics();
+    expect(ext).toBeDefined();
+  });
+
+  it("languageServerExtensions() returns non-empty array", () => {
+    const exts = languageServerExtensions();
+    expect(Array.isArray(exts)).toBe(true);
+    expect(exts.length).toBeGreaterThan(0);
+  });
+
+  it("renameKeymap has at least one entry", () => {
+    expect(renameKeymap.length).toBeGreaterThan(0);
+  });
+
+  it("signatureKeymap entries have key property", () => {
+    for (const binding of signatureKeymap) {
+      const hasKey = typeof binding.key === "string" || typeof binding.mac === "string";
+      expect(hasKey).toBe(true);
+    }
+  });
 });

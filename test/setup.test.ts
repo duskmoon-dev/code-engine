@@ -187,5 +187,31 @@ describe("Setup extensions", () => {
         expect(state.doc.toString()).toBe(doc);
       }
     });
+
+    it("basicSetup extension array is not empty", () => {
+      expect((basicSetup as unknown[]).length).toBeGreaterThan(0);
+    });
+
+    it("minimalSetup extension array is not empty", () => {
+      expect((minimalSetup as unknown[]).length).toBeGreaterThan(0);
+    });
+
+    it("basicSetup state can have multiple transactions applied", () => {
+      let state = EditorState.create({ doc: "a", extensions: basicSetup });
+      for (let i = 0; i < 5; i++) {
+        state = state.update({ changes: { from: state.doc.length, insert: String(i) } }).state;
+      }
+      expect(state.doc.toString()).toBe("a01234");
+    });
+
+    it("minimalSetup state reflects line breaks correctly", () => {
+      const state = EditorState.create({ doc: "x\ny\nz", extensions: minimalSetup });
+      expect(state.doc.lines).toBe(3);
+      expect(state.doc.line(2).text).toBe("y");
+    });
+
+    it("EditorView can be imported from setup module", () => {
+      expect(EditorView).toBeDefined();
+    });
   });
 });

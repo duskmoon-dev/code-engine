@@ -179,5 +179,51 @@ describe("Emacs keymap", () => {
       const doc = "function foo() {\n  return 42;\n}\nconsole.log(foo());";
       expect(() => EditorState.create({ doc, extensions: [emacs()] })).not.toThrow();
     });
+
+    it("emacs() state doc line count is correct for multi-line input", () => {
+      const state = EditorState.create({
+        doc: "line1\nline2\nline3\nline4",
+        extensions: [emacs()],
+      });
+      expect(state.doc.lines).toBe(4);
+    });
+
+    it("emacs() state doc line text is accessible", () => {
+      const state = EditorState.create({
+        doc: "hello\nworld",
+        extensions: [emacs()],
+      });
+      expect(state.doc.line(1).text).toBe("hello");
+    });
+
+    it("emacs() state allows multiple sequential transactions", () => {
+      let state = EditorState.create({ doc: "a", extensions: [emacs()] });
+      for (let i = 0; i < 3; i++) {
+        state = state.update({ changes: { from: state.doc.length, insert: String(i) } }).state;
+      }
+      expect(state.doc.toString()).toBe("a012");
+    });
+
+    it("emacs() extension allows replacement transaction", () => {
+      let state = EditorState.create({ doc: "foo bar", extensions: [emacs()] });
+      state = state.update({ changes: { from: 4, to: 7, insert: "baz" } }).state;
+      expect(state.doc.toString()).toBe("foo baz");
+    });
+
+    it("emacs() extension handles unicode document", () => {
+      const doc = "こんにちは世界";
+      const state = EditorState.create({ doc, extensions: [emacs()] });
+      expect(state.doc.toString()).toBe(doc);
+    });
+
+    it("emacs() state selection can span lines", () => {
+      const state = EditorState.create({
+        doc: "line1\nline2",
+        selection: { anchor: 0, head: 11 },
+        extensions: [emacs()],
+      });
+      expect(state.selection.main.from).toBe(0);
+      expect(state.selection.main.to).toBe(11);
+    });
   });
 });

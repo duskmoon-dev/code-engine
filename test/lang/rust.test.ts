@@ -182,4 +182,34 @@ describe("Rust language pack", () => {
     expect(node.from).toBeLessThanOrEqual(14);
     expect(node.to).toBeGreaterThanOrEqual(14);
   });
+
+  it("rustLanguage tree.toString() returns non-empty string", () => {
+    const tree = rustLanguage.parser.parse("fn main() { println!(\"hello\"); }");
+    expect(typeof tree.toString()).toBe("string");
+    expect(tree.toString().length).toBeGreaterThan(0);
+  });
+
+  it("rustLanguage cursor traversal finds nodes", () => {
+    const tree = rustLanguage.parser.parse("fn add(a: i32, b: i32) -> i32 { a + b }");
+    let count = 0;
+    tree.iterate({ enter: () => { count++; } });
+    expect(count).toBeGreaterThan(3);
+  });
+
+  it("rustLanguage can parse trait implementation", () => {
+    const tree = rustLanguage.parser.parse("trait Animal { fn speak(&self) -> &str; }\nstruct Dog;\nimpl Animal for Dog { fn speak(&self) -> &str { \"woof\" } }");
+    expect(tree.length).toBeGreaterThan(0);
+    expect(tree.type.isTop).toBe(true);
+  });
+
+  it("rustLanguage can parse enum with data", () => {
+    const tree = rustLanguage.parser.parse("enum Shape { Circle(f64), Rectangle(f64, f64), Triangle { base: f64, height: f64 } }");
+    expect(tree.length).toBeGreaterThan(0);
+  });
+
+  it("rustLanguage can parse closures and higher-order functions", () => {
+    const tree = rustLanguage.parser.parse("let nums = vec![1, 2, 3, 4, 5];\nlet doubled: Vec<i32> = nums.iter().map(|&x| x * 2).collect();");
+    expect(tree.length).toBeGreaterThan(0);
+    expect(tree.type.isTop).toBe(true);
+  });
 });

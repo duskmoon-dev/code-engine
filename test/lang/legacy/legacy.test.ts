@@ -226,5 +226,60 @@ describe("Legacy language packs (StreamLanguage)", () => {
       expect(shellLang).not.toBe(rubyLang);
       expect(typeof shellLang.name).toBe("string");
     });
+
+    it("erlang integrates with EditorState", () => {
+      const lang = StreamLanguage.define(erlang);
+      const state = EditorState.create({
+        doc: "-module(hello).\n-export([greet/1]).\ngreet(Name) -> io:format(\"Hello ~s!~n\", [Name]).",
+        extensions: [new LanguageSupport(lang)],
+      });
+      expect(state.doc.toString()).toContain("-module");
+    });
+
+    it("lua integrates with EditorState", () => {
+      const lang = StreamLanguage.define(lua);
+      const state = EditorState.create({
+        doc: "function factorial(n)\n  if n == 0 then return 1 end\n  return n * factorial(n-1)\nend",
+        extensions: [new LanguageSupport(lang)],
+      });
+      expect(state.doc.toString()).toContain("factorial");
+    });
+
+    it("clojure integrates with EditorState", () => {
+      const lang = StreamLanguage.define(clojure);
+      const state = EditorState.create({
+        doc: "(defn greet [name]\n  (str \"Hello, \" name \"!\"))\n(println (greet \"World\"))",
+        extensions: [new LanguageSupport(lang)],
+      });
+      expect(state.doc.toString()).toContain("defn greet");
+    });
+
+    it("coffeeScript integrates with EditorState", () => {
+      const lang = StreamLanguage.define(coffeeScript);
+      const state = EditorState.create({
+        doc: "square = (x) -> x * x\ncube = (x) -> x * square x\nconsole.log cube 3",
+        extensions: [new LanguageSupport(lang)],
+      });
+      expect(state.doc.toString()).toContain("square");
+    });
+
+    it("shell doc line count is correct", () => {
+      const lang = StreamLanguage.define(shell);
+      const state = EditorState.create({
+        doc: "#!/bin/bash\necho hello\necho world",
+        extensions: [new LanguageSupport(lang)],
+      });
+      expect(state.doc.lines).toBe(3);
+    });
+
+    it("ruby doc mutation via transaction works", () => {
+      const lang = StreamLanguage.define(ruby);
+      let state = EditorState.create({
+        doc: "puts 'hello'",
+        extensions: [new LanguageSupport(lang)],
+      });
+      state = state.update({ changes: { from: 12, insert: "\nputs 'world'" } }).state;
+      expect(state.doc.lines).toBe(2);
+    });
   });
 });

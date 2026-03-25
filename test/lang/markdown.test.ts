@@ -217,4 +217,51 @@ describe("Markdown language pack", () => {
     expect(tree.length).toBeGreaterThan(0);
     expect(tree.type.isTop).toBe(true);
   });
+
+  it("markdownLanguage can parse blockquotes", () => {
+    const tree = markdownLanguage.parser.parse("> This is a blockquote\n> with multiple lines\n>> Nested blockquote");
+    expect(tree.length).toBeGreaterThan(0);
+    expect(tree.type.isTop).toBe(true);
+  });
+
+  it("markdownLanguage can parse horizontal rule", () => {
+    const tree = markdownLanguage.parser.parse("before\n\n---\n\nafter\n\n***\n\n___");
+    expect(tree.length).toBeGreaterThan(0);
+  });
+
+  it("markdownLanguage can parse inline code", () => {
+    const tree = markdownLanguage.parser.parse("Use `console.log()` for debugging. The `const` keyword declares a constant.");
+    expect(tree.length).toBeGreaterThan(0);
+    expect(tree.type.isTop).toBe(true);
+  });
+
+  it("markdownLanguage can parse strikethrough", () => {
+    const tree = markdownLanguage.parser.parse("This is ~~deleted~~ text and this is **bold ~~bold-deleted~~**.");
+    expect(tree.length).toBeGreaterThan(0);
+  });
+
+  it("markdownLanguage can parse image with title", () => {
+    const tree = markdownLanguage.parser.parse("![Alt text](photo.jpg \"Optional title\")\n![another](https://example.com/img.png)");
+    expect(tree.length).toBeGreaterThan(0);
+    expect(tree.type.isTop).toBe(true);
+  });
+
+  it("markdownLanguage tree.toString() returns non-empty string", () => {
+    const tree = markdownLanguage.parser.parse("# Hello\nWorld");
+    expect(typeof tree.toString()).toBe("string");
+    expect(tree.toString().length).toBeGreaterThan(0);
+  });
+
+  it("tree.resolveInner() finds innermost node in Markdown", () => {
+    const tree = markdownLanguage.parser.parse("# Title\n\nParagraph here");
+    const node = tree.resolveInner(3);
+    expect(node).toBeDefined();
+    expect(node.from).toBeLessThanOrEqual(3);
+    expect(node.to).toBeGreaterThanOrEqual(3);
+  });
+
+  it("markdownLanguage can parse definition lists", () => {
+    const tree = markdownLanguage.parser.parse("Term\n: Definition\n\nAnother term\n: Another definition");
+    expect(tree.length).toBeGreaterThan(0);
+  });
 });

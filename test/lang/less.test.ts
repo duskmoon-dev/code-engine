@@ -190,5 +190,35 @@ describe("Less language pack", () => {
       expect(node.from).toBeLessThanOrEqual(5);
       expect(node.to).toBeGreaterThanOrEqual(5);
     });
+
+    it("lessLanguage tree.toString() returns non-empty string", () => {
+      const tree = lessLanguage.parser.parse(".btn { padding: 10px; }");
+      expect(typeof tree.toString()).toBe("string");
+      expect(tree.toString().length).toBeGreaterThan(0);
+    });
+
+    it("lessLanguage can parse extend directive", () => {
+      const tree = lessLanguage.parser.parse(".animal { background-color: black; }\n.bear { &:extend(.animal); background-color: brown; }");
+      expect(tree.length).toBeGreaterThan(0);
+    });
+
+    it("lessLanguage can parse operations", () => {
+      const tree = lessLanguage.parser.parse("@base: 5%;\n@filler: @base * 2;\n@other: @base + @filler;\n.class { width: @base + @other; }");
+      expect(tree.length).toBeGreaterThan(0);
+      expect(tree.type.isTop).toBe(true);
+    });
+
+    it("lessLanguage cursor traversal finds nodes", () => {
+      const tree = lessLanguage.parser.parse("@primary: blue;\n.header { color: @primary; font-size: 16px; }");
+      let count = 0;
+      tree.iterate({ enter: () => { count++; } });
+      expect(count).toBeGreaterThan(3);
+    });
+
+    it("EditorState with less() has correct doc length", () => {
+      const doc = "@color: red;\n.box { color: @color; }";
+      const state = EditorState.create({ doc, extensions: [less()] });
+      expect(state.doc.length).toBe(doc.length);
+    });
   });
 });
