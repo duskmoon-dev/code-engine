@@ -13,7 +13,8 @@ import {
   setDiagnosticsEffect,
   forEachDiagnostic,
 } from "../../src/core/lint/index";
-import { EditorState } from "../../src/core/state/index";
+import type { Diagnostic } from "../../src/core/lint/index";
+import { EditorState, StateEffect } from "../../src/core/state/index";
 
 describe("lint module exports", () => {
   it("exports linter as a function", () => {
@@ -429,5 +430,351 @@ describe("lint additional coverage", () => {
 
   it("forEachDiagnostic is a function", () => {
     expect(typeof forEachDiagnostic).toBe("function");
+  });
+});
+
+describe("diagnostic creation with full fields", () => {
+  it("preserves optional source field", () => {
+    const state = EditorState.create({ doc: "let x = 1;" });
+    const spec = setDiagnostics(state, [
+      { from: 0, to: 3, severity: "error", message: "bad keyword", source: "eslint" },
+    ]);
+    const newState = state.update(spec).state;
+    const sources: (string | undefined)[] = [];
+    forEachDiagnostic(newState, (d) => { sources.push(d.source); });
+    expect(sources[0]).toBe("eslint");
+  });
+
+  it("preserves optional markClass field", () => {
+    const state = EditorState.create({ doc: "test" });
+    const spec = setDiagnostics(state, [
+      { from: 0, to: 4, severity: "warning", message: "warn", markClass: "cm-custom-mark" },
+    ]);
+    const newState = state.update(spec).state;
+    const classes: (string | undefined)[] = [];
+    forEachDiagnostic(newState, (d) => { classes.push(d.markClass); });
+    expect(classes[0]).toBe("cm-custom-mark");
+  });
+
+  it("preserves actions array on diagnostics", () => {
+    const state = EditorState.create({ doc: "test" });
+    const actions = [{ name: "Fix it", apply: () => {} }];
+    const spec = setDiagnostics(state, [
+      { from: 0, to: 4, severity: "error", message: "broken", actions },
+    ]);
+    const newState = state.update(spec).state;
+    const receivedActions: any[] = [];
+    forEachDiagnostic(newState, (d) => { receivedActions.push(d.actions); });
+    expect(receivedActions[0]).toBeDefined();
+    expect(receivedActions[0]!.length).toBe(1);
+    expect(receivedActions[0]![0].name).toBe("Fix it");
+    expect(typeof receivedActions[0]![0].apply).toBe("function");
+  });
+
+  it("supports multiple actions on a single diagnostic", () => {
+    const state = EditorState.create({ doc: "test" });
+    const actions = [
+      { name: "Fix", apply: () => {} },
+      { name: "Ignore", apply: () => {} },
+      { name: "Disable rule", apply: () => {} },
+    ];
+    const spec = setDiagnostics(state, [
+      { from: 0, to: 4, severity: "warning", message: "issue", actions },
+    ]);
+    const newState = state.update(spec).state;
+    forEachDiagnostic(newState, (d) => {
+      expect(d.actions!.length).toBe(3);
+      expect(d.actions!.map(a => a.name)).toEqual(["Fix", "Ignore", "Disable rule"]);
+    });
+  });
+
+  it("preserves all severity levels together", () => {
+    const state = EditorState.create({ doc: "abcdefghij" });
+    const diags: Diagnostic[] = [
+      { from: 0, to: 2, severity: "error", message: "e" },
+      { from: 2, to: 4, severity: "warning", message: "w" },
+      { from: 4, to: 6, severity: "info", message: "i" },
+      { from: 6, to: 8, severity: "hint", message: "h" },
+    ];
+    const newState = state.update(setDiagnostics(state, diags)).state;
+    expect(diagnosticCount(newState)).toBe(4);
+    const severities: string[] = [];
+    forEachDiagnostic(newState, (d) => { severities.push(d.severity); });
+    expect(severities).toContain("error");
+    expect(severities).toContain("warning");
+    expect(severities).toContain("info");
+    expect(severities).toContain("hint");
+  });
+});
+
+describe("setDiagnostics transaction integration", () => {
+  it("transaction spec contains effects", () => {
+    const state = EditorState.create({ doc: "hello" });
+    const spec = setDiagnostics(state, [
+      { from: 0, to: 5, severity: "error", message: "err" },
+    ]);
+    expect(spec.effects).toBeDefined();
+  });
+
+  it("effects array contains setDiagnosticsEffect", () => {
+    const state = EditorState.create({ doc: "hello" });
+    const spec = setDiagnostics(state, [
+      { from: 0, to: 5, severity: "error", message: "err" },
+    ]);
+    const effects = Array.isArray(spec.effects) ? spec.effects : [spec.effects];
+    const hasDiagEffect = effects.some((e: any) => e && e.is && e.is(setDiagnosticsEffect));
+    expect(hasDiagEffect).toBe(true);
+  });
+
+  it("applying same diagnostics twice yields same count", () => {
+    const diags: Diagnostic[] = [
+      { from: 0, to: 3, severity: "error", message: "x" },
+    ];
+    let state = EditorState.create({ doc: "abc" });
+    state = state.update(setDiagnostics(state, diags)).state;
+    expect(diagnosticCount(state)).toBe(1);
+    state = state.update(setDiagnostics(state, diags)).state;
+    expect(diagnosticCount(state)).toBe(1);
+  });
+
+  it("setting empty diagnostics on a clean state produces 0 count", () => {
+    const state = EditorState.create({ doc: "test" });
+    const newState = state.update(setDiagnostics(state, [])).state;
+    expect(diagnosticCount(newState)).toBe(0);
+  });
+});
+
+describe("setDiagnosticsEffect direct usage", () => {
+  it("can create an effect via .of()", () => {
+    const effect = setDiagnosticsEffect.of([
+      { from: 0, to: 1, severity: "error", message: "test" },
+    ]);
+    expect(effect).toBeDefined();
+    expect(effect.is(setDiagnosticsEffect)).toBe(true);
+  });
+
+  it("effect value contains the diagnostics", () => {
+    const diags: readonly Diagnostic[] = [
+      { from: 0, to: 1, severity: "warning", message: "w1" },
+      { from: 1, to: 2, severity: "error", message: "e1" },
+    ];
+    const effect = setDiagnosticsEffect.of(diags);
+    expect(effect.value).toEqual(diags);
+  });
+
+  it("effect is not mistakenly identified as another effect type", () => {
+    const otherEffect = StateEffect.define<string>();
+    const diagEffect = setDiagnosticsEffect.of([]);
+    expect(diagEffect.is(otherEffect)).toBe(false);
+    expect(diagEffect.is(setDiagnosticsEffect)).toBe(true);
+  });
+});
+
+describe("diagnostics survive document changes", () => {
+  it("diagnostics persist after inserting text before them", () => {
+    let state = EditorState.create({ doc: "hello world" });
+    state = state.update(setDiagnostics(state, [
+      { from: 6, to: 11, severity: "error", message: "bad word" },
+    ])).state;
+    expect(diagnosticCount(state)).toBe(1);
+
+    // Insert text at the beginning, shifting positions
+    state = state.update({ changes: { from: 0, insert: "prefix " } }).state;
+    expect(diagnosticCount(state)).toBe(1);
+
+    // The diagnostic positions should be updated
+    const positions: Array<{ from: number; to: number }> = [];
+    forEachDiagnostic(state, (_d, from, to) => { positions.push({ from, to }); });
+    expect(positions[0].from).toBe(13); // 6 + 7 (length of "prefix ")
+    expect(positions[0].to).toBe(18); // 11 + 7
+  });
+
+  it("diagnostics persist after inserting text after them", () => {
+    let state = EditorState.create({ doc: "hello world" });
+    state = state.update(setDiagnostics(state, [
+      { from: 0, to: 5, severity: "warning", message: "first word" },
+    ])).state;
+
+    state = state.update({ changes: { from: 11, insert: " suffix" } }).state;
+    expect(diagnosticCount(state)).toBe(1);
+
+    const positions: Array<{ from: number; to: number }> = [];
+    forEachDiagnostic(state, (_d, from, to) => { positions.push({ from, to }); });
+    expect(positions[0].from).toBe(0);
+    expect(positions[0].to).toBe(5);
+  });
+
+  it("diagnostics are removed when their range is fully deleted", () => {
+    let state = EditorState.create({ doc: "hello world" });
+    state = state.update(setDiagnostics(state, [
+      { from: 0, to: 5, severity: "error", message: "gone" },
+    ])).state;
+    expect(diagnosticCount(state)).toBe(1);
+
+    // Delete the entire range covered by the diagnostic
+    state = state.update({ changes: { from: 0, to: 5, insert: "" } }).state;
+    // After deletion, the diagnostic collapses to a zero-width range; count may still be 1
+    // but forEachDiagnostic should still yield it (mapped position)
+    const positions: Array<{ from: number; to: number }> = [];
+    forEachDiagnostic(state, (_d, from, to) => { positions.push({ from, to }); });
+    if (positions.length > 0) {
+      expect(positions[0].from).toBe(positions[0].to);
+    }
+  });
+});
+
+describe("linter extension integration", () => {
+  it("linter with null source acts as config-only", () => {
+    const ext = linter(null, { delay: 300 });
+    expect(ext).toBeDefined();
+    const state = EditorState.create({ doc: "test", extensions: [ext] });
+    expect(diagnosticCount(state)).toBe(0);
+  });
+
+  it("state with linter extension allows setDiagnostics", () => {
+    const ext = linter(() => []);
+    let state = EditorState.create({ doc: "hello", extensions: [ext] });
+    state = state.update(setDiagnostics(state, [
+      { from: 0, to: 5, severity: "error", message: "err" },
+    ])).state;
+    expect(diagnosticCount(state)).toBe(1);
+  });
+
+  it("multiple linter extensions can coexist", () => {
+    const ext1 = linter(() => []);
+    const ext2 = linter(() => []);
+    const state = EditorState.create({ doc: "test", extensions: [ext1, ext2] });
+    expect(diagnosticCount(state)).toBe(0);
+  });
+});
+
+describe("lintGutter extension options", () => {
+  it("returns an array-like extension", () => {
+    const ext = lintGutter();
+    expect(Array.isArray(ext)).toBe(true);
+  });
+
+  it("can be used as a state extension without error", () => {
+    const ext = lintGutter();
+    const state = EditorState.create({ doc: "test", extensions: [ext] });
+    expect(state.doc.toString()).toBe("test");
+  });
+
+  it("lintGutter with hoverTime option returns extension", () => {
+    const ext = lintGutter({ hoverTime: 500 });
+    expect(ext).toBeDefined();
+  });
+});
+
+describe("lintKeymap behavioral details", () => {
+  it("contains a binding with Ctrl-Shift-m or Cmd-Shift-m key", () => {
+    const keys = lintKeymap.map(b => b.key);
+    const hasLintPanelKey = keys.some(k =>
+      k.includes("Shift") && k.includes("m")
+    );
+    expect(hasLintPanelKey).toBe(true);
+  });
+
+  it("contains a binding for F8 (next diagnostic)", () => {
+    const keys = lintKeymap.map(b => b.key);
+    expect(keys).toContain("F8");
+  });
+});
+
+describe("command exports are EditorView commands", () => {
+  it("openLintPanel accepts exactly one argument", () => {
+    expect(openLintPanel.length).toBe(1);
+  });
+
+  it("closeLintPanel accepts exactly one argument", () => {
+    expect(closeLintPanel.length).toBe(1);
+  });
+
+  it("nextDiagnostic accepts exactly one argument", () => {
+    expect(nextDiagnostic.length).toBe(1);
+  });
+
+  it("previousDiagnostic accepts exactly one argument", () => {
+    expect(previousDiagnostic.length).toBe(1);
+  });
+
+  it("forceLinting accepts exactly one argument", () => {
+    expect(forceLinting.length).toBe(1);
+  });
+});
+
+describe("forEachDiagnostic ordering and completeness", () => {
+  it("iterates diagnostics in document order", () => {
+    const state = EditorState.create({ doc: "one two three four" });
+    const diags: Diagnostic[] = [
+      { from: 14, to: 18, severity: "error", message: "fourth" },
+      { from: 0, to: 3, severity: "error", message: "first" },
+      { from: 8, to: 13, severity: "error", message: "third" },
+      { from: 4, to: 7, severity: "error", message: "second" },
+    ];
+    const newState = state.update(setDiagnostics(state, diags)).state;
+    const fromPositions: number[] = [];
+    forEachDiagnostic(newState, (_d, from) => { fromPositions.push(from); });
+    // Should be in ascending document order
+    for (let i = 1; i < fromPositions.length; i++) {
+      expect(fromPositions[i]).toBeGreaterThanOrEqual(fromPositions[i - 1]);
+    }
+  });
+
+  it("handles overlapping diagnostics", () => {
+    const state = EditorState.create({ doc: "abcdefgh" });
+    const diags: Diagnostic[] = [
+      { from: 0, to: 4, severity: "error", message: "overlap1" },
+      { from: 2, to: 6, severity: "warning", message: "overlap2" },
+    ];
+    const newState = state.update(setDiagnostics(state, diags)).state;
+    // diagnosticCount counts decoration ranges, which may be split for overlaps
+    expect(diagnosticCount(newState)).toBeGreaterThanOrEqual(2);
+    const messages: string[] = [];
+    forEachDiagnostic(newState, (d) => { messages.push(d.message); });
+    expect(messages).toContain("overlap1");
+    expect(messages).toContain("overlap2");
+  });
+
+  it("handles zero-width diagnostics (from === to)", () => {
+    const state = EditorState.create({ doc: "test" });
+    const diags: Diagnostic[] = [
+      { from: 2, to: 2, severity: "info", message: "cursor hint" },
+    ];
+    const newState = state.update(setDiagnostics(state, diags)).state;
+    expect(diagnosticCount(newState)).toBe(1);
+    forEachDiagnostic(newState, (d, from, to) => {
+      expect(from).toBe(2);
+      expect(to).toBe(2);
+      expect(d.message).toBe("cursor hint");
+    });
+  });
+
+  it("handles diagnostics spanning the entire document", () => {
+    const doc = "full document diagnostic";
+    const state = EditorState.create({ doc });
+    const diags: Diagnostic[] = [
+      { from: 0, to: doc.length, severity: "error", message: "whole doc" },
+    ];
+    const newState = state.update(setDiagnostics(state, diags)).state;
+    expect(diagnosticCount(newState)).toBe(1);
+    forEachDiagnostic(newState, (d, from, to) => {
+      expect(from).toBe(0);
+      expect(to).toBe(doc.length);
+    });
+  });
+
+  it("handles many diagnostics", () => {
+    const doc = "a".repeat(100);
+    const state = EditorState.create({ doc });
+    const diags: Diagnostic[] = [];
+    for (let i = 0; i < 50; i++) {
+      diags.push({ from: i * 2, to: i * 2 + 1, severity: "warning", message: `d${i}` });
+    }
+    const newState = state.update(setDiagnostics(state, diags)).state;
+    expect(diagnosticCount(newState)).toBe(50);
+    let count = 0;
+    forEachDiagnostic(newState, () => { count++; });
+    expect(count).toBe(50);
   });
 });

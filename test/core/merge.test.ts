@@ -6,6 +6,7 @@ import {
   Chunk, uncollapseUnchanged, mergeViewSiblings,
   originalDocChangeEffect, updateOriginalDoc,
 } from "../../src/core/merge/index";
+import { Text, EditorState, ChangeSet } from "../../src/core/state/index";
 
 describe("Change", () => {
   it("stores fromA, toA, fromB, toB properties", () => {
@@ -370,5 +371,402 @@ describe("diff behavioral tests", () => {
 
   it("mergeViewSiblings is defined", () => {
     expect(mergeViewSiblings).toBeDefined();
+  });
+});
+
+describe("Chunk.build", () => {
+  it("returns empty array for identical documents", () => {
+    const doc = Text.of(["hello", "world"]);
+    const chunks = Chunk.build(doc, doc);
+    expect(chunks.length).toBe(0);
+  });
+
+  it("detects a single changed line", () => {
+    const a = Text.of(["line1", "line2", "line3"]);
+    const b = Text.of(["line1", "CHANGED", "line3"]);
+    const chunks = Chunk.build(a, b);
+    expect(chunks.length).toBe(1);
+    expect(chunks[0].fromA).toBeGreaterThanOrEqual(0);
+    expect(chunks[0].toA).toBeGreaterThan(chunks[0].fromA);
+    expect(chunks[0].fromB).toBeGreaterThanOrEqual(0);
+    expect(chunks[0].toB).toBeGreaterThan(chunks[0].fromB);
+  });
+
+  it("detects an inserted line", () => {
+    const a = Text.of(["line1", "line3"]);
+    const b = Text.of(["line1", "line2", "line3"]);
+    const chunks = Chunk.build(a, b);
+    expect(chunks.length).toBe(1);
+    // Insertion: A range may be empty
+    const chunk = chunks[0];
+    expect(chunk.toB - chunk.fromB).toBeGreaterThan(0);
+  });
+
+  it("detects a deleted line", () => {
+    const a = Text.of(["line1", "line2", "line3"]);
+    const b = Text.of(["line1", "line3"]);
+    const chunks = Chunk.build(a, b);
+    expect(chunks.length).toBe(1);
+    const chunk = chunks[0];
+    expect(chunk.toA - chunk.fromA).toBeGreaterThan(0);
+  });
+
+  it("detects multiple changed regions", () => {
+    const a = Text.of(["aaa", "bbb", "ccc", "ddd", "eee"]);
+    const b = Text.of(["AAA", "bbb", "ccc", "DDD", "eee"]);
+    const chunks = Chunk.build(a, b);
+    expect(chunks.length).toBe(2);
+  });
+
+  it("handles completely different documents", () => {
+    const a = Text.of(["alpha", "beta"]);
+    const b = Text.of(["gamma", "delta"]);
+    const chunks = Chunk.build(a, b);
+    expect(chunks.length).toBeGreaterThan(0);
+  });
+
+  it("handles empty document A", () => {
+    const a = Text.of([""]);
+    const b = Text.of(["hello", "world"]);
+    const chunks = Chunk.build(a, b);
+    expect(chunks.length).toBeGreaterThan(0);
+  });
+
+  it("handles empty document B", () => {
+    const a = Text.of(["hello", "world"]);
+    const b = Text.of([""]);
+    const chunks = Chunk.build(a, b);
+    expect(chunks.length).toBeGreaterThan(0);
+  });
+
+  it("handles both documents empty", () => {
+    const a = Text.of([""]);
+    const b = Text.of([""]);
+    const chunks = Chunk.build(a, b);
+    expect(chunks.length).toBe(0);
+  });
+});
+
+describe("Chunk properties", () => {
+  it("has changes array with relative positions", () => {
+    const a = Text.of(["line1", "line2", "line3"]);
+    const b = Text.of(["line1", "CHANGED", "line3"]);
+    const chunks = Chunk.build(a, b);
+    expect(chunks.length).toBe(1);
+    const chunk = chunks[0];
+    expect(Array.isArray(chunk.changes)).toBe(true);
+    expect(chunk.changes.length).toBeGreaterThan(0);
+    // Changes are relative to chunk start
+    for (const change of chunk.changes) {
+      expect(change.fromA).toBeGreaterThanOrEqual(0);
+      expect(change.toA).toBeGreaterThanOrEqual(change.fromA);
+      expect(change.fromB).toBeGreaterThanOrEqual(0);
+      expect(change.toB).toBeGreaterThanOrEqual(change.fromB);
+    }
+  });
+
+  it("has precise flag set to true by default", () => {
+    const a = Text.of(["hello"]);
+    const b = Text.of(["world"]);
+    const chunks = Chunk.build(a, b);
+    expect(chunks.length).toBeGreaterThan(0);
+    expect(chunks[0].precise).toBe(true);
+  });
+
+  it("endA returns fromA when chunk is empty in A", () => {
+    const a = Text.of(["line1", "line3"]);
+    const b = Text.of(["line1", "inserted", "line3"]);
+    const chunks = Chunk.build(a, b);
+    const insertChunk = chunks.find(c => c.fromA === c.toA);
+    if (insertChunk) {
+      expect(insertChunk.endA).toBe(insertChunk.fromA);
+    }
+  });
+
+  it("endB returns fromB when chunk is empty in B", () => {
+    const a = Text.of(["line1", "deleted", "line3"]);
+    const b = Text.of(["line1", "line3"]);
+    const chunks = Chunk.build(a, b);
+    const deleteChunk = chunks.find(c => c.fromB === c.toB);
+    if (deleteChunk) {
+      expect(deleteChunk.endB).toBe(deleteChunk.fromB);
+    }
+  });
+
+  it("endA returns toA - 1 for non-empty chunks", () => {
+    const a = Text.of(["line1", "line2", "line3"]);
+    const b = Text.of(["line1", "CHANGED", "line3"]);
+    const chunks = Chunk.build(a, b);
+    expect(chunks.length).toBe(1);
+    const chunk = chunks[0];
+    if (chunk.fromA < chunk.toA) {
+      expect(chunk.endA).toBe(chunk.toA - 1);
+    }
+  });
+
+  it("endB returns toB - 1 for non-empty chunks", () => {
+    const a = Text.of(["line1", "line2", "line3"]);
+    const b = Text.of(["line1", "CHANGED", "line3"]);
+    const chunks = Chunk.build(a, b);
+    expect(chunks.length).toBe(1);
+    const chunk = chunks[0];
+    if (chunk.fromB < chunk.toB) {
+      expect(chunk.endB).toBe(chunk.toB - 1);
+    }
+  });
+
+  it("Chunk constructor stores all properties correctly", () => {
+    const changes = [new Change(0, 3, 0, 5)];
+    const chunk = new Chunk(changes, 10, 20, 15, 30, false);
+    expect(chunk.fromA).toBe(10);
+    expect(chunk.toA).toBe(20);
+    expect(chunk.fromB).toBe(15);
+    expect(chunk.toB).toBe(30);
+    expect(chunk.precise).toBe(false);
+    expect(chunk.changes).toBe(changes);
+  });
+});
+
+describe("Chunk.updateA", () => {
+  it("updates chunks when document A changes", () => {
+    const a = Text.of(["line1", "line2", "line3"]);
+    const b = Text.of(["line1", "CHANGED", "line3"]);
+    const chunks = Chunk.build(a, b);
+    expect(chunks.length).toBe(1);
+
+    // Simulate changing "line1" to "LINE1" in document A
+    const changes = ChangeSet.of({from: 0, to: 5, insert: "LINE1"}, a.length);
+    const newA = changes.apply(a);
+    const updated = Chunk.updateA(chunks, newA, b, changes);
+    expect(Array.isArray(updated)).toBe(true);
+    // Should still have changes since docs differ
+    expect(updated.length).toBeGreaterThan(0);
+  });
+});
+
+describe("Chunk.updateB", () => {
+  it("updates chunks when document B changes", () => {
+    const a = Text.of(["line1", "line2", "line3"]);
+    const b = Text.of(["line1", "CHANGED", "line3"]);
+    const chunks = Chunk.build(a, b);
+    expect(chunks.length).toBe(1);
+
+    // Simulate changing "CHANGED" back to "line2" in document B
+    const changeStart = "line1\n".length;
+    const changeEnd = changeStart + "CHANGED".length;
+    const changes = ChangeSet.of({from: changeStart, to: changeEnd, insert: "line2"}, b.length);
+    const newB = changes.apply(b);
+    const updated = Chunk.updateB(chunks, a, newB, changes);
+    expect(Array.isArray(updated)).toBe(true);
+    // After reverting the change, documents should be identical
+    expect(updated.length).toBe(0);
+  });
+});
+
+describe("getChunks with EditorState", () => {
+  it("returns null when no merge extension is active", () => {
+    const state = EditorState.create({ doc: "hello" });
+    const result = getChunks(state);
+    expect(result).toBeNull();
+  });
+});
+
+describe("goToNextChunk / goToPreviousChunk as StateCommands", () => {
+  it("goToNextChunk returns false when no chunks field is present", () => {
+    const state = EditorState.create({ doc: "hello" });
+    let dispatched = false;
+    const result = goToNextChunk({
+      state,
+      dispatch: () => { dispatched = true; },
+    });
+    expect(result).toBe(false);
+    expect(dispatched).toBe(false);
+  });
+
+  it("goToPreviousChunk returns false when no chunks field is present", () => {
+    const state = EditorState.create({ doc: "hello" });
+    let dispatched = false;
+    const result = goToPreviousChunk({
+      state,
+      dispatch: () => { dispatched = true; },
+    });
+    expect(result).toBe(false);
+    expect(dispatched).toBe(false);
+  });
+});
+
+describe("unifiedMergeView configuration", () => {
+  it("returns an array of extensions", () => {
+    const extensions = unifiedMergeView({
+      original: "hello\nworld",
+    });
+    expect(Array.isArray(extensions)).toBe(true);
+    expect(extensions.length).toBeGreaterThan(0);
+  });
+
+  it("accepts Text object as original", () => {
+    const orig = Text.of(["hello", "world"]);
+    const extensions = unifiedMergeView({ original: orig });
+    expect(Array.isArray(extensions)).toBe(true);
+    expect(extensions.length).toBeGreaterThan(0);
+  });
+
+  it("accepts highlightChanges option", () => {
+    const ext1 = unifiedMergeView({ original: "hello", highlightChanges: true });
+    const ext2 = unifiedMergeView({ original: "hello", highlightChanges: false });
+    expect(Array.isArray(ext1)).toBe(true);
+    expect(Array.isArray(ext2)).toBe(true);
+  });
+
+  it("accepts gutter option", () => {
+    const ext1 = unifiedMergeView({ original: "hello", gutter: true });
+    const ext2 = unifiedMergeView({ original: "hello", gutter: false });
+    expect(Array.isArray(ext1)).toBe(true);
+    expect(Array.isArray(ext2)).toBe(true);
+  });
+
+  it("accepts collapseUnchanged option", () => {
+    const ext = unifiedMergeView({
+      original: "hello",
+      collapseUnchanged: { margin: 5, minSize: 8 },
+    });
+    expect(Array.isArray(ext)).toBe(true);
+  });
+
+  it("accepts mergeControls option set to false", () => {
+    const ext = unifiedMergeView({
+      original: "hello",
+      mergeControls: false,
+    });
+    expect(Array.isArray(ext)).toBe(true);
+  });
+
+  it("accepts syntaxHighlightDeletions option", () => {
+    const ext = unifiedMergeView({
+      original: "hello",
+      syntaxHighlightDeletions: false,
+    });
+    expect(Array.isArray(ext)).toBe(true);
+  });
+
+  it("accepts diffConfig option", () => {
+    const ext = unifiedMergeView({
+      original: "hello",
+      diffConfig: { scanLimit: 1000 },
+    });
+    expect(Array.isArray(ext)).toBe(true);
+  });
+
+  it("creates a working EditorState with unifiedMergeView extensions", () => {
+    const original = "line1\nline2\nline3";
+    const modified = "line1\nCHANGED\nline3";
+    const state = EditorState.create({
+      doc: modified,
+      extensions: [unifiedMergeView({ original })],
+    });
+    expect(state.doc.toString()).toBe(modified);
+    // The ChunkField should be initialized
+    const result = getChunks(state);
+    expect(result).not.toBeNull();
+    expect(result!.chunks.length).toBe(1);
+    expect(result!.side).toBe("b");
+  });
+
+  it("getOriginalDoc retrieves the original document from unified state", () => {
+    const original = "line1\nline2\nline3";
+    const modified = "line1\nCHANGED\nline3";
+    const state = EditorState.create({
+      doc: modified,
+      extensions: [unifiedMergeView({ original })],
+    });
+    const origDoc = getOriginalDoc(state);
+    expect(origDoc.toString()).toBe(original);
+  });
+
+  it("detects multiple chunks in unified merge state", () => {
+    const original = "aaa\nbbb\nccc\nddd\neee";
+    const modified = "AAA\nbbb\nccc\nDDD\neee";
+    const state = EditorState.create({
+      doc: modified,
+      extensions: [unifiedMergeView({ original })],
+    });
+    const result = getChunks(state);
+    expect(result).not.toBeNull();
+    expect(result!.chunks.length).toBe(2);
+  });
+
+  it("reports no chunks when original and modified are identical", () => {
+    const text = "same\ncontent\nhere";
+    const state = EditorState.create({
+      doc: text,
+      extensions: [unifiedMergeView({ original: text })],
+    });
+    const result = getChunks(state);
+    expect(result).not.toBeNull();
+    expect(result!.chunks.length).toBe(0);
+  });
+});
+
+describe("originalDocChangeEffect", () => {
+  it("creates a state effect for updating original doc", () => {
+    const original = "line1\nline2";
+    const modified = "line1\nCHANGED";
+    const state = EditorState.create({
+      doc: modified,
+      extensions: [unifiedMergeView({ original })],
+    });
+    const origDoc = getOriginalDoc(state);
+    const changes = ChangeSet.of(
+      { from: 0, to: 5, insert: "LINE1" },
+      origDoc.length
+    );
+    const effect = originalDocChangeEffect(state, changes);
+    expect(effect).toBeDefined();
+    expect(effect.value.doc.toString()).toBe("LINE1\nline2");
+    expect(effect.value.changes).toBe(changes);
+  });
+});
+
+describe("Chunk.build with diffConfig", () => {
+  it("accepts a custom scanLimit", () => {
+    const a = Text.of(["line1", "line2"]);
+    const b = Text.of(["line1", "CHANGED"]);
+    const chunks = Chunk.build(a, b, { scanLimit: 100 });
+    expect(chunks.length).toBe(1);
+  });
+
+  it("produces the same result for identical docs regardless of config", () => {
+    const doc = Text.of(["hello", "world"]);
+    const c1 = Chunk.build(doc, doc);
+    const c2 = Chunk.build(doc, doc, { scanLimit: 10 });
+    expect(c1.length).toBe(0);
+    expect(c2.length).toBe(0);
+  });
+});
+
+describe("Chunk ranges cover changed content", () => {
+  it("chunk fromA/toA spans the changed line in A", () => {
+    const a = Text.of(["aaa", "bbb", "ccc"]);
+    const b = Text.of(["aaa", "BBB", "ccc"]);
+    const chunks = Chunk.build(a, b);
+    expect(chunks.length).toBe(1);
+    const chunk = chunks[0];
+    // The changed line "bbb" starts at position 4 (after "aaa\n")
+    const lineStart = 4;
+    const lineEnd = 4 + 3; // "bbb" length
+    expect(chunk.fromA).toBeLessThanOrEqual(lineStart);
+    expect(chunk.endA).toBeGreaterThanOrEqual(lineEnd);
+  });
+
+  it("chunk fromB/toB spans the changed line in B", () => {
+    const a = Text.of(["aaa", "bbb", "ccc"]);
+    const b = Text.of(["aaa", "BBB", "ccc"]);
+    const chunks = Chunk.build(a, b);
+    expect(chunks.length).toBe(1);
+    const chunk = chunks[0];
+    const lineStart = 4;
+    const lineEnd = 4 + 3;
+    expect(chunk.fromB).toBeLessThanOrEqual(lineStart);
+    expect(chunk.endB).toBeGreaterThanOrEqual(lineEnd);
   });
 });

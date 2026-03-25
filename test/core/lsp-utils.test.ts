@@ -1,7 +1,7 @@
 import { describe, it, expect } from "bun:test"
 import { Text } from "../../src/core/state/index"
 import { toPosition, fromPosition } from "../../src/core/lsp/pos"
-import { escHTML } from "../../src/core/lsp/text"
+import { escHTML, docToHTML } from "../../src/core/lsp/text"
 import { Marked } from "../../src/core/lsp/marked"
 
 describe("LSP pos utilities", () => {
@@ -191,5 +191,269 @@ describe("Marked", () => {
 
   it("handles empty input", () => {
     expect(marked.parse("")).toBe("")
+  })
+
+  it("converts unordered list-like lines", () => {
+    const result = marked.parse("first\nsecond\nthird")
+    expect(result).toContain("first<br>second<br>third")
+  })
+
+  it("converts code blocks without a language", () => {
+    const result = marked.parse("```\nplain code\n```")
+    expect(result).toContain("<pre><code")
+    expect(result).toContain("plain code")
+  })
+
+  it("preserves inline code with special chars", () => {
+    const result = marked.parse("`a < b & c`")
+    expect(result).toContain("<code>")
+    expect(result).toContain("&lt;")
+    expect(result).toContain("&amp;")
+  })
+
+  it("handles multiple code blocks", () => {
+    const result = marked.parse("```js\nfoo\n```\ntext\n```ts\nbar\n```")
+    expect(result).toContain("foo")
+    expect(result).toContain("bar")
+    const codeBlocks = result.match(/<pre>/g)
+    expect(codeBlocks?.length).toBe(2)
+  })
+
+  it("handles nested bold inside italic", () => {
+    const result = marked.parse("*italic **bold** end*")
+    expect(result).toContain("<em>")
+    expect(result).toContain("<strong>")
+  })
+
+  it("handles links with special characters in URL", () => {
+    const result = marked.parse("[docs](https://example.com/path?a=1&b=2)")
+    expect(result).toContain('href="https://example.com/path?a=1&b=2"')
+    expect(result).toContain(">docs</a>")
+  })
+})
+
+describe("LSP pos edge cases", () => {
+  describe("fromPosition edge cases", () => {
+    const doc = Text.of(["hello", "world", "foo bar"])
+
+    it("character at line boundary (newline position)", () => {
+      // Position at the very end of a line's content
+      expect(fromPosition(doc, { line: 0, character: 5 })).toBe(5)
+      expect(fromPosition(doc, { line: 1, character: 5 })).toBe(11)
+    })
+
+    it("character 0 for every line", () => {
+      expect(fromPosition(doc, { line: 0, character: 0 })).toBe(0)
+      expect(fromPosition(doc, { line: 1, character: 0 })).toBe(6)
+      expect(fromPosition(doc, { line: 2, character: 0 })).toBe(12)
+    })
+
+    it("last character of last line", () => {
+      expect(fromPosition(doc, { line: 2, character: 7 })).toBe(19)
+    })
+  })
+
+  describe("toPosition edge cases", () => {
+    const doc = Text.of(["hello", "world", "foo bar"])
+
+    it("offset at each line start", () => {
+      expect(toPosition(doc, 0)).toEqual({ line: 0, character: 0 })
+      expect(toPosition(doc, 6)).toEqual({ line: 1, character: 0 })
+      expect(toPosition(doc, 12)).toEqual({ line: 2, character: 0 })
+    })
+
+    it("offset at each line end", () => {
+      expect(toPosition(doc, 5)).toEqual({ line: 0, character: 5 })
+      expect(toPosition(doc, 11)).toEqual({ line: 1, character: 5 })
+      expect(toPosition(doc, 19)).toEqual({ line: 2, character: 7 })
+    })
+
+    it("offset one past line start", () => {
+      expect(toPosition(doc, 1)).toEqual({ line: 0, character: 1 })
+      expect(toPosition(doc, 7)).toEqual({ line: 1, character: 1 })
+      expect(toPosition(doc, 13)).toEqual({ line: 2, character: 1 })
+    })
+  })
+
+  describe("multi-line document with empty lines", () => {
+    const doc = Text.of(["first", "", "third", ""])
+
+    it("toPosition handles empty lines", () => {
+      // "first" = 0..5, newline at 5, "" = 6..6, newline at 6, "third" = 7..12, newline at 12, "" = 13..13
+      expect(toPosition(doc, 6)).toEqual({ line: 1, character: 0 })
+      expect(toPosition(doc, 7)).toEqual({ line: 2, character: 0 })
+    })
+
+    it("fromPosition handles empty lines", () => {
+      expect(fromPosition(doc, { line: 1, character: 0 })).toBe(6)
+      expect(fromPosition(doc, { line: 3, character: 0 })).toBe(13)
+    })
+
+    it("roundtrip through all positions", () => {
+      for (let i = 0; i <= doc.length; i++) {
+        const pos = toPosition(doc, i)
+        expect(fromPosition(doc, pos)).toBe(i)
+      }
+    })
+  })
+
+  describe("document with long lines", () => {
+    const longLine = "a".repeat(1000)
+    const doc = Text.of([longLine, "b"])
+
+    it("toPosition at end of long line", () => {
+      expect(toPosition(doc, 1000)).toEqual({ line: 0, character: 1000 })
+    })
+
+    it("toPosition at start of second line after long line", () => {
+      expect(toPosition(doc, 1001)).toEqual({ line: 1, character: 0 })
+    })
+
+    it("fromPosition at end of long line", () => {
+      expect(fromPosition(doc, { line: 0, character: 1000 })).toBe(1000)
+    })
+  })
+
+  describe("document with many lines", () => {
+    const lines = Array.from({ length: 100 }, (_, i) => `line ${i}`)
+    const doc = Text.of(lines)
+
+    it("roundtrips for sampled offsets", () => {
+      const offsets = [0, 1, 50, doc.length - 1, doc.length]
+      for (const offset of offsets) {
+        const pos = toPosition(doc, offset)
+        expect(fromPosition(doc, pos)).toBe(offset)
+      }
+    })
+
+    it("correctly identifies line 50", () => {
+      // Each line is "line X\n" — compute offset for line 50
+      let offset = 0
+      for (let i = 0; i < 50; i++) {
+        offset += lines[i].length + 1 // +1 for newline
+      }
+      expect(toPosition(doc, offset)).toEqual({ line: 50, character: 0 })
+    })
+  })
+})
+
+describe("docToHTML", () => {
+  it("renders plain string with plaintext kind as escaped HTML", () => {
+    const result = docToHTML("hello <world>", "plaintext")
+    expect(result).toBe("hello &lt;world>")
+  })
+
+  it("renders plain string with markdown kind as markdown HTML", () => {
+    const result = docToHTML("**bold**", "markdown")
+    expect(result).toContain("<strong>bold</strong>")
+  })
+
+  it("renders MarkupContent object with plaintext kind", () => {
+    const result = docToHTML({ kind: "plaintext", value: "a & b" }, "markdown")
+    // The object's kind should override the default
+    expect(result).toBe("a &amp; b")
+  })
+
+  it("renders MarkupContent object with markdown kind", () => {
+    const result = docToHTML({ kind: "markdown", value: "# Title" }, "plaintext")
+    // The object's kind should override the default
+    expect(result).toContain("<h1>Title</h1>")
+  })
+
+  it("renders MarkupContent overriding defaultKind", () => {
+    // defaultKind is plaintext but MarkupContent says markdown
+    const result = docToHTML({ kind: "markdown", value: "*italic*" }, "plaintext")
+    expect(result).toContain("<em>italic</em>")
+  })
+
+  it("escapes special chars in plaintext mode", () => {
+    const result = docToHTML("line1\nline2 & <tag>", "plaintext")
+    expect(result).toContain("<br>")
+    expect(result).toContain("&amp;")
+    expect(result).toContain("&lt;")
+  })
+
+  it("handles empty string", () => {
+    expect(docToHTML("", "plaintext")).toBe("")
+    expect(docToHTML("", "markdown")).toBe("")
+  })
+
+  it("handles MarkupContent with empty value", () => {
+    expect(docToHTML({ kind: "markdown", value: "" }, "plaintext")).toBe("")
+    expect(docToHTML({ kind: "plaintext", value: "" }, "markdown")).toBe("")
+  })
+
+  it("handles markdown with code blocks", () => {
+    const result = docToHTML("```ts\nconst x = 1\n```", "markdown")
+    expect(result).toContain("<pre>")
+    expect(result).toContain("const x = 1")
+  })
+
+  it("handles markdown with links", () => {
+    const result = docToHTML("[click](https://example.com)", "markdown")
+    expect(result).toContain('<a href="https://example.com">click</a>')
+  })
+})
+
+describe("Marked advanced", () => {
+  const marked = new Marked()
+
+  it("handles h4-h6 as plain text (only h1-h3 supported)", () => {
+    // The minimal stub only handles h1-h3
+    const result = marked.parse("#### h4 text")
+    expect(result).not.toContain("<h4>")
+    expect(result).toContain("####")
+  })
+
+  it("handles multiple paragraphs", () => {
+    const result = marked.parse("para one\n\npara two\n\npara three")
+    const splits = result.split("</p><p>")
+    expect(splits.length).toBe(3)
+  })
+
+  it("handles code block then paragraph", () => {
+    const result = marked.parse("```\ncode\n```\n\ntext after")
+    expect(result).toContain("<pre>")
+    expect(result).toContain("text after")
+  })
+
+  it("handles bold at start and end of line", () => {
+    expect(marked.parse("**start**")).toContain("<strong>start</strong>")
+    expect(marked.parse("end **here**")).toContain("<strong>here</strong>")
+  })
+
+  it("handles multiple inline codes", () => {
+    const result = marked.parse("`a` and `b` and `c`")
+    const codes = result.match(/<code>/g)
+    expect(codes?.length).toBe(3)
+  })
+
+  it("handles multiple links in one line", () => {
+    const result = marked.parse("[a](url1) [b](url2)")
+    expect(result).toContain('href="url1"')
+    expect(result).toContain('href="url2"')
+  })
+
+  it("walkTokens receives all code blocks", () => {
+    const tokens: any[] = []
+    const custom = new Marked({
+      walkTokens(token) {
+        tokens.push({ type: token.type, lang: token.lang })
+      }
+    })
+    custom.parse("```js\na\n```\n\n```py\nb\n```")
+    expect(tokens.length).toBe(2)
+    expect(tokens[0].lang).toBe("js")
+    expect(tokens[1].lang).toBe("py")
+  })
+
+  it("walkTokens that does not set escaped leaves normal escaping", () => {
+    const custom = new Marked({
+      walkTokens(_token) {
+        // intentionally do nothing
+      }
+    })
+    const result = custom.parse("```js\n<div>\n```")
+    expect(result).toContain("&lt;div>")
   })
 })

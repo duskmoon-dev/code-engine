@@ -255,38 +255,12 @@ describe("LanguageDescription extra matching", () => {
     expect(match!.name).toBe("Rust");
   });
 
-  it("languages includes Go", () => {
-    const match = LanguageDescription.matchLanguageName(languages, "Go");
-    expect(match).toBeDefined();
-  });
-
-  it("languages includes TypeScript", () => {
-    const match = LanguageDescription.matchLanguageName(languages, "TypeScript");
-    expect(match).toBeDefined();
-  });
-
-  it("languages includes SQL", () => {
-    const match = LanguageDescription.matchLanguageName(languages, "SQL");
-    expect(match).toBeDefined();
-  });
-
-  it("languages includes Go", () => {
-    const match = LanguageDescription.matchLanguageName(languages, "Go");
-    expect(match).toBeDefined();
-  });
-
-  it("languages includes CSS", () => {
-    const match = LanguageDescription.matchLanguageName(languages, "CSS");
-    expect(match).toBeDefined();
-  });
-
-  it("languages includes Rust", () => {
-    const match = LanguageDescription.matchLanguageName(languages, "Rust");
-    expect(match).toBeDefined();
-  });
-
-  it("languages includes Java", () => {
-    const match = LanguageDescription.matchLanguageName(languages, "Java");
-    expect(match).toBeDefined();
-  });
+  const namesToCheck = ["Go", "TypeScript", "SQL", "CSS", "Java", "HTML", "Markdown", "YAML", "JSON"];
+  for (const name of namesToCheck) {
+    it(`languages includes ${name}`, () => {
+      const match = LanguageDescription.matchLanguageName(languages, name);
+      expect(match).toBeDefined();
+      expect(match!.name).toBe(name);
+    });
+  }
 });
