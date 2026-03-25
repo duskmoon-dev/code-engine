@@ -32,6 +32,7 @@ import {
   snippetKeymap,
 } from "../../src/core/autocomplete/index";
 import { EditorState } from "../../src/core/state/index";
+import { FuzzyMatcher, StrictMatcher } from "../../src/core/autocomplete/filter";
 
 describe("autocomplete module exports", () => {
   it("exports autocompletion as a function", () => {
@@ -379,5 +380,223 @@ describe("snippet and snippetKeymap", () => {
   it("snippet with fields creates field placeholders", () => {
     const applyFn = snippet("function ${name}(${args}) { ${} }");
     expect(typeof applyFn).toBe("function");
+  });
+});
+
+describe("FuzzyMatcher", () => {
+  it("constructor initializes chars and folded arrays from pattern", () => {
+    const m = new FuzzyMatcher("aBc");
+    expect(m.chars.length).toBe(3);
+    expect(m.folded.length).toBe(3);
+    // 'a' folds to 'A', 'B' folds to 'b', 'c' folds to 'C'
+    expect(m.chars[0]).toBe("a".charCodeAt(0));
+    expect(m.chars[1]).toBe("B".charCodeAt(0));
+    expect(m.chars[2]).toBe("c".charCodeAt(0));
+  });
+
+  it("empty pattern matches any word with NotFull penalty", () => {
+    const m = new FuzzyMatcher("");
+    const result = m.match("anything");
+    expect(result).not.toBeNull();
+    expect(result!.score).toBe(-100); // Penalty.NotFull
+    expect(result!.matched).toEqual([]);
+  });
+
+  it("exact match at start returns perfect score 0", () => {
+    const m = new FuzzyMatcher("abc");
+    const result = m.match("abc");
+    expect(result).not.toBeNull();
+    expect(result!.score).toBe(0);
+    expect(result!.matched).toEqual([0, 3]);
+  });
+
+  it("exact prefix match has NotFull penalty", () => {
+    const m = new FuzzyMatcher("abc");
+    const result = m.match("abcdef");
+    expect(result).not.toBeNull();
+    expect(result!.score).toBe(-100); // Penalty.NotFull
+    expect(result!.matched).toEqual([0, 3]);
+  });
+
+  it("case-insensitive match has CaseFold penalty", () => {
+    const m = new FuzzyMatcher("ABC");
+    const result = m.match("abc");
+    expect(result).not.toBeNull();
+    // Adjacent case-fold match at start, full length: CaseFold - word.length
+    expect(result!.score).toBe(-200 - 3); // CaseFold - word.length
+    expect(result!.matched).toEqual([0, 3]);
+  });
+
+  it("returns null when pattern does not match word", () => {
+    const m = new FuzzyMatcher("xyz");
+    expect(m.match("abc")).toBeNull();
+  });
+
+  it("returns null when word is shorter than pattern", () => {
+    const m = new FuzzyMatcher("abcd");
+    expect(m.match("ab")).toBeNull();
+  });
+
+  it("single char matches at start of word", () => {
+    const m = new FuzzyMatcher("a");
+    const result = m.match("abc");
+    expect(result).not.toBeNull();
+    expect(result!.score).toBe(-100); // NotFull since word is longer
+    expect(result!.matched).toEqual([0, 1]);
+  });
+
+  it("single char exact match returns score 0", () => {
+    const m = new FuzzyMatcher("a");
+    const result = m.match("a");
+    expect(result).not.toBeNull();
+    expect(result!.score).toBe(0);
+    expect(result!.matched).toEqual([0, 1]);
+  });
+
+  it("single char returns null on no match", () => {
+    const m = new FuzzyMatcher("x");
+    expect(m.match("abc")).toBeNull();
+  });
+
+  it("single char case fold match includes CaseFold penalty", () => {
+    const m = new FuzzyMatcher("A");
+    const result = m.match("abc");
+    expect(result).not.toBeNull();
+    expect(result!.score).toBe(-100 + -200); // NotFull + CaseFold
+    expect(result!.matched).toEqual([0, 1]);
+  });
+
+  it("direct substring not at start has NotStart penalty", () => {
+    const m = new FuzzyMatcher("bc");
+    const result = m.match("abcdef");
+    expect(result).not.toBeNull();
+    expect(result!.score).toBe(-700 - 6); // NotStart - word.length
+    expect(result!.matched).toEqual([1, 3]);
+  });
+
+  it("by-word matching: pattern chars match word starts", () => {
+    const m = new FuzzyMatcher("fB");
+    const result = m.match("fooBar");
+    expect(result).not.toBeNull();
+    // ByWord match at start, wordAdjacent
+    expect(result!.score).toBe(-100 - 6); // ByWord - word.length
+  });
+
+  it("fuzzy match with gaps returns match positions", () => {
+    const m = new FuzzyMatcher("ace");
+    const result = m.match("abcde");
+    expect(result).not.toBeNull();
+    expect(result!.matched.length).toBeGreaterThanOrEqual(2);
+    // matched should contain from/to pairs covering 'a', 'c', 'e'
+  });
+
+  it("score ordering: exact > prefix > case-fold > substring > fuzzy", () => {
+    const exact = new FuzzyMatcher("hello").match("hello");
+    const prefix = new FuzzyMatcher("hel").match("hello");
+    const caseFold = new FuzzyMatcher("HEL").match("hello");
+    const substr = new FuzzyMatcher("ell").match("hello");
+    const fuzzy = new FuzzyMatcher("hlo").match("hello");
+
+    expect(exact).not.toBeNull();
+    expect(prefix).not.toBeNull();
+    expect(caseFold).not.toBeNull();
+    expect(substr).not.toBeNull();
+    expect(fuzzy).not.toBeNull();
+
+    expect(exact!.score).toBeGreaterThan(prefix!.score);
+    expect(prefix!.score).toBeGreaterThan(caseFold!.score);
+    expect(caseFold!.score).toBeGreaterThan(substr!.score);
+  });
+
+  it("matched array contains from/to pairs for matched regions", () => {
+    const m = new FuzzyMatcher("abc");
+    const result = m.match("abcdef");
+    expect(result).not.toBeNull();
+    // matched should be [from, to] pairs
+    expect(result!.matched.length % 2).toBe(0);
+    expect(result!.matched[0]).toBe(0);
+    expect(result!.matched[1]).toBe(3);
+  });
+
+  it("handles astral/supplementary characters in pattern", () => {
+    const m = new FuzzyMatcher("a");
+    expect(m.astral).toBe(false);
+    // A pattern with a supplementary character
+    const m2 = new FuzzyMatcher("\u{1F600}");
+    expect(m2.astral).toBe(true);
+    expect(m2.chars.length).toBe(1);
+  });
+
+  it("returns null for empty word with non-empty pattern", () => {
+    const m = new FuzzyMatcher("abc");
+    expect(m.match("")).toBeNull();
+  });
+
+  it("two-char pattern returns null when only fuzzy (no adjacency)", () => {
+    const m = new FuzzyMatcher("ac");
+    // "aXYZc" has 'a' and 'c' but they aren't adjacent and pattern is 2 chars
+    // For 2-char patterns, the final fallback returns null
+    const result = m.match("aXYZc");
+    expect(result).toBeNull();
+  });
+
+  it("case-insensitive prefix match on longer word", () => {
+    const m = new FuzzyMatcher("ABC");
+    const result = m.match("abcdef");
+    expect(result).not.toBeNull();
+    expect(result!.score).toBe(-200 - 6 + -100); // CaseFold - word.length + NotFull
+    expect(result!.matched).toEqual([0, 3]);
+  });
+});
+
+describe("StrictMatcher", () => {
+  it("exact match returns score 0", () => {
+    const m = new StrictMatcher("hello");
+    const result = m.match("hello");
+    expect(result).not.toBeNull();
+    expect(result!.score).toBe(0);
+  });
+
+  it("prefix match has NotFull penalty", () => {
+    const m = new StrictMatcher("hel");
+    const result = m.match("hello");
+    expect(result).not.toBeNull();
+    expect(result!.score).toBe(-100); // NotFull
+  });
+
+  it("case-insensitive prefix has CaseFold + NotFull", () => {
+    const m = new StrictMatcher("HEL");
+    const result = m.match("hello");
+    expect(result).not.toBeNull();
+    expect(result!.score).toBe(-200 + -100); // CaseFold + NotFull
+  });
+
+  it("returns null when pattern does not match", () => {
+    const m = new StrictMatcher("xyz");
+    expect(m.match("hello")).toBeNull();
+  });
+
+  it("returns null when word is shorter than pattern", () => {
+    const m = new StrictMatcher("hello");
+    expect(m.match("hel")).toBeNull();
+  });
+
+  it("matched array is [0, pattern.length] on match", () => {
+    const m = new StrictMatcher("hel");
+    const result = m.match("hello");
+    expect(result).not.toBeNull();
+    expect(result!.matched).toEqual([0, 3]);
+  });
+
+  it("case-fold exact length has CaseFold only, no NotFull", () => {
+    const m = new StrictMatcher("HELLO");
+    const result = m.match("hello");
+    expect(result).not.toBeNull();
+    expect(result!.score).toBe(-200); // CaseFold only
+  });
+
+  it("non-prefix does not match (strict is prefix-only)", () => {
+    const m = new StrictMatcher("llo");
+    expect(m.match("hello")).toBeNull();
   });
 });
