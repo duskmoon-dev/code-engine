@@ -344,14 +344,13 @@ describe("PHP language pack", () => {
     expect(state.selection.main.to).toBe(5);
   });
 
-  it("SwitchBody indentation strategy: case label indent in switch", () => {
-    // "<?php\nswitch ($x) {\n  case 1:\n    $y = 1;\n}"
-    // line 1 (<?php) ends at 5, line 2 ends at 19, line 3 starts at pos 20
-    const doc = "<?php\nswitch ($x) {\n  case 1:\n    $y = 1;\n}";
-    const state = EditorState.create({ doc, extensions: [php()] });
+  it("Block indentation strategy: body inside switch block", () => {
+    // PHP switch body uses Block (not SwitchBody) - exercises delimitedIndent
+    // "switch ($x) {\n  $y = 1;\n}" with plain:true — pos 14 is start of body line
+    const doc = "switch ($x) {\n  $y = 1;\n}";
+    const state = EditorState.create({ doc, extensions: [php({ plain: true })] });
     ensureSyntaxTree(state, state.doc.length, 1000);
-    // Position at start of "  case 1:" line (pos 20)
-    const indent = getIndentation(state, 20);
+    const indent = getIndentation(state, 14);
     expect(typeof indent).toBe("number");
   });
 });
