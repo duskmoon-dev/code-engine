@@ -40,10 +40,20 @@ import {
   continuedIndent,
   flatIndent,
   indentService,
+  Language,
+  language,
+  languageDataProp,
+  defineLanguageFacet,
+  syntaxTreeAvailable,
+  LanguageDescription,
+  ParseContext,
+  DocInput,
+  sublanguageProp,
 } from "../../src/core/language/index";
 import { tags } from "../../src/parser/highlight/index";
 import { python, pythonLanguage } from "../../src/lang/python/index";
-import { EditorState, StateEffect } from "../../src/core/state/index";
+import { EditorState, StateEffect, Facet, Text } from "../../src/core/state/index";
+import { Tree, NodeProp } from "../../src/parser/common/index";
 
 describe("Language module", () => {
   describe("exports", () => {
@@ -1158,5 +1168,435 @@ describe("Fold state and effects (deep)", () => {
       expect(foldFrom).toBe(5);
       expect(foldTo).toBe(9);
     });
+  });
+});
+
+describe("Language.state and syntaxTree", () => {
+  it("Language.state is a StateField", () => {
+    expect(Language.state).toBeDefined();
+  });
+
+  it("syntaxTree returns Tree.empty when no language is configured", () => {
+    const state = EditorState.create({ doc: "hello" });
+    const tree = syntaxTree(state);
+    expect(tree).toBe(Tree.empty);
+  });
+
+  it("syntaxTree returns a Tree when language is configured", () => {
+    const state = EditorState.create({
+      doc: "x = 1",
+      extensions: [python()],
+    });
+    ensureSyntaxTree(state, state.doc.length, 1000);
+    const tree = syntaxTree(state);
+    expect(tree).toBeDefined();
+    expect(tree).not.toBe(Tree.empty);
+  });
+
+  it("syntaxTree returns a tree with correct length", () => {
+    const doc = "x = 1\ny = 2";
+    const state = EditorState.create({
+      doc,
+      extensions: [python()],
+    });
+    ensureSyntaxTree(state, state.doc.length, 1000);
+    const tree = syntaxTree(state);
+    expect(tree.length).toBe(doc.length);
+  });
+
+  it("Language.setState effect can replace language state", () => {
+    const state = EditorState.create({
+      doc: "x = 1",
+      extensions: [python()],
+    });
+    // Language.setState is a StateEffect definition
+    expect(Language.setState).toBeDefined();
+    const eff = Language.setState;
+    expect(typeof eff.of).toBe("function");
+  });
+});
+
+describe("ensureSyntaxTree", () => {
+  it("returns null when no language is configured", () => {
+    const state = EditorState.create({ doc: "hello" });
+    const result = ensureSyntaxTree(state, 5);
+    expect(result).toBeNull();
+  });
+
+  it("returns a tree when language is configured and parsing completes", () => {
+    const state = EditorState.create({
+      doc: "x = 1",
+      extensions: [python()],
+    });
+    const tree = ensureSyntaxTree(state, state.doc.length, 1000);
+    expect(tree).not.toBeNull();
+    expect(tree).toBeInstanceOf(Tree);
+  });
+
+  it("returns a tree that covers the requested range", () => {
+    const doc = "def foo():\n  return 1\n\ndef bar():\n  return 2";
+    const state = EditorState.create({
+      doc,
+      extensions: [python()],
+    });
+    const tree = ensureSyntaxTree(state, doc.length, 1000);
+    expect(tree).not.toBeNull();
+    expect(tree!.length).toBe(doc.length);
+  });
+
+  it("returns a tree for partial range", () => {
+    const doc = "x = 1\ny = 2\nz = 3";
+    const state = EditorState.create({
+      doc,
+      extensions: [python()],
+    });
+    const tree = ensureSyntaxTree(state, 5, 1000);
+    expect(tree).not.toBeNull();
+  });
+});
+
+describe("syntaxTreeAvailable", () => {
+  it("returns false when no language is configured", () => {
+    const state = EditorState.create({ doc: "hello" });
+    expect(syntaxTreeAvailable(state)).toBe(false);
+  });
+
+  it("returns true after full parse", () => {
+    const state = EditorState.create({
+      doc: "x = 1",
+      extensions: [python()],
+    });
+    ensureSyntaxTree(state, state.doc.length, 1000);
+    expect(syntaxTreeAvailable(state)).toBe(true);
+  });
+
+  it("returns true when checking up to a parsed position", () => {
+    const state = EditorState.create({
+      doc: "x = 1\ny = 2",
+      extensions: [python()],
+    });
+    ensureSyntaxTree(state, state.doc.length, 1000);
+    expect(syntaxTreeAvailable(state, 5)).toBe(true);
+  });
+});
+
+describe("languageDataProp and sublanguageProp", () => {
+  it("languageDataProp is a NodeProp", () => {
+    expect(languageDataProp).toBeDefined();
+    expect(languageDataProp).toBeInstanceOf(NodeProp);
+  });
+
+  it("sublanguageProp is a NodeProp", () => {
+    expect(sublanguageProp).toBeDefined();
+    expect(sublanguageProp).toBeInstanceOf(NodeProp);
+  });
+});
+
+describe("defineLanguageFacet", () => {
+  it("returns a Facet", () => {
+    const facet = defineLanguageFacet();
+    expect(facet).toBeDefined();
+  });
+
+  it("returns a Facet with base data", () => {
+    const facet = defineLanguageFacet({ autocomplete: true });
+    expect(facet).toBeDefined();
+  });
+
+  it("different calls return different facets", () => {
+    const f1 = defineLanguageFacet();
+    const f2 = defineLanguageFacet();
+    expect(f1).not.toBe(f2);
+  });
+});
+
+describe("language facet", () => {
+  it("language facet is defined", () => {
+    expect(language).toBeDefined();
+  });
+
+  it("state.facet(language) returns null with no language configured", () => {
+    const state = EditorState.create({ doc: "hello" });
+    const lang = state.facet(language);
+    expect(lang).toBeNull();
+  });
+
+  it("state.facet(language) returns a Language with python configured", () => {
+    const state = EditorState.create({
+      doc: "x = 1",
+      extensions: [python()],
+    });
+    const lang = state.facet(language);
+    expect(lang).not.toBeNull();
+    expect(lang).toBeInstanceOf(Language);
+  });
+});
+
+describe("Language class properties", () => {
+  it("Language instance has parser property", () => {
+    const state = EditorState.create({
+      doc: "x = 1",
+      extensions: [python()],
+    });
+    const lang = state.facet(language);
+    expect(lang).not.toBeNull();
+    expect(lang!.parser).toBeDefined();
+  });
+
+  it("Language instance has name property", () => {
+    const state = EditorState.create({
+      doc: "x = 1",
+      extensions: [python()],
+    });
+    const lang = state.facet(language);
+    expect(lang).not.toBeNull();
+    expect(lang!.name).toBe("python");
+  });
+
+  it("Language instance has data property (Facet)", () => {
+    const state = EditorState.create({
+      doc: "x = 1",
+      extensions: [python()],
+    });
+    const lang = state.facet(language);
+    expect(lang).not.toBeNull();
+    expect(lang!.data).toBeDefined();
+  });
+
+  it("Language instance has extension property", () => {
+    const state = EditorState.create({
+      doc: "x = 1",
+      extensions: [python()],
+    });
+    const lang = state.facet(language);
+    expect(lang).not.toBeNull();
+    expect(lang!.extension).toBeDefined();
+    expect(Array.isArray(lang!.extension)).toBe(true);
+  });
+
+  it("allowsNesting returns a boolean", () => {
+    const s = EditorState.create({
+      doc: "x = 1",
+      extensions: [python()],
+    });
+    const lang2 = s.facet(language);
+    expect(typeof lang2!.allowsNesting).toBe("boolean");
+  });
+
+  it("isActiveAt returns true for a position in the language", () => {
+    const state = EditorState.create({
+      doc: "x = 1",
+      extensions: [python()],
+    });
+    ensureSyntaxTree(state, state.doc.length, 1000);
+    const lang = state.facet(language);
+    expect(lang!.isActiveAt(state, 0)).toBe(true);
+  });
+
+  it("findRegions returns the full document for a single-language state", () => {
+    const state = EditorState.create({
+      doc: "x = 1",
+      extensions: [python()],
+    });
+    ensureSyntaxTree(state, state.doc.length, 1000);
+    const lang = state.facet(language);
+    const regions = lang!.findRegions(state);
+    expect(regions.length).toBe(1);
+    expect(regions[0].from).toBe(0);
+    expect(regions[0].to).toBe(state.doc.length);
+  });
+});
+
+describe("LanguageSupport extended", () => {
+  it("LanguageSupport.extension is an array", () => {
+    const support = python();
+    expect(Array.isArray(support.extension)).toBe(true);
+  });
+
+  it("LanguageSupport.language is a Language instance", () => {
+    const support = python();
+    expect(support.language).toBeInstanceOf(Language);
+  });
+
+  it("LanguageSupport.support is defined", () => {
+    const support = python();
+    expect(support.support).toBeDefined();
+  });
+
+  it("creating LanguageSupport with no support extensions", () => {
+    const support = new LanguageSupport(pythonLanguage);
+    expect(support.language).toBe(pythonLanguage);
+    expect(Array.isArray(support.extension)).toBe(true);
+  });
+});
+
+describe("LanguageDescription", () => {
+  it("LanguageDescription.of creates a description with support", () => {
+    const support = python();
+    const desc = LanguageDescription.of({
+      name: "Python",
+      extensions: ["py"],
+      support,
+    });
+    expect(desc.name).toBe("Python");
+    expect(desc.extensions).toContain("py");
+    expect(desc.support).toBe(support);
+  });
+
+  it("LanguageDescription.of creates a description with load function", () => {
+    const desc = LanguageDescription.of({
+      name: "Python",
+      extensions: ["py"],
+      load: () => Promise.resolve(python()),
+    });
+    expect(desc.name).toBe("Python");
+    expect(desc.support).toBeUndefined();
+  });
+
+  it("LanguageDescription.of throws without load or support", () => {
+    expect(() => {
+      LanguageDescription.of({ name: "Test" });
+    }).toThrow("Must pass either 'load' or 'support'");
+  });
+
+  it("LanguageDescription.matchFilename matches by extension", () => {
+    const descs = [
+      LanguageDescription.of({ name: "Python", extensions: ["py"], support: python() }),
+      LanguageDescription.of({ name: "JS", extensions: ["js"], support: python() }),
+    ];
+    const match = LanguageDescription.matchFilename(descs, "test.py");
+    expect(match).not.toBeNull();
+    expect(match!.name).toBe("Python");
+  });
+
+  it("LanguageDescription.matchFilename returns null for unknown extension", () => {
+    const descs = [
+      LanguageDescription.of({ name: "Python", extensions: ["py"], support: python() }),
+    ];
+    const match = LanguageDescription.matchFilename(descs, "test.xyz");
+    expect(match).toBeNull();
+  });
+
+  it("LanguageDescription.matchFilename matches by filename pattern", () => {
+    const descs = [
+      LanguageDescription.of({
+        name: "Makefile",
+        filename: /^Makefile$/,
+        support: python(),
+      }),
+    ];
+    const match = LanguageDescription.matchFilename(descs, "Makefile");
+    expect(match).not.toBeNull();
+    expect(match!.name).toBe("Makefile");
+  });
+
+  it("LanguageDescription.matchLanguageName matches exact name", () => {
+    const descs = [
+      LanguageDescription.of({ name: "Python", extensions: ["py"], support: python() }),
+    ];
+    const match = LanguageDescription.matchLanguageName(descs, "Python");
+    expect(match).not.toBeNull();
+    expect(match!.name).toBe("Python");
+  });
+
+  it("LanguageDescription.matchLanguageName is case insensitive", () => {
+    const descs = [
+      LanguageDescription.of({ name: "Python", extensions: ["py"], support: python() }),
+    ];
+    const match = LanguageDescription.matchLanguageName(descs, "python");
+    expect(match).not.toBeNull();
+  });
+
+  it("LanguageDescription.matchLanguageName with fuzzy matching", () => {
+    const descs = [
+      LanguageDescription.of({ name: "Python", extensions: ["py"], support: python() }),
+    ];
+    const match = LanguageDescription.matchLanguageName(descs, "I love python code");
+    expect(match).not.toBeNull();
+    expect(match!.name).toBe("Python");
+  });
+
+  it("LanguageDescription.matchLanguageName returns null with fuzzy=false for non-exact", () => {
+    const descs = [
+      LanguageDescription.of({ name: "Python", extensions: ["py"], support: python() }),
+    ];
+    const match = LanguageDescription.matchLanguageName(descs, "I love python code", false);
+    expect(match).toBeNull();
+  });
+
+  it("LanguageDescription.load resolves to LanguageSupport", async () => {
+    const desc = LanguageDescription.of({
+      name: "Python",
+      extensions: ["py"],
+      load: () => Promise.resolve(python()),
+    });
+    const support = await desc.load();
+    expect(support).toBeInstanceOf(LanguageSupport);
+    expect(desc.support).toBe(support);
+  });
+
+  it("LanguageDescription.matchLanguageName matches alias", () => {
+    const descs = [
+      LanguageDescription.of({
+        name: "Python",
+        alias: ["py3"],
+        extensions: ["py"],
+        support: python(),
+      }),
+    ];
+    const match = LanguageDescription.matchLanguageName(descs, "py3");
+    expect(match).not.toBeNull();
+    expect(match!.name).toBe("Python");
+  });
+});
+
+describe("DocInput", () => {
+  it("creates a DocInput from a Text", () => {
+    const text = Text.of(["hello world"]);
+    const input = new DocInput(text);
+    expect(input.length).toBe(11);
+  });
+
+  it("chunk returns text at position", () => {
+    const text = Text.of(["hello world"]);
+    const input = new DocInput(text);
+    const chunk = input.chunk(0);
+    expect(chunk).toContain("hello");
+  });
+
+  it("read returns substring", () => {
+    const text = Text.of(["hello world"]);
+    const input = new DocInput(text);
+    expect(input.read(0, 5)).toBe("hello");
+    expect(input.read(6, 11)).toBe("world");
+  });
+
+  it("lineChunks is true", () => {
+    const text = Text.of(["hello world"]);
+    const input = new DocInput(text);
+    expect(input.lineChunks).toBe(true);
+  });
+
+  it("read handles multi-line documents", () => {
+    const text = Text.of(["line one", "line two"]);
+    const input = new DocInput(text);
+    expect(input.read(0, 8)).toBe("line one");
+  });
+});
+
+describe("ParseContext", () => {
+  it("ParseContext.get returns null outside of parsing", () => {
+    expect(ParseContext.get()).toBeNull();
+  });
+
+  it("ParseContext.getSkippingParser returns a Parser", () => {
+    const parser = ParseContext.getSkippingParser();
+    expect(parser).toBeDefined();
+    expect(typeof parser.startParse).toBe("function");
+  });
+
+  it("ParseContext.getSkippingParser accepts a promise argument", () => {
+    const parser = ParseContext.getSkippingParser(Promise.resolve());
+    expect(parser).toBeDefined();
   });
 });
