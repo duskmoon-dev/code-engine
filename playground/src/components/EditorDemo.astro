@@ -72,6 +72,7 @@
     <button id="btn-fullscreen" class="toolbar-btn" aria-label="Toggle fullscreen">Fullscreen</button>
     <button id="btn-download" class="toolbar-btn" aria-label="Download editor content">Download</button>
     <button id="btn-share" class="toolbar-btn" aria-label="Copy share link">Share</button>
+    <button id="btn-shortcuts" class="toolbar-btn" aria-label="Show keyboard shortcuts" title="Keyboard shortcuts">?</button>
     <button id="btn-reset" class="toolbar-btn" aria-label="Reset to defaults">Reset</button>
   </div>
   <p id="load-error" class="load-error" role="alert" hidden>
@@ -87,6 +88,20 @@
     <span id="status-doc"></span>
     <span id="status-lang">JavaScript</span>
   </div>
+  <dialog id="shortcuts-dialog" class="shortcuts-dialog" aria-label="Keyboard shortcuts">
+    <h3>Keyboard Shortcuts</h3>
+    <dl>
+      <dt><kbd>Ctrl</kbd>/<kbd>Cmd</kbd> + <kbd>S</kbd></dt>
+      <dd>Copy share link</dd>
+      <dt><kbd>Ctrl</kbd>/<kbd>Cmd</kbd> + <kbd>=</kbd></dt>
+      <dd>Increase font size</dd>
+      <dt><kbd>Ctrl</kbd>/<kbd>Cmd</kbd> + <kbd>-</kbd></dt>
+      <dd>Decrease font size</dd>
+      <dt><kbd>F11</kbd></dt>
+      <dd>Toggle fullscreen</dd>
+    </dl>
+    <button id="shortcuts-close" class="toolbar-btn">Close</button>
+  </dialog>
   <noscript>
     <div class="noscript-msg">
       <p>JavaScript is required for the interactive editor.</p>
@@ -673,11 +688,24 @@ BinaryExpression { expression !add "+" expression }
   }
   shareBtn.addEventListener('click', shareLink)
 
-  // Ctrl/Cmd+S to share (prevent useless save-page dialog)
+  // Global keyboard shortcuts
   document.addEventListener('keydown', (e) => {
-    if ((e.metaKey || e.ctrlKey) && e.key === 's') {
+    const mod = e.metaKey || e.ctrlKey
+    if (mod && e.key === 's') {
       e.preventDefault()
       shareLink()
+    } else if (mod && (e.key === '=' || e.key === '+')) {
+      e.preventDefault()
+      updateFontSize(currentFontSize + 2)
+      updateHash()
+    } else if (mod && e.key === '-') {
+      e.preventDefault()
+      updateFontSize(currentFontSize - 2)
+      updateHash()
+    } else if (e.key === 'F11') {
+      e.preventDefault()
+      if (document.fullscreenElement) document.exitFullscreen()
+      else editorDemo.requestFullscreen()
     }
   })
 
@@ -700,6 +728,13 @@ BinaryExpression { expression !add "+" expression }
     a.click()
     URL.revokeObjectURL(url)
   })
+
+  // Shortcuts dialog
+  const shortcutsBtn = document.getElementById('btn-shortcuts')!
+  const shortcutsDialog = document.getElementById('shortcuts-dialog') as HTMLDialogElement
+  const shortcutsClose = document.getElementById('shortcuts-close')!
+  shortcutsBtn.addEventListener('click', () => shortcutsDialog.showModal())
+  shortcutsClose.addEventListener('click', () => shortcutsDialog.close())
 
   // Fullscreen toggle
   const fullscreenBtn = document.getElementById('btn-fullscreen')!
@@ -942,6 +977,45 @@ BinaryExpression { expression !add "+" expression }
       grid-column: 1 / -1;
       border-radius: 0 0 var(--radius) var(--radius);
     }
+  }
+
+  .shortcuts-dialog {
+    background: var(--color-surface);
+    color: var(--color-text);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius);
+    padding: var(--space-md) var(--space-lg);
+    max-width: 24rem;
+  }
+  .shortcuts-dialog::backdrop {
+    background: rgba(0, 0, 0, 0.5);
+  }
+  .shortcuts-dialog h3 {
+    margin-bottom: var(--space-sm);
+    color: var(--color-accent);
+  }
+  .shortcuts-dialog dl {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    gap: 0.35rem 1rem;
+    margin-bottom: var(--space-md);
+  }
+  .shortcuts-dialog dt {
+    font-family: var(--font-mono);
+    font-size: 0.8rem;
+    white-space: nowrap;
+  }
+  .shortcuts-dialog dd {
+    font-size: 0.85rem;
+    color: var(--color-text-muted);
+  }
+  .shortcuts-dialog kbd {
+    background: var(--color-bg);
+    border: 1px solid var(--color-border);
+    border-radius: 3px;
+    padding: 0.1rem 0.3rem;
+    font-size: 0.75rem;
+    font-family: var(--font-mono);
   }
 
   .editor-demo:fullscreen {
