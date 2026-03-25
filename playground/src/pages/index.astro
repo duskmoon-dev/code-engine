@@ -47,6 +47,23 @@ new EditorView({
   </nav>
 </Layout>
 
+<script>
+  document.querySelectorAll('pre').forEach(pre => {
+    const btn = document.createElement('button')
+    btn.textContent = 'Copy'
+    btn.setAttribute('aria-label', 'Copy code to clipboard')
+    btn.className = 'copy-btn'
+    btn.addEventListener('click', async () => {
+      const code = pre.querySelector('code')?.textContent ?? ''
+      await navigator.clipboard.writeText(code)
+      btn.textContent = 'Copied!'
+      setTimeout(() => { btn.textContent = 'Copy' }, 1500)
+    })
+    pre.style.position = 'relative'
+    pre.appendChild(btn)
+  })
+</script>
+
 <style>
   .hero {
     text-align: center;
@@ -110,5 +127,23 @@ new EditorView({
   .link-card p {
     color: var(--color-text-muted);
     font-size: 0.9rem;
+  }
+  :global(.copy-btn) {
+    position: absolute;
+    top: 0.5rem;
+    right: 0.5rem;
+    padding: 0.2rem 0.5rem;
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: 4px;
+    color: var(--color-text-muted);
+    font-size: 0.75rem;
+    font-family: var(--font-sans);
+    cursor: pointer;
+    transition: color 0.15s, border-color 0.15s;
+  }
+  :global(.copy-btn:hover) {
+    color: var(--color-text);
+    border-color: var(--color-accent);
   }
 </style>
