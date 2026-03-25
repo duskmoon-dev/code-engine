@@ -732,10 +732,18 @@ BinaryExpression { expression !add "+" expression }
 
   // Share button — copy current URL with hash state
   const shareBtn = document.getElementById('btn-share')!
+  const MAX_SHARE_URL_LENGTH = 8000 // browsers typically support up to ~8KB URLs
   async function shareLink() {
     updateHash()
+    const url = location.href
+    if (url.length > MAX_SHARE_URL_LENGTH) {
+      shareBtn.textContent = 'Too long!'
+      shareBtn.title = 'Code is too large to share via URL. Try shorter code or use Copy instead.'
+      setTimeout(() => { shareBtn.textContent = 'Share'; shareBtn.title = '' }, 2500)
+      return
+    }
     try {
-      await navigator.clipboard.writeText(location.href)
+      await navigator.clipboard.writeText(url)
       shareBtn.textContent = 'Copied!'
     } catch {
       shareBtn.textContent = 'Failed'
@@ -807,6 +815,10 @@ BinaryExpression { expression !add "+" expression }
   const shortcutsClose = document.getElementById('shortcuts-close')!
   shortcutsBtn.addEventListener('click', () => shortcutsDialog.showModal())
   shortcutsClose.addEventListener('click', () => shortcutsDialog.close())
+  // Close dialog when clicking the backdrop (outside the dialog box)
+  shortcutsDialog.addEventListener('click', (e) => {
+    if (e.target === shortcutsDialog) shortcutsDialog.close()
+  })
 
   // Fullscreen toggle
   const fullscreenBtn = document.getElementById('btn-fullscreen')!

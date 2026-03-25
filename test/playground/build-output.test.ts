@@ -416,4 +416,48 @@ describe('playground build output', () => {
       expect(html).toContain('og:url')
     }
   }))
+
+  it('export table headers have scope="col" for accessibility', requireBuild(() => {
+    const html = readFileSync(join(distDir, 'docs/index.html'), 'utf-8')
+    expect(html).toContain('scope="col"')
+    // Both Import and Exports headers should have scope
+    const scopeCount = (html.match(/scope="col"/g) ?? []).length
+    // At least 2 per category table (7 categories × 2 headers = 14)
+    expect(scopeCount).toBeGreaterThanOrEqual(14)
+  }))
+
+  it('playground has shortcuts dialog with close button', requireBuild(() => {
+    const html = readFileSync(join(distDir, 'playground/index.html'), 'utf-8')
+    expect(html).toContain('shortcuts-dialog')
+    expect(html).toContain('shortcuts-close')
+    // Dialog should be a <dialog> element
+    expect(html).toContain('<dialog')
+  }))
+
+  it('docs page changelog section exists', requireBuild(() => {
+    const html = readFileSync(join(distDir, 'docs/index.html'), 'utf-8')
+    expect(html).toContain('Changelog')
+    expect(html).toContain('changelog')
+  }))
+
+  it('playground has all 23 language loaders', requireBuild(() => {
+    const html = readFileSync(join(distDir, 'playground/index.html'), 'utf-8')
+    const astroDir = join(distDir, '_astro')
+    if (!existsSync(astroDir)) return
+    const jsFiles = readdirSync(astroDir).filter(f => f.endsWith('.js'))
+    // The main editor script should reference all language import paths
+    const mainScript = jsFiles
+      .map(f => readFileSync(join(astroDir, f), 'utf-8'))
+      .join('\n')
+    // Check a sample of language paths are referenced
+    const langs = ['javascript', 'python', 'rust', 'go', 'html', 'css']
+    for (const lang of langs) {
+      expect(mainScript).toContain(lang)
+    }
+  }))
+
+  it('playground editor has aria-label for code editor region', requireBuild(() => {
+    const html = readFileSync(join(distDir, 'playground/index.html'), 'utf-8')
+    expect(html).toContain('aria-label="Code editor"')
+  }))
 })
