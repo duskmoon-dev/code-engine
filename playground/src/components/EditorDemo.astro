@@ -24,6 +24,10 @@
       Autocomplete
     </label>
     <label class="checkbox">
+      <input type="checkbox" id="ext-wordwrap" aria-label="Toggle word wrap">
+      Word Wrap
+    </label>
+    <label class="checkbox">
       <input type="checkbox" id="ext-vim" aria-label="Toggle Vim keymap">
       Vim
     </label>
@@ -349,6 +353,7 @@ BinaryExpression { expression !add "+" expression }
   const themeSelect = document.getElementById('theme-select') as HTMLSelectElement
   const lineNumbersCheckbox = document.getElementById('ext-linenumbers') as HTMLInputElement
   const autocompleteCheckbox = document.getElementById('ext-autocomplete') as HTMLInputElement
+  const wordWrapCheckbox = document.getElementById('ext-wordwrap') as HTMLInputElement
   const vimCheckbox = document.getElementById('ext-vim') as HTMLInputElement
   const emacsCheckbox = document.getElementById('ext-emacs') as HTMLInputElement
 
@@ -419,6 +424,7 @@ BinaryExpression { expression !add "+" expression }
     const exts: any[] = []
     if (lineNumbersCheckbox.checked) exts.push(lineNumbersExt())
     if (autocompleteCheckbox.checked) exts.push(autocompletion())
+    if (wordWrapCheckbox.checked) exts.push(EditorView.lineWrapping)
     if (vimCheckbox.checked) exts.push(vim())
     if (emacsCheckbox.checked) exts.push(emacs())
     return exts
@@ -498,6 +504,7 @@ BinaryExpression { expression !add "+" expression }
 
   lineNumbersCheckbox.addEventListener('change', reconfigureExtensions)
   autocompleteCheckbox.addEventListener('change', reconfigureExtensions)
+  wordWrapCheckbox.addEventListener('change', reconfigureExtensions)
 
   vimCheckbox.addEventListener('change', () => {
     if (vimCheckbox.checked) emacsCheckbox.checked = false
@@ -516,6 +523,7 @@ BinaryExpression { expression !add "+" expression }
     params.set('theme', themeSelect.value)
     if (!lineNumbersCheckbox.checked) params.set('ln', '0')
     if (!autocompleteCheckbox.checked) params.set('ac', '0')
+    if (wordWrapCheckbox.checked) params.set('wrap', '1')
     if (vimCheckbox.checked) params.set('vim', '1')
     if (emacsCheckbox.checked) params.set('emacs', '1')
     return params.toString()
@@ -535,6 +543,7 @@ BinaryExpression { expression !add "+" expression }
     }
     if (params.get('ln') === '0') lineNumbersCheckbox.checked = false
     if (params.get('ac') === '0') autocompleteCheckbox.checked = false
+    if (params.get('wrap') === '1') wordWrapCheckbox.checked = true
     if (params.get('vim') === '1') { vimCheckbox.checked = true; emacsCheckbox.checked = false }
     if (params.get('emacs') === '1') { emacsCheckbox.checked = true; vimCheckbox.checked = false }
     reconfigureExtensions()
@@ -549,6 +558,7 @@ BinaryExpression { expression !add "+" expression }
   themeSelect.addEventListener('change', updateHash)
   lineNumbersCheckbox.addEventListener('change', updateHash)
   autocompleteCheckbox.addEventListener('change', updateHash)
+  wordWrapCheckbox.addEventListener('change', updateHash)
   vimCheckbox.addEventListener('change', updateHash)
   emacsCheckbox.addEventListener('change', updateHash)
 
@@ -572,6 +582,7 @@ BinaryExpression { expression !add "+" expression }
     themeSelect.value = 'one-dark'
     lineNumbersCheckbox.checked = true
     autocompleteCheckbox.checked = true
+    wordWrapCheckbox.checked = false
     vimCheckbox.checked = false
     emacsCheckbox.checked = false
     switchLanguage('javascript')
