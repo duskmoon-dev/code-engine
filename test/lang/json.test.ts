@@ -241,5 +241,44 @@ describe("JSON language pack", () => {
       const tree = jsonLanguage.parser.parse('{"emoji": "\\u2764\\uFE0F", "cjk": "\\u4e2d\\u6587"}');
       expect(tree.length).toBeGreaterThan(0);
     });
+
+    it("json() state doc line count is correct", () => {
+      const state = EditorState.create({
+        doc: '{\n  "name": "Alice",\n  "age": 30\n}',
+        extensions: [json()],
+      });
+      expect(state.doc.lines).toBe(4);
+    });
+
+    it("json() state doc line text is accessible", () => {
+      const state = EditorState.create({
+        doc: '{"name": "Alice"}',
+        extensions: [json()],
+      });
+      expect(state.doc.line(1).text).toBe('{"name": "Alice"}');
+    });
+
+    it("json() state allows multiple sequential transactions", () => {
+      let state = EditorState.create({ doc: '{"a":1}', extensions: [json()] });
+      state = state.update({ changes: { from: 6, insert: ',"b":2' } }).state;
+      state = state.update({ changes: { from: state.doc.length - 1, insert: ',"c":3' } }).state;
+      expect(state.doc.toString()).toContain('"c":3');
+    });
+
+    it("json() extension preserves doc length invariant", () => {
+      const doc = '{"key": "value"}';
+      const state = EditorState.create({ doc, extensions: [json()] });
+      expect(state.doc.length).toBe(doc.length);
+    });
+
+    it("json() state selection can span content", () => {
+      const state = EditorState.create({
+        doc: '{"name": "Alice"}',
+        selection: { anchor: 1, head: 7 },
+        extensions: [json()],
+      });
+      expect(state.selection.main.from).toBe(1);
+      expect(state.selection.main.to).toBe(7);
+    });
   });
 });

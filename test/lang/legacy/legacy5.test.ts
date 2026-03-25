@@ -292,5 +292,49 @@ describe("Legacy language packs (batch 5)", () => {
       state = state.update({ changes: { from: 17, insert: "\ninterface Bar {};" } }).state;
       expect(state.doc.lines).toBe(2);
     });
+
+    it("crystal syntaxTree is non-empty", () => {
+      const lang = StreamLanguage.define(crystal);
+      const state = EditorState.create({
+        doc: "def factorial(n : Int32) : Int32\n  n <= 1 ? 1 : n * factorial(n - 1)\nend",
+        extensions: [new LanguageSupport(lang)],
+      });
+      expect(syntaxTree(state).length).toBeGreaterThan(0);
+    });
+
+    it("elm syntaxTree is non-empty", () => {
+      const lang = StreamLanguage.define(elm);
+      const state = EditorState.create({
+        doc: "module Counter exposing (..)\ntype Msg = Increment | Decrement\nupdate msg model = case msg of\n  Increment -> model + 1\n  Decrement -> model - 1",
+        extensions: [new LanguageSupport(lang)],
+      });
+      expect(syntaxTree(state).length).toBeGreaterThan(0);
+    });
+
+    it("cypher doc line count is correct", () => {
+      const lang = StreamLanguage.define(cypher);
+      const state = EditorState.create({
+        doc: "MATCH (n:Person)\nWHERE n.age > 21\nRETURN n.name",
+        extensions: [new LanguageSupport(lang)],
+      });
+      expect(state.doc.lines).toBe(3);
+    });
+
+    it("http doc mutation via transaction works", () => {
+      const lang = StreamLanguage.define(http);
+      let state = EditorState.create({
+        doc: "GET / HTTP/1.1",
+        extensions: [new LanguageSupport(lang)],
+      });
+      state = state.update({ changes: { from: 14, insert: "\nHost: example.com" } }).state;
+      expect(state.doc.lines).toBe(2);
+    });
+
+    it("spreadsheet doc length is correct", () => {
+      const lang = StreamLanguage.define(spreadsheet);
+      const doc = "=SUM(A1:A10)";
+      const state = EditorState.create({ doc, extensions: [new LanguageSupport(lang)] });
+      expect(state.doc.length).toBe(doc.length);
+    });
   });
 });

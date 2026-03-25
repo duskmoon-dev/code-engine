@@ -214,5 +214,39 @@ describe("Vim keymap", () => {
       const state = EditorState.create({ doc, extensions: [vim()] });
       expect(state.doc.length).toBe(doc.length);
     });
+
+    it("vim() extension handles unicode document", () => {
+      const doc = "こんにちは世界";
+      const state = EditorState.create({ doc, extensions: [vim()] });
+      expect(state.doc.toString()).toBe(doc);
+    });
+
+    it("vim() state selection can span lines", () => {
+      const state = EditorState.create({
+        doc: "line1\nline2",
+        selection: { anchor: 0, head: 11 },
+        extensions: [vim()],
+      });
+      expect(state.selection.main.from).toBe(0);
+      expect(state.selection.main.to).toBe(11);
+    });
+
+    it("vim() extension allows insertion at start", () => {
+      let state = EditorState.create({ doc: "world", extensions: [vim()] });
+      state = state.update({ changes: { from: 0, insert: "hello " } }).state;
+      expect(state.doc.toString()).toBe("hello world");
+    });
+
+    it("vim() extension allows deletion of entire content", () => {
+      let state = EditorState.create({ doc: "delete me", extensions: [vim()] });
+      state = state.update({ changes: { from: 0, to: 9 } }).state;
+      expect(state.doc.toString()).toBe("");
+    });
+
+    it("vim() extension preserves doc length invariant", () => {
+      const doc = "test content";
+      const state = EditorState.create({ doc, extensions: [vim()] });
+      expect(state.doc.length).toBe(doc.length);
+    });
   });
 });

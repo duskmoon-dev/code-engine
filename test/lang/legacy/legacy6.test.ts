@@ -293,5 +293,51 @@ describe("Legacy language packs (batch 6)", () => {
       });
       expect(state.doc.toString()).toContain("factorial");
     });
+
+    it("dylan integrates with EditorState", () => {
+      const lang = StreamLanguage.define(dylan);
+      const state = EditorState.create({
+        doc: "define method greet (name :: <string>)\n  format-out(\"Hello, %s!\\n\", name);\nend method greet;",
+        extensions: [new LanguageSupport(lang)],
+      });
+      expect(state.doc.toString()).toContain("define method");
+    });
+
+    it("troff integrates with EditorState", () => {
+      const lang = StreamLanguage.define(troff);
+      const state = EditorState.create({
+        doc: ".TH MYCOMMAND 1\n.SH NAME\nmycommand \\- a sample command\n.SH SYNOPSIS\n.B mycommand [OPTIONS]",
+        extensions: [new LanguageSupport(lang)],
+      });
+      expect(state.doc.toString()).toContain(".TH MYCOMMAND");
+    });
+
+    it("ecl integrates with EditorState", () => {
+      const lang = StreamLanguage.define(ecl);
+      const state = EditorState.create({
+        doc: "MyData := DATASET([{1,'Alice'},{2,'Bob'}], {INTEGER id; STRING name;});",
+        extensions: [new LanguageSupport(lang)],
+      });
+      expect(state.doc.toString()).toContain("DATASET");
+    });
+
+    it("nsis doc line count is correct", () => {
+      const lang = StreamLanguage.define(nsis);
+      const state = EditorState.create({
+        doc: "Name \"MyApp\"\nOutFile \"installer.exe\"\nInstallDir $PROGRAMFILES\\MyApp",
+        extensions: [new LanguageSupport(lang)],
+      });
+      expect(state.doc.lines).toBe(3);
+    });
+
+    it("gas doc mutation via transaction works", () => {
+      const lang = StreamLanguage.define(gas);
+      let state = EditorState.create({
+        doc: ".section .text",
+        extensions: [new LanguageSupport(lang)],
+      });
+      state = state.update({ changes: { from: 14, insert: "\n.globl main" } }).state;
+      expect(state.doc.lines).toBe(2);
+    });
   });
 });

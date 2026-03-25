@@ -224,4 +224,41 @@ describe("YAML language pack", () => {
     state = state.update({ changes: { from: 8, insert: "\nother: 42" } }).state;
     expect(state.doc.lines).toBe(2);
   });
+
+  it("yaml() extension handles replacement transaction", () => {
+    let state = EditorState.create({ doc: "env: prod", extensions: [yaml()] });
+    state = state.update({ changes: { from: 5, to: 9, insert: "dev" } }).state;
+    expect(state.doc.toString()).toBe("env: dev");
+  });
+
+  it("yaml() state doc line text is accessible", () => {
+    const state = EditorState.create({
+      doc: "name: Alice\nage: 30",
+      extensions: [yaml()],
+    });
+    expect(state.doc.line(2).text).toBe("age: 30");
+  });
+
+  it("yaml() state allows multiple sequential transactions", () => {
+    let state = EditorState.create({ doc: "a: 1", extensions: [yaml()] });
+    state = state.update({ changes: { from: 4, insert: "\nb: 2" } }).state;
+    state = state.update({ changes: { from: state.doc.length, insert: "\nc: 3" } }).state;
+    expect(state.doc.lines).toBe(3);
+  });
+
+  it("yaml() extension preserves doc length invariant", () => {
+    const doc = "key: value";
+    const state = EditorState.create({ doc, extensions: [yaml()] });
+    expect(state.doc.length).toBe(doc.length);
+  });
+
+  it("yaml() state selection can span lines", () => {
+    const state = EditorState.create({
+      doc: "name: Alice\nage: 30",
+      selection: { anchor: 0, head: 11 },
+      extensions: [yaml()],
+    });
+    expect(state.selection.main.from).toBe(0);
+    expect(state.selection.main.to).toBe(11);
+  });
 });

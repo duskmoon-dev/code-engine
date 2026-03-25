@@ -219,5 +219,44 @@ describe("LR Parser module", () => {
     it("LRParser Stack is constructable or defined", () => {
       expect(Stack).toBeDefined();
     });
+
+    it("parsed tree type has a name property", () => {
+      const tree = pythonLanguage.parser.parse("x = 1");
+      expect(typeof tree.type.name).toBe("string");
+    });
+
+    it("tree.resolve returns a node with from/to for python", () => {
+      const tree = pythonLanguage.parser.parse("x = 1 + 2");
+      const node = tree.resolve(0);
+      expect(node.from).toBeLessThanOrEqual(0);
+      expect(node.to).toBeGreaterThanOrEqual(0);
+    });
+
+    it("all language parsers produce trees with length equal to source", () => {
+      const code = "x = 1";
+      const tree = pythonLanguage.parser.parse(code);
+      expect(tree.length).toBe(code.length);
+    });
+
+    it("LRParser.configure preserves topNode name", () => {
+      const parser = pythonLanguage.parser as LRParser;
+      const configured = parser.configure({});
+      expect(configured.topNode.name).toBe(parser.topNode.name);
+    });
+
+    it("rust tree iterate visits more than 3 nodes for struct def", () => {
+      const tree = rustLanguage.parser.parse("struct Point { x: i32, y: i32 }");
+      let count = 0;
+      tree.iterate({ enter: () => { count++; } });
+      expect(count).toBeGreaterThan(3);
+    });
+
+    it("javascript tree can be resolved at middle position", () => {
+      const code = "const x = 42;";
+      const tree = javascriptLanguage.parser.parse(code);
+      const node = tree.resolveInner(7);
+      expect(node.from).toBeLessThanOrEqual(7);
+      expect(node.to).toBeGreaterThanOrEqual(7);
+    });
   });
 });

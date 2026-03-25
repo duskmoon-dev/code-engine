@@ -288,5 +288,40 @@ describe("Legacy language packs (batch 4)", () => {
       });
       expect(state.doc.toString()).toContain("LOAD");
     });
+
+    it("xQuery doc line count is correct", () => {
+      const lang = StreamLanguage.define(xQuery);
+      const state = EditorState.create({
+        doc: "for $i in 1 to 10\nreturn $i * $i",
+        extensions: [new LanguageSupport(lang)],
+      });
+      expect(state.doc.lines).toBe(2);
+    });
+
+    it("liveScript doc mutation via transaction works", () => {
+      const lang = StreamLanguage.define(liveScript);
+      let state = EditorState.create({
+        doc: "x = 1",
+        extensions: [new LanguageSupport(lang)],
+      });
+      state = state.update({ changes: { from: 5, insert: "\ny = 2" } }).state;
+      expect(state.doc.lines).toBe(2);
+    });
+
+    it("forth doc length is correct", () => {
+      const lang = StreamLanguage.define(forth);
+      const doc = ": SQUARE DUP * ;";
+      const state = EditorState.create({ doc, extensions: [new LanguageSupport(lang)] });
+      expect(state.doc.length).toBe(doc.length);
+    });
+
+    it("textile integrates with complex markup", () => {
+      const lang = StreamLanguage.define(textile);
+      const state = EditorState.create({
+        doc: "h2. Section Title\n\np. This is *important* and _italic_ text.\n\nbq. A blockquote here.",
+        extensions: [new LanguageSupport(lang)],
+      });
+      expect(state.doc.toString()).toContain("Section Title");
+    });
   });
 });

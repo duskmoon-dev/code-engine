@@ -287,5 +287,51 @@ describe("Legacy language packs (batch 8 - coverage completion)", () => {
       });
       expect(syntaxTree(state).length).toBeGreaterThan(0);
     });
+
+    it("legacy sql doc line count is correct", () => {
+      const lang = StreamLanguage.define(legacySql);
+      const state = EditorState.create({
+        doc: "SELECT id FROM users;\nSELECT name FROM orders;\nSELECT * FROM products;",
+        extensions: [new LanguageSupport(lang)],
+      });
+      expect(state.doc.lines).toBe(3);
+    });
+
+    it("legacy js doc mutation via transaction works", () => {
+      const lang = StreamLanguage.define(legacyJS);
+      let state = EditorState.create({
+        doc: "var x = 1;",
+        extensions: [new LanguageSupport(lang)],
+      });
+      state = state.update({ changes: { from: 10, insert: "\nvar y = 2;" } }).state;
+      expect(state.doc.lines).toBe(2);
+    });
+
+    it("rpmSpec integrates with EditorState", () => {
+      const lang = StreamLanguage.define(rpmSpec);
+      const state = EditorState.create({
+        doc: "Name: mypackage\nVersion: 1.0\nRelease: 1\nSummary: My package",
+        extensions: [new LanguageSupport(lang)],
+      });
+      expect(state.doc.toString()).toContain("Name: mypackage");
+    });
+
+    it("ttcnCfg integrates with EditorState", () => {
+      const lang = StreamLanguage.define(ttcnCfg);
+      const state = EditorState.create({
+        doc: "[LOGGING]\nLogFile := \"test.log\"\nFileMask := LOG_ALL",
+        extensions: [new LanguageSupport(lang)],
+      });
+      expect(state.doc.toString()).toContain("[LOGGING]");
+    });
+
+    it("mirc syntaxTree is non-empty", () => {
+      const lang = StreamLanguage.define(mirc);
+      const state = EditorState.create({
+        doc: "on 1:TEXT:*:#:{ msg $chan Hello $nick }",
+        extensions: [new LanguageSupport(lang)],
+      });
+      expect(syntaxTree(state).length).toBeGreaterThan(0);
+    });
   });
 });

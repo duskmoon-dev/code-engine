@@ -222,4 +222,36 @@ describe("LSP factory functions", () => {
       expect(hasKey).toBe(true);
     }
   });
+
+  it("LSPClient is a constructor function", () => {
+    expect(typeof LSPClient).toBe("function");
+    expect(LSPClient.prototype).toBeDefined();
+  });
+
+  it("Workspace is a constructor function", () => {
+    expect(typeof Workspace).toBe("function");
+    expect(Workspace.prototype).toBeDefined();
+  });
+
+  it("serverCompletion() returns an array or object", () => {
+    const ext = serverCompletion();
+    expect(ext !== null && ext !== undefined).toBe(true);
+  });
+
+  it("hoverTooltips() can be called multiple times", () => {
+    const a = hoverTooltips();
+    const b = hoverTooltips();
+    expect(a).toBeDefined();
+    expect(b).toBeDefined();
+  });
+
+  it("jumpToDefinitionKeymap has run functions", () => {
+    for (const binding of jumpToDefinitionKeymap) {
+      expect(typeof binding.run).toBe("function");
+    }
+  });
+
+  it("formatDocument is callable", () => {
+    expect(typeof formatDocument).toBe("function");
+  });
 });

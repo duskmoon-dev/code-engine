@@ -292,5 +292,43 @@ describe("Legacy language packs (batch 3)", () => {
       state = state.update({ changes: { from: 18, insert: "\nadd_executable(main main.cpp)" } }).state;
       expect(state.doc.lines).toBe(2);
     });
+
+    it("sparql integrates with complex query", () => {
+      const lang = StreamLanguage.define(sparql);
+      const state = EditorState.create({
+        doc: "PREFIX ex: <http://example.org/>\nSELECT ?name WHERE { ?s a ex:Person; ex:name ?name } ORDER BY ?name",
+        extensions: [new LanguageSupport(lang)],
+      });
+      expect(state.doc.toString()).toContain("PREFIX");
+    });
+
+    it("turtle doc line count is correct", () => {
+      const lang = StreamLanguage.define(turtle);
+      const state = EditorState.create({
+        doc: "@prefix ex: <http://example.org/> .\nex:Alice a ex:Person .\nex:Bob ex:knows ex:Alice .",
+        extensions: [new LanguageSupport(lang)],
+      });
+      expect(state.doc.lines).toBe(3);
+    });
+
+    it("protobuf doc mutation via transaction works", () => {
+      const lang = StreamLanguage.define(protobuf);
+      let state = EditorState.create({
+        doc: "syntax = \"proto3\";",
+        extensions: [new LanguageSupport(lang)],
+      });
+      state = state.update({ changes: { from: 18, insert: "\nmessage Empty {}" } }).state;
+      expect(state.doc.lines).toBe(2);
+    });
+
+    it("octave doc length is correct", () => {
+      const lang = StreamLanguage.define(octave);
+      const doc = "x = linspace(0, 2*pi, 100);";
+      const state = EditorState.create({
+        doc,
+        extensions: [new LanguageSupport(lang)],
+      });
+      expect(state.doc.length).toBe(doc.length);
+    });
   });
 });

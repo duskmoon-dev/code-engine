@@ -215,4 +215,33 @@ describe("C++ language pack", () => {
     const state = EditorState.create({ doc, extensions: [cpp()] });
     expect(state.doc.length).toBe(doc.length);
   });
+
+  it("cpp() state doc line count is correct", () => {
+    const state = EditorState.create({
+      doc: "#include <iostream>\nusing namespace std;\nint main() { return 0; }",
+      extensions: [cpp()],
+    });
+    expect(state.doc.lines).toBe(3);
+  });
+
+  it("cpp() state doc line text is accessible", () => {
+    const state = EditorState.create({
+      doc: "#include <iostream>\nint main() {}",
+      extensions: [cpp()],
+    });
+    expect(state.doc.line(1).text).toBe("#include <iostream>");
+  });
+
+  it("cpp() state allows multiple sequential transactions", () => {
+    let state = EditorState.create({ doc: "int x = 1;", extensions: [cpp()] });
+    state = state.update({ changes: { from: 10, insert: "\nint y = 2;" } }).state;
+    state = state.update({ changes: { from: state.doc.length, insert: "\nint z = 3;" } }).state;
+    expect(state.doc.lines).toBe(3);
+  });
+
+  it("cpp() extension handles replacement transaction", () => {
+    let state = EditorState.create({ doc: "int x = 1;", extensions: [cpp()] });
+    state = state.update({ changes: { from: 4, to: 5, insert: "y" } }).state;
+    expect(state.doc.toString()).toBe("int y = 1;");
+  });
 });

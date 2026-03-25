@@ -225,5 +225,31 @@ describe("Emacs keymap", () => {
       expect(state.selection.main.from).toBe(0);
       expect(state.selection.main.to).toBe(11);
     });
+
+    it("emacs() state with unicode document works", () => {
+      const doc = "こんにちは";
+      const state = EditorState.create({ doc, extensions: [emacs()] });
+      expect(state.doc.toString()).toBe(doc);
+    });
+
+    it("emacs() doc line(n).text accessible", () => {
+      const state = EditorState.create({
+        doc: "alpha\nbeta",
+        extensions: [emacs()],
+      });
+      expect(state.doc.line(2).text).toBe("beta");
+    });
+
+    it("emacs() allows insertion at start of document", () => {
+      let state = EditorState.create({ doc: "world", extensions: [emacs()] });
+      state = state.update({ changes: { from: 0, insert: "hello " } }).state;
+      expect(state.doc.toString()).toBe("hello world");
+    });
+
+    it("emacs() allows deletion of entire content", () => {
+      let state = EditorState.create({ doc: "delete me", extensions: [emacs()] });
+      state = state.update({ changes: { from: 0, to: 9 } }).state;
+      expect(state.doc.toString()).toBe("");
+    });
   });
 });

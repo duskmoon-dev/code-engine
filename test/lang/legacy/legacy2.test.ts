@@ -297,5 +297,49 @@ describe("Legacy language packs (batch 2)", () => {
       });
       expect(state.doc.toString()).toContain("[>++++");
     });
+
+    it("vb integrates with EditorState", () => {
+      const lang = StreamLanguage.define(vb);
+      const state = EditorState.create({
+        doc: "Module Hello\n  Sub Main()\n    Console.WriteLine(\"Hello, World!\")\n  End Sub\nEnd Module",
+        extensions: [new LanguageSupport(lang)],
+      });
+      expect(state.doc.toString()).toContain("Console.WriteLine");
+    });
+
+    it("commonLisp integrates with EditorState", () => {
+      const lang = StreamLanguage.define(commonLisp);
+      const state = EditorState.create({
+        doc: "(defun factorial (n)\n  (if (<= n 1) 1\n    (* n (factorial (- n 1)))))",
+        extensions: [new LanguageSupport(lang)],
+      });
+      expect(state.doc.toString()).toContain("factorial");
+    });
+
+    it("nginx doc line count is correct", () => {
+      const lang = StreamLanguage.define(nginx);
+      const state = EditorState.create({
+        doc: "http {\n  server {\n    listen 80;\n  }\n}",
+        extensions: [new LanguageSupport(lang)],
+      });
+      expect(state.doc.lines).toBe(5);
+    });
+
+    it("pascal doc mutation via transaction works", () => {
+      const lang = StreamLanguage.define(pascal);
+      let state = EditorState.create({
+        doc: "program Test;",
+        extensions: [new LanguageSupport(lang)],
+      });
+      state = state.update({ changes: { from: 13, insert: "\nbegin end." } }).state;
+      expect(state.doc.lines).toBe(2);
+    });
+
+    it("powerShell doc length is correct", () => {
+      const lang = StreamLanguage.define(powerShell);
+      const doc = "Write-Host \"Hello, World!\"";
+      const state = EditorState.create({ doc, extensions: [new LanguageSupport(lang)] });
+      expect(state.doc.length).toBe(doc.length);
+    });
   });
 });

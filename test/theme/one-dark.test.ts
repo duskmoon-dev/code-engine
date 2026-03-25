@@ -245,5 +245,41 @@ describe("theme/one-dark", () => {
       const state = EditorState.create({ doc: "", extensions: [oneDark] });
       expect(state.doc.length).toBe(0);
     });
+
+    it("oneDark extension handles unicode document", () => {
+      const doc = "こんにちは世界";
+      const state = EditorState.create({ doc, extensions: [oneDark] });
+      expect(state.doc.toString()).toBe(doc);
+    });
+
+    it("oneDark state selection can span lines", () => {
+      const state = EditorState.create({
+        doc: "line1\nline2",
+        selection: { anchor: 0, head: 11 },
+        extensions: [oneDark],
+      });
+      expect(state.selection.main.from).toBe(0);
+      expect(state.selection.main.to).toBe(11);
+    });
+
+    it("oneDark insertion at start of document", () => {
+      let state = EditorState.create({ doc: "world", extensions: [oneDark] });
+      state = state.update({ changes: { from: 0, insert: "hello " } }).state;
+      expect(state.doc.toString()).toBe("hello world");
+    });
+
+    it("oneDark deletion of entire content", () => {
+      let state = EditorState.create({ doc: "delete me", extensions: [oneDark] });
+      state = state.update({ changes: { from: 0, to: 9 } }).state;
+      expect(state.doc.toString()).toBe("");
+    });
+
+    it("oneDark state doc line(n).text accessible for each line", () => {
+      const state = EditorState.create({
+        doc: "alpha\nbeta\ngamma",
+        extensions: [oneDark],
+      });
+      expect(state.doc.line(2).text).toBe("beta");
+    });
   });
 });

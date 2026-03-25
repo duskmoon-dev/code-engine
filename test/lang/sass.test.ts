@@ -225,5 +225,40 @@ describe("Sass language pack", () => {
       state = state.update({ changes: { from: 6, insert: "\n$y: 2;" } }).state;
       expect(state.doc.lines).toBe(2);
     });
+
+    it("sass() extension handles replacement transaction", () => {
+      let state = EditorState.create({ doc: "body { color: red; }", extensions: [sass()] });
+      state = state.update({ changes: { from: 14, to: 17, insert: "blue" } }).state;
+      expect(state.doc.toString()).toBe("body { color: blue; }");
+    });
+
+    it("sass() state doc line text is accessible", () => {
+      const state = EditorState.create({
+        doc: "$primary: blue;\n.btn { color: $primary; }",
+        extensions: [sass()],
+      });
+      expect(state.doc.line(1).text).toBe("$primary: blue;");
+    });
+
+    it("sass() state allows multiple sequential transactions", () => {
+      let state = EditorState.create({ doc: "$a: 1;", extensions: [sass()] });
+      state = state.update({ changes: { from: 6, insert: "\n$b: 2;" } }).state;
+      state = state.update({ changes: { from: state.doc.length, insert: "\n$c: 3;" } }).state;
+      expect(state.doc.lines).toBe(3);
+    });
+
+    it("sass() extension preserves doc length invariant", () => {
+      const doc = "$color: red;";
+      const state = EditorState.create({ doc, extensions: [sass()] });
+      expect(state.doc.length).toBe(doc.length);
+    });
+
+    it("indented sass state doc line count is correct", () => {
+      const state = EditorState.create({
+        doc: ".nav\n  color: red\n  &:hover\n    color: blue",
+        extensions: [sass({ indented: true })],
+      });
+      expect(state.doc.lines).toBe(4);
+    });
   });
 });

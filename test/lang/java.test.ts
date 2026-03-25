@@ -216,4 +216,35 @@ describe("Java language pack", () => {
     });
     expect(state.doc.lines).toBe(3);
   });
+
+  it("java() state doc line text is accessible", () => {
+    const state = EditorState.create({
+      doc: "public class Foo {}\npublic class Bar {}",
+      extensions: [java()],
+    });
+    expect(state.doc.line(1).text).toBe("public class Foo {}");
+  });
+
+  it("java() state allows multiple sequential transactions", () => {
+    let state = EditorState.create({ doc: "int x = 1;", extensions: [java()] });
+    state = state.update({ changes: { from: 10, insert: "\nint y = 2;" } }).state;
+    state = state.update({ changes: { from: state.doc.length, insert: "\nint z = 3;" } }).state;
+    expect(state.doc.lines).toBe(3);
+  });
+
+  it("java() extension handles replacement transaction", () => {
+    let state = EditorState.create({ doc: "int x = 1;", extensions: [java()] });
+    state = state.update({ changes: { from: 4, to: 5, insert: "y" } }).state;
+    expect(state.doc.toString()).toBe("int y = 1;");
+  });
+
+  it("java() state selection can span lines", () => {
+    const state = EditorState.create({
+      doc: "class A {}\nclass B {}",
+      selection: { anchor: 0, head: 10 },
+      extensions: [java()],
+    });
+    expect(state.selection.main.from).toBe(0);
+    expect(state.selection.main.to).toBe(10);
+  });
 });

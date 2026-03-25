@@ -247,5 +247,32 @@ describe("theme/duskmoon", () => {
       const state = EditorState.create({ doc, extensions: [duskMoon({ dark: false })] });
       expect(state.doc.length).toBe(doc.length);
     });
+
+    it("duskMoon state with unicode document works", () => {
+      const doc = "こんにちは 世界";
+      const state = EditorState.create({ doc, extensions: [duskMoon()] });
+      expect(state.doc.toString()).toBe(doc);
+    });
+
+    it("duskMoon dark mode state with unicode document works", () => {
+      const doc = "مرحبا بالعالم";
+      const state = EditorState.create({ doc, extensions: [duskMoon({ dark: true })] });
+      expect(state.doc.toString()).toBe(doc);
+    });
+
+    it("duskMoon state line(n).text accessible for each line", () => {
+      const state = EditorState.create({
+        doc: "alpha\nbeta\ngamma",
+        extensions: [duskMoon()],
+      });
+      expect(state.doc.line(1).text).toBe("alpha");
+      expect(state.doc.line(3).text).toBe("gamma");
+    });
+
+    it("duskMoon allows insertion at start of document", () => {
+      let state = EditorState.create({ doc: "world", extensions: [duskMoon()] });
+      state = state.update({ changes: { from: 0, insert: "hello " } }).state;
+      expect(state.doc.toString()).toBe("hello world");
+    });
   });
 });
