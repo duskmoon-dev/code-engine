@@ -244,4 +244,39 @@ describe("C++ language pack", () => {
     state = state.update({ changes: { from: 4, to: 5, insert: "y" } }).state;
     expect(state.doc.toString()).toBe("int y = 1;");
   });
+
+  it("cpp() doc length invariant holds", () => {
+    const doc = "int main() { return 0; }";
+    const state = EditorState.create({ doc, extensions: [cpp()] });
+    expect(state.doc.length).toBe(doc.length);
+  });
+
+  it("cpp() state selection within code works", () => {
+    const state = EditorState.create({
+      doc: "int x = 1;\nint y = 2;",
+      selection: { anchor: 0, head: 10 },
+      extensions: [cpp()],
+    });
+    expect(state.selection.main.from).toBe(0);
+    expect(state.selection.main.to).toBe(10);
+  });
+
+  it("cppLanguage parser tree has correct length", () => {
+    const code = "namespace ns { void foo() {} }";
+    const tree = cppLanguage.parser.parse(code);
+    expect(tree.length).toBe(code.length);
+  });
+
+  it("cpp() state deletion transaction works", () => {
+    let state = EditorState.create({ doc: "int x = 1;\nint y = 2;", extensions: [cpp()] });
+    state = state.update({ changes: { from: 10, to: 21 } }).state;
+    expect(state.doc.toString()).toBe("int x = 1;");
+    expect(state.doc.lines).toBe(1);
+  });
+
+  it("cppLanguage can parse templates", () => {
+    const tree = cppLanguage.parser.parse("template<typename T> T max(T a, T b) { return a > b ? a : b; }");
+    expect(tree.length).toBeGreaterThan(0);
+    expect(tree.type.isTop).toBe(true);
+  });
 });

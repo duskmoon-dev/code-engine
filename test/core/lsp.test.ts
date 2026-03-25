@@ -254,4 +254,24 @@ describe("LSP factory functions", () => {
   it("formatDocument is callable", () => {
     expect(typeof formatDocument).toBe("function");
   });
+
+  it("serverDiagnostics is a function", () => {
+    expect(typeof serverDiagnostics).toBe("function");
+  });
+
+  it("languageServerSupport is a function", () => {
+    expect(typeof languageServerSupport).toBe("function");
+  });
+
+  it("languageServerExtensions is a function or defined", () => {
+    expect(languageServerExtensions).toBeDefined();
+  });
+
+  it("signatureHelp is a function", () => {
+    expect(typeof signatureHelp).toBe("function");
+  });
+
+  it("findReferences is a function", () => {
+    expect(typeof findReferences).toBe("function");
+  });
 });

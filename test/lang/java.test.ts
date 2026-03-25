@@ -247,4 +247,34 @@ describe("Java language pack", () => {
     expect(state.selection.main.from).toBe(0);
     expect(state.selection.main.to).toBe(10);
   });
+
+  it("java() doc length invariant holds", () => {
+    const doc = "public class Foo {}";
+    const state = EditorState.create({ doc, extensions: [java()] });
+    expect(state.doc.length).toBe(doc.length);
+  });
+
+  it("java() state deletion transaction works", () => {
+    let state = EditorState.create({ doc: "int x = 1;\nint y = 2;", extensions: [java()] });
+    state = state.update({ changes: { from: 10, to: 21 } }).state;
+    expect(state.doc.toString()).toBe("int x = 1;");
+  });
+
+  it("javaLanguage parser tree has correct length", () => {
+    const code = "interface Runnable { void run(); }";
+    const tree = javaLanguage.parser.parse(code);
+    expect(tree.length).toBe(code.length);
+  });
+
+  it("java() state line text is accessible after transaction", () => {
+    let state = EditorState.create({ doc: "class A {}", extensions: [java()] });
+    state = state.update({ changes: { from: 10, insert: "\nclass B {}" } }).state;
+    expect(state.doc.line(2).text).toBe("class B {}");
+  });
+
+  it("javaLanguage can parse enums", () => {
+    const tree = javaLanguage.parser.parse("enum Day { MON, TUE, WED, THU, FRI, SAT, SUN }");
+    expect(tree.length).toBeGreaterThan(0);
+    expect(tree.type.isTop).toBe(true);
+  });
 });

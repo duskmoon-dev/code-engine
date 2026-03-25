@@ -280,5 +280,36 @@ describe("JSON language pack", () => {
       expect(state.selection.main.from).toBe(1);
       expect(state.selection.main.to).toBe(7);
     });
+
+    it("json() state deletion transaction works", () => {
+      let state = EditorState.create({ doc: '{"a":1,"b":2}', extensions: [json()] });
+      state = state.update({ changes: { from: 6, to: 12 } }).state;
+      expect(state.doc.toString()).toBe('{"a":1}');
+    });
+
+    it("json() state doc line text is correct", () => {
+      const state = EditorState.create({
+        doc: '{\n  "x": 1\n}',
+        extensions: [json()],
+      });
+      expect(state.doc.line(1).text).toBe("{");
+      expect(state.doc.line(3).text).toBe("}");
+    });
+
+    it("jsonLanguage parser tree has correct length", () => {
+      const code = '{"nested": {"a": 1, "b": [1, 2, 3]}}';
+      const tree = jsonLanguage.parser.parse(code);
+      expect(tree.length).toBe(code.length);
+    });
+
+    it("jsonParseLinter is a function", () => {
+      expect(typeof jsonParseLinter).toBe("function");
+    });
+
+    it("jsonParseLinter returns a linting extension when called", () => {
+      const linter = jsonParseLinter();
+      expect(linter).toBeDefined();
+      expect(typeof linter).toBe("function");
+    });
   });
 });
