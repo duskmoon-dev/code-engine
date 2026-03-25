@@ -574,6 +574,8 @@ BinaryExpression { expression !add "+" expression }
         effects: languageCompartment.reconfigure(factory()),
       })
       statusLang.textContent = languageLabels[key] ?? key
+      // Update hash after doc has been replaced with the new sample code
+      updateHash()
     } catch {
       lastFailedLang = key
       failedLangName.textContent = languageLabels[key] ?? key
@@ -599,30 +601,32 @@ BinaryExpression { expression !add "+" expression }
     view.dispatch({ effects: extensionCompartment.reconfigure(getActiveExtensions()) })
   }
 
-  langSelect.addEventListener('change', () => { switchLanguage(langSelect.value); autoSave() })
+  langSelect.addEventListener('change', () => { switchLanguage(langSelect.value) })
 
   themeSelect.addEventListener('change', () => {
     const t = themes[themeSelect.value]
     if (t) view.dispatch({ effects: themeCompartment.reconfigure(t) })
+    autoSave()
   })
 
-  lineNumbersCheckbox.addEventListener('change', reconfigureExtensions)
-  autocompleteCheckbox.addEventListener('change', reconfigureExtensions)
-  wordWrapCheckbox.addEventListener('change', reconfigureExtensions)
-  readOnlyCheckbox.addEventListener('change', reconfigureExtensions)
-  highlightLineCheckbox.addEventListener('change', reconfigureExtensions)
-  bracketsCheckbox.addEventListener('change', reconfigureExtensions)
-  foldCheckbox.addEventListener('change', reconfigureExtensions)
-  whitespaceCheckbox.addEventListener('change', reconfigureExtensions)
+  function reconfigureAndSave() { reconfigureExtensions(); autoSave() }
+  lineNumbersCheckbox.addEventListener('change', reconfigureAndSave)
+  autocompleteCheckbox.addEventListener('change', reconfigureAndSave)
+  wordWrapCheckbox.addEventListener('change', reconfigureAndSave)
+  readOnlyCheckbox.addEventListener('change', reconfigureAndSave)
+  highlightLineCheckbox.addEventListener('change', reconfigureAndSave)
+  bracketsCheckbox.addEventListener('change', reconfigureAndSave)
+  foldCheckbox.addEventListener('change', reconfigureAndSave)
+  whitespaceCheckbox.addEventListener('change', reconfigureAndSave)
 
   vimCheckbox.addEventListener('change', () => {
     if (vimCheckbox.checked) emacsCheckbox.checked = false
-    reconfigureExtensions()
+    reconfigureAndSave()
   })
 
   emacsCheckbox.addEventListener('change', () => {
     if (emacsCheckbox.checked) vimCheckbox.checked = false
-    reconfigureExtensions()
+    reconfigureAndSave()
   })
 
   function updateFontSize(size: number) {
@@ -631,8 +635,8 @@ BinaryExpression { expression !add "+" expression }
     view.dispatch({ effects: fontSizeCompartment.reconfigure(EditorView.theme({ '&': { fontSize: currentFontSize + 'px' } })) })
   }
 
-  fontDecreaseBtn.addEventListener('click', () => updateFontSize(currentFontSize - 2))
-  fontIncreaseBtn.addEventListener('click', () => updateFontSize(currentFontSize + 2))
+  fontDecreaseBtn.addEventListener('click', () => { updateFontSize(currentFontSize - 2); autoSave() })
+  fontIncreaseBtn.addEventListener('click', () => { updateFontSize(currentFontSize + 2); autoSave() })
 
   function getIndentString() {
     const size = Number(tabSizeSelect.value)
@@ -648,8 +652,8 @@ BinaryExpression { expression !add "+" expression }
     })
   }
 
-  tabSizeSelect.addEventListener('change', reconfigureIndent)
-  indentTabsCheckbox.addEventListener('change', reconfigureIndent)
+  tabSizeSelect.addEventListener('change', () => { reconfigureIndent(); autoSave() })
+  indentTabsCheckbox.addEventListener('change', () => { reconfigureIndent(); autoSave() })
 
   // URL hash state: persist settings in the URL for shareability
   function serializeState(): string {
@@ -725,8 +729,7 @@ BinaryExpression { expression !add "+" expression }
     history.replaceState(null, '', '#' + serializeState())
   }
 
-  // Update hash on any control change
-  langSelect.addEventListener('change', updateHash)
+  // Update hash on any control change (language changes call updateHash after load completes)
   themeSelect.addEventListener('change', updateHash)
   lineNumbersCheckbox.addEventListener('change', updateHash)
   autocompleteCheckbox.addEventListener('change', updateHash)
@@ -888,6 +891,18 @@ BinaryExpression { expression !add "+" expression }
         localStorage.setItem(STORAGE_KEY, JSON.stringify({
           lang: langSelect.value,
           doc: view.state.doc.toString(),
+          theme: themeSelect.value,
+          fontSize: currentFontSize,
+          tabSize: tabSizeSelect.value,
+          useTabs: indentTabsCheckbox.checked,
+          lineNumbers: lineNumbersCheckbox.checked,
+          autocomplete: autocompleteCheckbox.checked,
+          wordWrap: wordWrapCheckbox.checked,
+          highlightLine: highlightLineCheckbox.checked,
+          brackets: bracketsCheckbox.checked,
+          fold: foldCheckbox.checked,
+          vim: vimCheckbox.checked,
+          emacs: emacsCheckbox.checked,
         }))
       } catch (e) { console.warn('Failed to save editor state:', e) }
     }, 1000)
@@ -898,7 +913,29 @@ BinaryExpression { expression !add "+" expression }
     try {
       const saved = localStorage.getItem(STORAGE_KEY)
       if (saved) {
-        const { lang, doc } = JSON.parse(saved)
+        const state = JSON.parse(saved)
+        const { lang, doc, theme, fontSize, tabSize, useTabs,
+                lineNumbers, autocomplete, wordWrap, highlightLine,
+                brackets, fold, vim, emacs } = state
+        // Restore settings controls
+        if (theme && themes[theme]) {
+          themeSelect.value = theme
+          view.dispatch({ effects: themeCompartment.reconfigure(themes[theme]) })
+        }
+        if (typeof fontSize === 'number') updateFontSize(fontSize)
+        if (tabSize && ['2', '4', '8'].includes(String(tabSize))) tabSizeSelect.value = String(tabSize)
+        if (typeof useTabs === 'boolean') indentTabsCheckbox.checked = useTabs
+        if (typeof lineNumbers === 'boolean') lineNumbersCheckbox.checked = lineNumbers
+        if (typeof autocomplete === 'boolean') autocompleteCheckbox.checked = autocomplete
+        if (typeof wordWrap === 'boolean') wordWrapCheckbox.checked = wordWrap
+        if (typeof highlightLine === 'boolean') highlightLineCheckbox.checked = highlightLine
+        if (typeof brackets === 'boolean') bracketsCheckbox.checked = brackets
+        if (typeof fold === 'boolean') foldCheckbox.checked = fold
+        if (vim === true) { vimCheckbox.checked = true; emacsCheckbox.checked = false }
+        else if (emacs === true) { emacsCheckbox.checked = true; vimCheckbox.checked = false }
+        reconfigureIndent()
+        reconfigureExtensions()
+        // Restore language + doc
         if (lang && languageLoaders[lang] && doc) {
           langSelect.value = lang
           switchLanguage(lang).then(() => {

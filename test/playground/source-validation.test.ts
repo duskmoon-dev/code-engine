@@ -229,6 +229,72 @@ describe('playground source validation', () => {
       const editor = readComponent('EditorDemo.astro')
       expect(editor).toContain('STORAGE_KEY')
     })
+
+    it('persists theme in localStorage', () => {
+      const editor = readComponent('EditorDemo.astro')
+      // autoSave should include theme
+      expect(editor).toContain("theme: themeSelect.value")
+    })
+
+    it('persists fontSize in localStorage', () => {
+      const editor = readComponent('EditorDemo.astro')
+      expect(editor).toContain("fontSize: currentFontSize")
+    })
+
+    it('persists tab settings in localStorage', () => {
+      const editor = readComponent('EditorDemo.astro')
+      expect(editor).toContain("tabSize: tabSizeSelect.value")
+      expect(editor).toContain("useTabs: indentTabsCheckbox.checked")
+    })
+
+    it('persists extension toggles in localStorage', () => {
+      const editor = readComponent('EditorDemo.astro')
+      expect(editor).toContain("lineNumbers: lineNumbersCheckbox.checked")
+      expect(editor).toContain("autocomplete: autocompleteCheckbox.checked")
+      expect(editor).toContain("wordWrap: wordWrapCheckbox.checked")
+      expect(editor).toContain("highlightLine: highlightLineCheckbox.checked")
+      expect(editor).toContain("brackets: bracketsCheckbox.checked")
+      expect(editor).toContain("fold: foldCheckbox.checked")
+      expect(editor).toContain("vim: vimCheckbox.checked")
+      expect(editor).toContain("emacs: emacsCheckbox.checked")
+    })
+
+    it('restores theme from localStorage', () => {
+      const editor = readComponent('EditorDemo.astro')
+      expect(editor).toContain("if (theme && themes[theme])")
+    })
+
+    it('restores fontSize from localStorage', () => {
+      const editor = readComponent('EditorDemo.astro')
+      // updateFontSize called with stored value
+      expect(editor).toContain("if (typeof fontSize === 'number') updateFontSize(fontSize)")
+    })
+
+    it('restores extension toggles from localStorage', () => {
+      const editor = readComponent('EditorDemo.astro')
+      expect(editor).toContain("if (typeof lineNumbers === 'boolean') lineNumbersCheckbox.checked = lineNumbers")
+      expect(editor).toContain("if (typeof wordWrap === 'boolean') wordWrapCheckbox.checked = wordWrap")
+    })
+  })
+
+  describe('EditorDemo URL hash update timing', () => {
+    it('calls updateHash inside switchLanguage after language loads', () => {
+      const editor = readComponent('EditorDemo.astro')
+      // updateHash must appear inside the try block of switchLanguage
+      const switchLangFn = editor.match(/async function switchLanguage[\s\S]*?^  \}/m)?.[0] ?? ''
+      expect(switchLangFn).toContain('updateHash()')
+    })
+
+    it('does not register a separate updateHash handler on langSelect change', () => {
+      const editor = readComponent('EditorDemo.astro')
+      // The separate langSelect.addEventListener('change', updateHash) must not exist
+      // (updateHash is called inside switchLanguage instead)
+      const lines = editor.split('\n')
+      const separateHashListener = lines.find(
+        l => l.includes("langSelect.addEventListener('change', updateHash)")
+      )
+      expect(separateHashListener).toBeUndefined()
+    })
   })
 
   describe('Homepage copy button', () => {
