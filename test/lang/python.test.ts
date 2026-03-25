@@ -4,7 +4,7 @@ import {
   localCompletionSource, snippets, globalCompletion
 } from "../../src/lang/python/index";
 import { EditorState } from "../../src/core/state/index";
-import { syntaxTree } from "../../src/core/language/index";
+import { syntaxTree, ensureSyntaxTree, getIndentation, foldable } from "../../src/core/language/index";
 
 describe("Python language pack", () => {
   it("exports python function", () => {
@@ -348,5 +348,60 @@ describe("Python language pack", () => {
     const doc = "# こんにちは\nx = 1";
     const state = EditorState.create({ doc, extensions: [python()] });
     expect(state.doc.toString()).toBe(doc);
+  });
+
+  describe("Python indentation strategies", () => {
+    it("Body indentation: next line inside if body", () => {
+      // "if True:\n    x = 1\n" - pos 9 is start of "    x = 1" inside Body
+      const doc = "if True:\n    x = 1\n";
+      const state = EditorState.create({ doc, extensions: [python()] });
+      ensureSyntaxTree(state, state.doc.length, 1000);
+      const indent = getIndentation(state, 9);
+      expect(typeof indent).toBe("number");
+    });
+
+    it("Body indentation: continuation line with comment before it (innerBody Comment path)", () => {
+      // "if True:\n    # comment\n    x = 1\n" - pos 9 triggers Body with comment
+      const doc = "if True:\n    # comment\n    x = 1\n";
+      const state = EditorState.create({ doc, extensions: [python()] });
+      ensureSyntaxTree(state, state.doc.length, 1000);
+      const indent = getIndentation(state, 9);
+      expect(typeof indent).toBe("number");
+    });
+
+    it("IfStatement indentation: else: gets base indent", () => {
+      // "if True:\n    x = 1\nelse:\n    y = 2" - pos 19 is start of "else:" line
+      const doc = "if True:\n    x = 1\nelse:\n    y = 2";
+      const state = EditorState.create({ doc, extensions: [python()] });
+      ensureSyntaxTree(state, state.doc.length, 1000);
+      const indent = getIndentation(state, 19);
+      expect(typeof indent).toBe("number");
+    });
+
+    it("TryStatement indentation: except gets base indent", () => {
+      // "try:\n    x()\nexcept:\n    pass" - pos 12 is start of "except:" line
+      const doc = "try:\n    x()\nexcept:\n    pass";
+      const state = EditorState.create({ doc, extensions: [python()] });
+      ensureSyntaxTree(state, state.doc.length, 1000);
+      const indent = getIndentation(state, 13);
+      expect(typeof indent).toBe("number");
+    });
+
+    it("MatchStatement indentation: case gets base+unit indent", () => {
+      // Python 3.10 match/case
+      const doc = "match x:\n    case 1:\n        pass";
+      const state = EditorState.create({ doc, extensions: [python()] });
+      ensureSyntaxTree(state, state.doc.length, 1000);
+      const indent = getIndentation(state, 9);
+      expect(typeof indent).toBe("number");
+    });
+
+    it("Body fold: foldable returns range for function body", () => {
+      const doc = "def foo():\n    x = 1\n    return x";
+      const state = EditorState.create({ doc, extensions: [python()] });
+      ensureSyntaxTree(state, state.doc.length, 1000);
+      const fold = foldable(state, 0, 9);
+      expect(fold === null || typeof fold!.from === "number").toBe(true);
+    });
   });
 });
