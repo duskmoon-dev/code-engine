@@ -243,6 +243,72 @@ describe('playground source validation', () => {
     })
   })
 
+  describe('ExportList table accessibility', () => {
+    it('has role="region" on table-wrap divs for accessibility', () => {
+      const exportList = readComponent('ExportList.astro')
+      expect(exportList).toContain('role="region"')
+    })
+
+    it('has tabindex="0" on table-wrap divs for keyboard scrolling', () => {
+      const exportList = readComponent('ExportList.astro')
+      expect(exportList).toContain('tabindex="0"')
+    })
+  })
+
+  describe('EditorDemo noscript fallback', () => {
+    it('has a <noscript> element with JavaScript-required message', () => {
+      const editor = readComponent('EditorDemo.astro')
+      expect(editor).toContain('<noscript>')
+      expect(editor).toContain('noscript-msg')
+    })
+  })
+
+  describe('EditorDemo download button', () => {
+    it('has fileExtensions map for download file types', () => {
+      const editor = readComponent('EditorDemo.astro')
+      expect(editor).toContain('fileExtensions')
+    })
+
+    it('has btn-download button', () => {
+      const editor = readComponent('EditorDemo.astro')
+      expect(editor).toContain('btn-download')
+    })
+  })
+
+  describe('EditorDemo share URL functionality', () => {
+    it('has btn-share button', () => {
+      const editor = readComponent('EditorDemo.astro')
+      expect(editor).toContain('btn-share')
+    })
+
+    it('has serializeState function for share URL generation', () => {
+      const editor = readComponent('EditorDemo.astro')
+      expect(editor).toContain('serializeState')
+    })
+  })
+
+  describe('Layout og:image meta tag', () => {
+    it('has og:image meta tag referencing og-image.svg', () => {
+      const layout = readFileSync(join(playgroundSrc, 'layouts', 'Layout.astro'), 'utf-8')
+      expect(layout).toContain('og:image')
+      expect(layout).toContain('og-image.svg')
+    })
+  })
+
+  describe('global.css reduced motion support', () => {
+    it('has prefers-reduced-motion media query', () => {
+      const css = readFileSync(join(playgroundSrc, 'styles', 'global.css'), 'utf-8')
+      expect(css).toContain('prefers-reduced-motion')
+    })
+  })
+
+  describe('EditorDemo language prefetching', () => {
+    it('uses requestIdleCallback to prefetch popular languages', () => {
+      const editor = readComponent('EditorDemo.astro')
+      expect(editor).toContain('requestIdleCallback')
+    })
+  })
+
   describe('Changelog component', () => {
     it('imports CHANGELOG.md with raw import', () => {
       const changelog = readComponent('Changelog.astro')
