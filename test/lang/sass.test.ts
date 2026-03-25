@@ -89,5 +89,13 @@ describe("Sass language pack", () => {
       const tree = syntaxTree(state);
       expect(tree.length).toBeGreaterThan(0);
     });
+
+    it("sass parse tree cursor traversal works", () => {
+      const tree = sassLanguage.parser.parse("$primary: blue;\n.btn { color: $primary; }");
+      const cursor = tree.cursor();
+      let nodeCount = 0;
+      do { nodeCount++; } while (cursor.next() && nodeCount < 100);
+      expect(nodeCount).toBeGreaterThan(1);
+    });
   });
 });

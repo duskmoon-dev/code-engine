@@ -172,5 +172,13 @@ describe("WAST language pack", () => {
       const tree = syntaxTree(state);
       expect(tree.length).toBeGreaterThan(0);
     });
+
+    it("wast parse tree cursor traversal works", () => {
+      const tree = wastLanguage.parser.parse("(module (func $add (param i32 i32) (result i32) local.get 0 local.get 1 i32.add))");
+      const cursor = tree.cursor();
+      let nodeCount = 0;
+      do { nodeCount++; } while (cursor.next() && nodeCount < 100);
+      expect(nodeCount).toBeGreaterThan(1);
+    });
   });
 });

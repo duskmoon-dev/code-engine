@@ -91,5 +91,13 @@ describe("JSON language pack", () => {
       const tree = syntaxTree(state);
       expect(tree.length).toBeGreaterThan(0);
     });
+
+    it("json parse tree cursor traversal works", () => {
+      const tree = jsonLanguage.parser.parse('{"a": 1, "b": [1, 2, 3]}');
+      const cursor = tree.cursor();
+      let nodeCount = 0;
+      do { nodeCount++; } while (cursor.next() && nodeCount < 100);
+      expect(nodeCount).toBeGreaterThan(1);
+    });
   });
 });

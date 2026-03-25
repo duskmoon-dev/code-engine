@@ -145,5 +145,13 @@ describe("Angular language pack", () => {
       const tree = syntaxTree(state);
       expect(tree.length).toBeGreaterThan(0);
     });
+
+    it("angular parse tree cursor traversal works", () => {
+      const tree = angularLanguage.parser.parse("<div *ngIf=\"show\">{{ title }}</div>");
+      const cursor = tree.cursor();
+      let nodeCount = 0;
+      do { nodeCount++; } while (cursor.next() && nodeCount < 100);
+      expect(nodeCount).toBeGreaterThan(1);
+    });
   });
 });

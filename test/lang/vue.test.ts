@@ -127,5 +127,13 @@ describe("Vue language pack", () => {
       const tree = syntaxTree(state);
       expect(tree.length).toBeGreaterThan(0);
     });
+
+    it("vue parse tree cursor traversal works", () => {
+      const tree = vueLanguage.parser.parse("<template><div>hello</div></template>");
+      const cursor = tree.cursor();
+      let nodeCount = 0;
+      do { nodeCount++; } while (cursor.next() && nodeCount < 100);
+      expect(nodeCount).toBeGreaterThan(1);
+    });
   });
 });
