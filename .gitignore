@@ -4,3 +4,4 @@ dist/
 .loki/
 docs-dist/
 .npmrc
+.astro/

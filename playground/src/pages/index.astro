@@ -1,0 +1,112 @@
+---
+import Layout from '../layouts/Layout.astro'
+---
+<Layout title="Home">
+  <div class="hero">
+    <h1>@duskmoon-dev/code-engine</h1>
+    <p class="tagline">Deep fork of CodeMirror 6 + Lezer — single package, zero dependencies</p>
+    <div class="badges">
+      <span class="badge">v0.1.0</span>
+      <span class="badge">MIT License</span>
+      <span class="badge">Zero Dependencies</span>
+    </div>
+  </div>
+
+  <section>
+    <h2>Install</h2>
+    <pre><code>bun add @duskmoon-dev/code-engine</code></pre>
+  </section>
+
+  <section>
+    <h2>Quick Start</h2>
+    <pre><code>{`import { EditorState } from "@duskmoon-dev/code-engine/state"
+import { EditorView } from "@duskmoon-dev/code-engine/view"
+import { basicSetup } from "@duskmoon-dev/code-engine/setup"
+import { javascript } from "@duskmoon-dev/code-engine/lang/javascript"
+
+new EditorView({
+  state: EditorState.create({
+    doc: 'console.log("Hello!")',
+    extensions: [basicSetup, javascript()],
+  }),
+  parent: document.getElementById("editor"),
+})`}</code></pre>
+  </section>
+
+  <nav class="page-links">
+    <a href={`${import.meta.env.BASE_URL}docs`} class="link-card">
+      <h3>API Reference</h3>
+      <p>Browse all 42 exports and the changelog</p>
+    </a>
+    <a href={`${import.meta.env.BASE_URL}playground`} class="link-card">
+      <h3>Playground</h3>
+      <p>Try the editor with 22 languages and themes</p>
+    </a>
+  </nav>
+</Layout>
+
+<style>
+  .hero {
+    text-align: center;
+    padding: var(--space-lg) 0;
+  }
+  .hero h1 {
+    font-family: var(--font-mono);
+    font-size: 1.8rem;
+    color: var(--color-accent);
+    margin-bottom: var(--space-sm);
+  }
+  .tagline {
+    color: var(--color-text-muted);
+    margin-bottom: var(--space-md);
+  }
+  .badges {
+    display: flex;
+    gap: var(--space-sm);
+    justify-content: center;
+    flex-wrap: wrap;
+  }
+  .badge {
+    display: inline-block;
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    padding: 0.2rem 0.6rem;
+    border-radius: 12px;
+    font-size: 0.85rem;
+  }
+  section {
+    margin-bottom: var(--space-lg);
+  }
+  h2 {
+    color: var(--color-accent);
+    margin-bottom: var(--space-sm);
+    border-bottom: 1px solid var(--color-border);
+    padding-bottom: 0.3rem;
+  }
+  .page-links {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(14rem, 1fr));
+    gap: var(--space-md);
+    margin-top: var(--space-lg);
+  }
+  .link-card {
+    display: block;
+    padding: var(--space-md);
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius);
+    transition: border-color 0.15s;
+  }
+  .link-card:hover {
+    border-color: var(--color-accent);
+    text-decoration: none;
+  }
+  .link-card h3 {
+    color: var(--color-text);
+    margin-bottom: 0.25rem;
+  }
+  .link-card p {
+    color: var(--color-text-muted);
+    font-size: 0.9rem;
+  }
+</style>

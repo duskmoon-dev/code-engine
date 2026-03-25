@@ -1,0 +1,49 @@
+---
+import Layout from '../layouts/Layout.astro'
+import ExportList from '../components/ExportList.astro'
+import Changelog from '../components/Changelog.astro'
+---
+<Layout title="API Reference">
+  <h1>API Reference</h1>
+  <p>All exports from <code>@duskmoon-dev/code-engine</code>, organized by category.</p>
+
+  <section class="exports">
+    <h2>Exports</h2>
+    <ExportList />
+  </section>
+
+  <section>
+    <h2>Changelog</h2>
+    <Changelog />
+  </section>
+
+  <section class="links">
+    <h2>Links</h2>
+    <ul>
+      <li><a href="https://www.npmjs.com/package/@duskmoon-dev/code-engine" target="_blank" rel="noopener">npm Package</a></li>
+      <li><a href="https://github.com/duskmoon-dev/code-engine" target="_blank" rel="noopener">GitHub Repository</a></li>
+    </ul>
+  </section>
+</Layout>
+
+<style>
+  h1 {
+    margin-bottom: var(--space-sm);
+  }
+  h2 {
+    color: var(--color-accent);
+    margin-top: var(--space-lg);
+    margin-bottom: var(--space-sm);
+    border-bottom: 1px solid var(--color-border);
+    padding-bottom: 0.3rem;
+  }
+  section {
+    margin-bottom: var(--space-lg);
+  }
+  ul {
+    padding-left: 1.5rem;
+  }
+  li {
+    margin-bottom: 0.25rem;
+  }
+</style>

@@ -1,0 +1,26 @@
+---
+import changelog from '../../../CHANGELOG.md?raw'
+
+const sections = changelog.split('\n## ').map((s, i) => i === 0 ? s : '## ' + s)
+---
+
+<div class="changelog">
+  {sections.map(section => (
+    <section>
+      <pre set:html={section} />
+    </section>
+  ))}
+</div>
+
+<style>
+  .changelog {
+    margin-top: var(--space-md);
+  }
+  section {
+    margin-bottom: var(--space-md);
+  }
+  pre {
+    white-space: pre-wrap;
+    word-wrap: break-word;
+  }
+</style>

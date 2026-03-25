@@ -111,8 +111,18 @@ async function main() {
   }
   console.log("  ✓ Declarations generated\n");
 
-  // 5. Verify exports
-  console.log("Step 5: Verifying exports...");
+  // 5. Fix duplicate exports (Bun bundler quirk)
+  console.log("Step 5: Fixing duplicate exports...");
+  const fixExports = Bun.spawnSync(["bun", "run", join(ROOT, "scripts/fix-duplicate-exports.ts")], {
+    cwd: ROOT, stdout: "inherit", stderr: "inherit"
+  });
+  if (fixExports.exitCode !== 0) {
+    console.error("Fix duplicate exports failed!");
+    process.exit(1);
+  }
+
+  // 6. Verify exports
+  console.log("Step 6: Verifying exports...");
   const verify = Bun.spawnSync(["bun", "run", join(ROOT, "scripts/verify-exports.ts")], {
     cwd: ROOT, stdout: "inherit", stderr: "inherit"
   });

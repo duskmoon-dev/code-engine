@@ -1,0 +1,477 @@
+---
+---
+
+<div class="editor-demo">
+  <div class="controls">
+    <label>
+      Language
+      <select id="lang-select"></select>
+    </label>
+    <label>
+      Theme
+      <select id="theme-select">
+        <option value="one-dark">One Dark</option>
+        <option value="duskmoon">DuskMoon</option>
+      </select>
+    </label>
+    <label class="checkbox">
+      <input type="checkbox" id="ext-linenumbers" checked>
+      Line Numbers
+    </label>
+    <label class="checkbox">
+      <input type="checkbox" id="ext-autocomplete" checked>
+      Autocomplete
+    </label>
+    <label class="checkbox">
+      <input type="checkbox" id="ext-vim">
+      Vim
+    </label>
+    <label class="checkbox">
+      <input type="checkbox" id="ext-emacs">
+      Emacs
+    </label>
+  </div>
+  <div id="editor"></div>
+</div>
+
+<script>
+  import { EditorState, Compartment } from '@duskmoon-dev/code-engine/state'
+  import { EditorView, lineNumbers as lineNumbersExt } from '@duskmoon-dev/code-engine/view'
+  import { basicSetup, minimalSetup } from '@duskmoon-dev/code-engine/setup'
+  import { autocompletion } from '@duskmoon-dev/code-engine/autocomplete'
+  import { oneDark } from '@duskmoon-dev/code-engine/theme/one-dark'
+  import { duskMoon } from '@duskmoon-dev/code-engine/theme/duskmoon'
+  import { vim } from '@duskmoon-dev/code-engine/keymaps/vim'
+  import { emacs } from '@duskmoon-dev/code-engine/keymaps/emacs'
+
+  import { javascript } from '@duskmoon-dev/code-engine/lang/javascript'
+  import { python } from '@duskmoon-dev/code-engine/lang/python'
+  import { html } from '@duskmoon-dev/code-engine/lang/html'
+  import { css } from '@duskmoon-dev/code-engine/lang/css'
+  import { json } from '@duskmoon-dev/code-engine/lang/json'
+  import { markdown } from '@duskmoon-dev/code-engine/lang/markdown'
+  import { xml } from '@duskmoon-dev/code-engine/lang/xml'
+  import { sql } from '@duskmoon-dev/code-engine/lang/sql'
+  import { rust } from '@duskmoon-dev/code-engine/lang/rust'
+  import { go } from '@duskmoon-dev/code-engine/lang/go'
+  import { java } from '@duskmoon-dev/code-engine/lang/java'
+  import { cpp } from '@duskmoon-dev/code-engine/lang/cpp'
+  import { php } from '@duskmoon-dev/code-engine/lang/php'
+  import { sass } from '@duskmoon-dev/code-engine/lang/sass'
+  import { less } from '@duskmoon-dev/code-engine/lang/less'
+  import { yaml } from '@duskmoon-dev/code-engine/lang/yaml'
+  import { angular } from '@duskmoon-dev/code-engine/lang/angular'
+  import { vue } from '@duskmoon-dev/code-engine/lang/vue'
+  import { liquid } from '@duskmoon-dev/code-engine/lang/liquid'
+  import { wast } from '@duskmoon-dev/code-engine/lang/wast'
+  import { jinja } from '@duskmoon-dev/code-engine/lang/jinja'
+  import { lezer } from '@duskmoon-dev/code-engine/lang/lezer'
+
+  import type { LanguageSupport } from '@duskmoon-dev/code-engine/language'
+
+  const languageMap: Record<string, () => LanguageSupport> = {
+    javascript: () => javascript(),
+    typescript: () => javascript({ typescript: true }),
+    python: () => python(),
+    html: () => html(),
+    css: () => css(),
+    json: () => json(),
+    markdown: () => markdown(),
+    xml: () => xml(),
+    sql: () => sql(),
+    rust: () => rust(),
+    go: () => go(),
+    java: () => java(),
+    cpp: () => cpp(),
+    php: () => php(),
+    sass: () => sass(),
+    less: () => less(),
+    yaml: () => yaml(),
+    angular: () => angular(),
+    vue: () => vue(),
+    liquid: () => liquid(),
+    wast: () => wast(),
+    jinja: () => jinja(),
+    lezer: () => lezer(),
+  }
+
+  const sampleCode: Record<string, string> = {
+    javascript: `function fibonacci(n) {
+  if (n <= 1) return n
+  return fibonacci(n - 1) + fibonacci(n - 2)
+}
+
+console.log(fibonacci(10))`,
+    typescript: `function greet(name: string): string {
+  return \`Hello, \${name}!\`
+}
+
+interface User {
+  name: string
+  age: number
+}
+
+const user: User = { name: "World", age: 42 }
+console.log(greet(user.name))`,
+    python: `def fibonacci(n: int) -> int:
+    if n <= 1:
+        return n
+    return fibonacci(n - 1) + fibonacci(n - 2)
+
+for i in range(10):
+    print(fibonacci(i), end=" ")`,
+    html: `<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Hello</title>
+</head>
+<body>
+  <h1>Hello, world!</h1>
+</body>
+</html>`,
+    css: `body {
+  font-family: system-ui, sans-serif;
+  line-height: 1.6;
+  color: #333;
+}
+
+.container {
+  max-width: 48rem;
+  margin: 0 auto;
+  padding: 1rem;
+}`,
+    json: `{
+  "name": "@duskmoon-dev/code-engine",
+  "version": "0.1.0",
+  "type": "module",
+  "dependencies": {}
+}`,
+    markdown: `# Hello World
+
+This is a **markdown** document with _emphasis_.
+
+- Item one
+- Item two
+- Item three
+
+\`\`\`js
+console.log("code block")
+\`\`\``,
+    xml: `<?xml version="1.0" encoding="UTF-8"?>
+<catalog>
+  <book id="1">
+    <title>Code Engine</title>
+    <author>DuskMoon</author>
+    <year>2025</year>
+  </book>
+</catalog>`,
+    sql: `SELECT users.name, COUNT(orders.id) AS order_count
+FROM users
+LEFT JOIN orders ON users.id = orders.user_id
+WHERE users.created_at > '2024-01-01'
+GROUP BY users.name
+HAVING order_count > 5
+ORDER BY order_count DESC;`,
+    rust: `fn fibonacci(n: u64) -> u64 {
+    match n {
+        0 | 1 => n,
+        _ => fibonacci(n - 1) + fibonacci(n - 2),
+    }
+}
+
+fn main() {
+    for i in 0..10 {
+        println!("{}", fibonacci(i));
+    }
+}`,
+    go: `package main
+
+import "fmt"
+
+func fibonacci(n int) int {
+	if n <= 1 {
+		return n
+	}
+	return fibonacci(n-1) + fibonacci(n-2)
+}
+
+func main() {
+	for i := 0; i < 10; i++ {
+		fmt.Printf("%d ", fibonacci(i))
+	}
+}`,
+    java: `public class Fibonacci {
+    static int fibonacci(int n) {
+        if (n <= 1) return n;
+        return fibonacci(n - 1) + fibonacci(n - 2);
+    }
+
+    public static void main(String[] args) {
+        for (int i = 0; i < 10; i++) {
+            System.out.print(fibonacci(i) + " ");
+        }
+    }
+}`,
+    cpp: `#include <iostream>
+
+int fibonacci(int n) {
+    if (n <= 1) return n;
+    return fibonacci(n - 1) + fibonacci(n - 2);
+}
+
+int main() {
+    for (int i = 0; i < 10; i++) {
+        std::cout << fibonacci(i) << " ";
+    }
+    return 0;
+}`,
+    php: `<?php
+function fibonacci(int $n): int {
+    if ($n <= 1) return $n;
+    return fibonacci($n - 1) + fibonacci($n - 2);
+}
+
+for ($i = 0; $i < 10; $i++) {
+    echo fibonacci($i) . " ";
+}`,
+    sass: `.container {
+  max-width: 48rem;
+  margin: 0 auto;
+
+  .header {
+    font-size: 2rem;
+    color: #333;
+
+    &:hover {
+      color: #58a6ff;
+    }
+  }
+}`,
+    less: `.container {
+  max-width: 48rem;
+  margin: 0 auto;
+
+  .header {
+    font-size: 2rem;
+    color: #333;
+
+    &:hover {
+      color: #58a6ff;
+    }
+  }
+}`,
+    yaml: `name: CI
+on:
+  push:
+    branches: [main]
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: npm test`,
+    angular: `<div *ngIf="user">
+  <h1>{{ user.name }}</h1>
+  <p [class.active]="isActive">
+    Welcome back!
+  </p>
+  <button (click)="logout()">Log out</button>
+</div>`,
+    vue: `<template>
+  <div class="app">
+    <h1>{{ message }}</h1>
+    <button @click="count++">
+      Count: {{ count }}
+    </button>
+  </div>
+</template>`,
+    liquid: `{% for product in collections.all.products %}
+  <div class="product">
+    <h2>{{ product.title }}</h2>
+    <p>{{ product.price | money }}</p>
+  </div>
+{% endfor %}`,
+    wast: `(module
+  (func $fibonacci (param $n i32) (result i32)
+    (if (i32.le_s (local.get $n) (i32.const 1))
+      (then (return (local.get $n)))
+    )
+    (i32.add
+      (call $fibonacci (i32.sub (local.get $n) (i32.const 1)))
+      (call $fibonacci (i32.sub (local.get $n) (i32.const 2)))
+    )
+  )
+  (export "fibonacci" (func $fibonacci))
+)`,
+    jinja: `{% extends "base.html" %}
+{% block content %}
+  <h1>{{ title }}</h1>
+  {% for item in items %}
+    <div class="item">
+      <span>{{ item.name | capitalize }}</span>
+      <span>{{ item.price | round(2) }}</span>
+    </div>
+  {% endfor %}
+{% endblock %}`,
+    lezer: `@top Program { expression* }
+
+expression {
+  Number |
+  Variable |
+  BinaryExpression
+}
+
+BinaryExpression { expression !add "+" expression }
+
+@tokens {
+  Number { @digit+ }
+  Variable { @asciiLetter+ }
+}`,
+  }
+
+  const themes: Record<string, any> = {
+    'one-dark': oneDark,
+    'duskmoon': duskMoon(),
+  }
+
+  const languageCompartment = new Compartment()
+  const themeCompartment = new Compartment()
+  const extensionCompartment = new Compartment()
+
+  const langSelect = document.getElementById('lang-select') as HTMLSelectElement
+  const themeSelect = document.getElementById('theme-select') as HTMLSelectElement
+  const lineNumbersCheckbox = document.getElementById('ext-linenumbers') as HTMLInputElement
+  const autocompleteCheckbox = document.getElementById('ext-autocomplete') as HTMLInputElement
+  const vimCheckbox = document.getElementById('ext-vim') as HTMLInputElement
+  const emacsCheckbox = document.getElementById('ext-emacs') as HTMLInputElement
+
+  // Populate language dropdown
+  for (const key of Object.keys(languageMap)) {
+    const opt = document.createElement('option')
+    opt.value = key
+    opt.textContent = key
+    langSelect.appendChild(opt)
+  }
+
+  function getActiveExtensions() {
+    const exts: any[] = []
+    if (lineNumbersCheckbox.checked) exts.push(lineNumbersExt())
+    if (autocompleteCheckbox.checked) exts.push(autocompletion())
+    if (vimCheckbox.checked) exts.push(vim())
+    if (emacsCheckbox.checked) exts.push(emacs())
+    return exts
+  }
+
+  const view = new EditorView({
+    state: EditorState.create({
+      doc: sampleCode['javascript'],
+      extensions: [
+        minimalSetup,
+        languageCompartment.of(javascript()),
+        themeCompartment.of(oneDark),
+        extensionCompartment.of(getActiveExtensions()),
+      ],
+    }),
+    parent: document.getElementById('editor')!,
+  })
+
+  function switchLanguage(key: string) {
+    const langFactory = languageMap[key]
+    if (!langFactory) return
+    view.dispatch({
+      changes: { from: 0, to: view.state.doc.length, insert: sampleCode[key] ?? '' },
+      effects: languageCompartment.reconfigure(langFactory()),
+    })
+  }
+
+  function reconfigureExtensions() {
+    view.dispatch({ effects: extensionCompartment.reconfigure(getActiveExtensions()) })
+  }
+
+  langSelect.addEventListener('change', () => switchLanguage(langSelect.value))
+
+  themeSelect.addEventListener('change', () => {
+    const t = themes[themeSelect.value]
+    if (t) view.dispatch({ effects: themeCompartment.reconfigure(t) })
+  })
+
+  lineNumbersCheckbox.addEventListener('change', reconfigureExtensions)
+  autocompleteCheckbox.addEventListener('change', reconfigureExtensions)
+
+  vimCheckbox.addEventListener('change', () => {
+    if (vimCheckbox.checked) emacsCheckbox.checked = false
+    reconfigureExtensions()
+  })
+
+  emacsCheckbox.addEventListener('change', () => {
+    if (emacsCheckbox.checked) vimCheckbox.checked = false
+    reconfigureExtensions()
+  })
+</script>
+
+<style>
+  .editor-demo {
+    display: flex;
+    flex-direction: column;
+    height: calc(100vh - 10rem);
+    min-height: 400px;
+  }
+
+  .controls {
+    display: flex;
+    align-items: center;
+    gap: var(--space-md);
+    padding: var(--space-sm) var(--space-md);
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius) var(--radius) 0 0;
+    flex-wrap: wrap;
+  }
+
+  .controls label {
+    display: flex;
+    align-items: center;
+    gap: 0.35rem;
+    font-size: 0.85rem;
+    color: var(--color-text-muted);
+  }
+
+  .controls select {
+    background: var(--color-bg);
+    color: var(--color-text);
+    border: 1px solid var(--color-border);
+    border-radius: 4px;
+    padding: 0.25rem 0.5rem;
+    font-size: 0.85rem;
+    font-family: var(--font-sans);
+  }
+
+  .controls input[type="checkbox"] {
+    accent-color: var(--color-accent);
+  }
+
+  #editor {
+    flex: 1;
+    border: 1px solid var(--color-border);
+    border-top: none;
+    border-radius: 0 0 var(--radius) var(--radius);
+    overflow: hidden;
+  }
+
+  #editor :global(.cm-editor) {
+    height: 100%;
+  }
+
+  @media (max-width: 767px) {
+    .controls {
+      border-radius: var(--radius);
+      margin-bottom: var(--space-sm);
+      border-bottom: 1px solid var(--color-border);
+    }
+    #editor {
+      border-top: 1px solid var(--color-border);
+      border-radius: var(--radius);
+    }
+  }
+</style>

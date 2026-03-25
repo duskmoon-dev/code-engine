@@ -182,12 +182,14 @@
       "import": "./dist/keymaps/emacs/index.js"
     }
   },
+  "workspaces": ["playground"],
   "files": [
     "dist",
     "LICENSE",
     "README.md"
   ],
   "scripts": {
+    "build:playground": "cd playground && bun run build",
     "build": "bun run scripts/build.ts",
     "build:grammars": "bun run scripts/build-grammars.ts",
     "test": "bun test",

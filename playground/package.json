@@ -1,0 +1,16 @@
+{
+  "name": "@duskmoon-dev/code-engine-playground",
+  "version": "0.0.1",
+  "private": true,
+  "scripts": {
+    "dev": "astro dev",
+    "build": "astro build",
+    "preview": "astro preview"
+  },
+  "dependencies": {
+    "@duskmoon-dev/code-engine": "file:.."
+  },
+  "devDependencies": {
+    "astro": "^5.x"
+  }
+}
