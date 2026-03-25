@@ -56,6 +56,10 @@
       </select>
     </label>
     <label class="checkbox">
+      <input type="checkbox" id="ext-indent-tabs" aria-label="Toggle tab indentation">
+      Use Tabs
+    </label>
+    <label class="checkbox">
       <input type="checkbox" id="ext-vim" aria-label="Toggle Vim keymap">
       Vim
     </label>
@@ -97,6 +101,8 @@
       <dd>Increase font size</dd>
       <dt><kbd>Ctrl</kbd>/<kbd>Cmd</kbd> + <kbd>-</kbd></dt>
       <dd>Decrease font size</dd>
+      <dt><kbd>Ctrl</kbd>/<kbd>Cmd</kbd> + <kbd>0</kbd></dt>
+      <dd>Reset font size</dd>
       <dt><kbd>F11</kbd></dt>
       <dd>Toggle fullscreen</dd>
     </dl>
@@ -115,7 +121,7 @@
   import { EditorView, lineNumbers as lineNumbersExt, highlightActiveLine, highlightActiveLineGutter, highlightWhitespace, keymap } from '@duskmoon-dev/code-engine/view'
   import { minimalSetup } from '@duskmoon-dev/code-engine/setup'
   import { autocompletion, closeBrackets, closeBracketsKeymap } from '@duskmoon-dev/code-engine/autocomplete'
-  import { bracketMatching, indentOnInput, foldGutter, foldKeymap } from '@duskmoon-dev/code-engine/language'
+  import { bracketMatching, indentOnInput, indentUnit, foldGutter, foldKeymap } from '@duskmoon-dev/code-engine/language'
   import { highlightSelectionMatches, searchKeymap } from '@duskmoon-dev/code-engine/search'
   import { oneDark } from '@duskmoon-dev/code-engine/theme/one-dark'
   import { duskMoon } from '@duskmoon-dev/code-engine/theme/duskmoon'
@@ -400,6 +406,7 @@ BinaryExpression { expression !add "+" expression }
   const extensionCompartment = new Compartment()
   const fontSizeCompartment = new Compartment()
   const tabSizeCompartment = new Compartment()
+  const indentUnitCompartment = new Compartment()
 
   const langSelect = document.getElementById('lang-select') as HTMLSelectElement
   const themeSelect = document.getElementById('theme-select') as HTMLSelectElement
@@ -412,6 +419,7 @@ BinaryExpression { expression !add "+" expression }
   const foldCheckbox = document.getElementById('ext-fold') as HTMLInputElement
   const whitespaceCheckbox = document.getElementById('ext-whitespace') as HTMLInputElement
   const tabSizeSelect = document.getElementById('tab-size') as HTMLSelectElement
+  const indentTabsCheckbox = document.getElementById('ext-indent-tabs') as HTMLInputElement
   const vimCheckbox = document.getElementById('ext-vim') as HTMLInputElement
   const emacsCheckbox = document.getElementById('ext-emacs') as HTMLInputElement
   const fontDecreaseBtn = document.getElementById('btn-font-decrease')!
@@ -513,6 +521,7 @@ BinaryExpression { expression !add "+" expression }
         extensionCompartment.of(getActiveExtensions()),
         fontSizeCompartment.of(EditorView.theme({ '&': { fontSize: currentFontSize + 'px' } })),
         tabSizeCompartment.of(EditorState.tabSize.of(2)),
+        indentUnitCompartment.of(indentUnit.of('  ')),
         statusBarUpdater,
       ],
     }),
@@ -597,9 +606,22 @@ BinaryExpression { expression !add "+" expression }
   fontDecreaseBtn.addEventListener('click', () => updateFontSize(currentFontSize - 2))
   fontIncreaseBtn.addEventListener('click', () => updateFontSize(currentFontSize + 2))
 
-  tabSizeSelect.addEventListener('change', () => {
-    view.dispatch({ effects: tabSizeCompartment.reconfigure(EditorState.tabSize.of(Number(tabSizeSelect.value))) })
-  })
+  function getIndentString() {
+    const size = Number(tabSizeSelect.value)
+    return indentTabsCheckbox.checked ? '\t' : ' '.repeat(size)
+  }
+
+  function reconfigureIndent() {
+    view.dispatch({
+      effects: [
+        tabSizeCompartment.reconfigure(EditorState.tabSize.of(Number(tabSizeSelect.value))),
+        indentUnitCompartment.reconfigure(indentUnit.of(getIndentString())),
+      ],
+    })
+  }
+
+  tabSizeSelect.addEventListener('change', reconfigureIndent)
+  indentTabsCheckbox.addEventListener('change', reconfigureIndent)
 
   // URL hash state: persist settings in the URL for shareability
   function serializeState(): string {
@@ -618,6 +640,13 @@ BinaryExpression { expression !add "+" expression }
     if (emacsCheckbox.checked) params.set('emacs', '1')
     if (currentFontSize !== 14) params.set('fs', String(currentFontSize))
     if (tabSizeSelect.value !== '2') params.set('tab', tabSizeSelect.value)
+    if (indentTabsCheckbox.checked) params.set('tabs', '1')
+    // Encode editor content in share URL
+    const doc = view.state.doc.toString()
+    const defaultDoc = sampleCode[langSelect.value] ?? ''
+    if (doc !== defaultDoc) {
+      params.set('code', btoa(unescape(encodeURIComponent(doc))))
+    }
     return params.toString()
   }
 
@@ -648,9 +677,20 @@ BinaryExpression { expression !add "+" expression }
     const tab = params.get('tab')
     if (tab && ['2', '4', '8'].includes(tab)) {
       tabSizeSelect.value = tab
-      view.dispatch({ effects: tabSizeCompartment.reconfigure(EditorState.tabSize.of(Number(tab))) })
     }
+    if (params.get('tabs') === '1') indentTabsCheckbox.checked = true
+    reconfigureIndent()
     reconfigureExtensions()
+    // Restore code content from URL (after language switch settles)
+    const code = params.get('code')
+    if (code) {
+      try {
+        const decoded = decodeURIComponent(escape(atob(code)))
+        setTimeout(() => {
+          view.dispatch({ changes: { from: 0, to: view.state.doc.length, insert: decoded } })
+        }, 100)
+      } catch { /* ignore invalid base64 */ }
+    }
   }
 
   function updateHash() {
@@ -673,6 +713,7 @@ BinaryExpression { expression !add "+" expression }
   fontDecreaseBtn.addEventListener('click', updateHash)
   fontIncreaseBtn.addEventListener('click', updateHash)
   tabSizeSelect.addEventListener('change', updateHash)
+  indentTabsCheckbox.addEventListener('change', updateHash)
 
   // Share button — copy current URL with hash state
   const shareBtn = document.getElementById('btn-share')!
@@ -701,6 +742,10 @@ BinaryExpression { expression !add "+" expression }
     } else if (mod && e.key === '-') {
       e.preventDefault()
       updateFontSize(currentFontSize - 2)
+      updateHash()
+    } else if (mod && e.key === '0') {
+      e.preventDefault()
+      updateFontSize(14)
       updateHash()
     } else if (e.key === 'F11') {
       e.preventDefault()
@@ -766,8 +811,9 @@ BinaryExpression { expression !add "+" expression }
     vimCheckbox.checked = false
     emacsCheckbox.checked = false
     tabSizeSelect.value = '2'
+    indentTabsCheckbox.checked = false
     updateFontSize(14)
-    view.dispatch({ effects: tabSizeCompartment.reconfigure(EditorState.tabSize.of(2)) })
+    reconfigureIndent()
     switchLanguage('javascript')
     view.dispatch({ effects: themeCompartment.reconfigure(themes['one-dark']) })
     reconfigureExtensions()

@@ -80,8 +80,13 @@ const categories = categoryOrder
   .filter(c => c.exports.length > 0)
 ---
 
+<div class="export-filter">
+  <input type="search" id="export-search" placeholder="Filter exports…" aria-label="Filter exports" />
+  <span id="export-match-count" class="match-count"></span>
+</div>
+
 {categories.map(cat => (
-  <div class="category">
+  <div class="category" data-category={cat.name}>
     <h3>{cat.name} <span class="count">({cat.exports.length})</span></h3>
     <div class="table-wrap" role="region" aria-label={`${cat.name} exports`} tabindex="0">
     <table>
@@ -112,7 +117,62 @@ const categories = categoryOrder
   </div>
 ))}
 
+<script>
+  const searchInput = document.getElementById('export-search') as HTMLInputElement
+  const matchCount = document.getElementById('export-match-count')!
+  const categories = document.querySelectorAll('.category')
+
+  searchInput.addEventListener('input', () => {
+    const query = searchInput.value.toLowerCase().trim()
+    let total = 0
+    let visible = 0
+
+    categories.forEach(cat => {
+      const rows = cat.querySelectorAll('tbody tr')
+      let catVisible = 0
+      rows.forEach(row => {
+        total++
+        const text = row.textContent?.toLowerCase() ?? ''
+        const match = !query || text.includes(query)
+        ;(row as HTMLElement).hidden = !match
+        if (match) { catVisible++; visible++ }
+      })
+      ;(cat as HTMLElement).hidden = catVisible === 0 && !!query
+    })
+
+    matchCount.textContent = query ? `${visible} of ${total}` : ''
+  })
+</script>
+
 <style>
+  .export-filter {
+    display: flex;
+    align-items: center;
+    gap: var(--space-sm);
+    margin-bottom: var(--space-md);
+  }
+  .export-filter input {
+    flex: 1;
+    max-width: 20rem;
+    padding: 0.35rem 0.6rem;
+    background: var(--color-bg);
+    color: var(--color-text);
+    border: 1px solid var(--color-border);
+    border-radius: 4px;
+    font-size: 0.9rem;
+    font-family: var(--font-sans);
+  }
+  .export-filter input:focus-visible {
+    outline: 2px solid var(--color-accent);
+    outline-offset: 1px;
+  }
+  .export-filter input::placeholder {
+    color: var(--color-text-muted);
+  }
+  .match-count {
+    font-size: 0.8rem;
+    color: var(--color-text-muted);
+  }
   .category {
     margin-bottom: var(--space-lg);
   }
