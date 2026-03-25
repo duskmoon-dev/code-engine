@@ -458,21 +458,60 @@ BinaryExpression { expression !add "+" expression }
 
 <style>
   .editor-demo {
-    display: flex;
-    flex-direction: column;
     height: calc(100dvh - 10rem);
     min-height: 400px;
   }
 
+  /* Desktop: sidebar + editor side by side */
+  @media (min-width: 768px) {
+    .editor-demo {
+      display: grid;
+      grid-template-columns: 240px 1fr;
+      grid-template-rows: 1fr;
+      gap: 0;
+    }
+    .controls {
+      grid-row: 1;
+      flex-direction: column;
+      align-items: stretch;
+      border-radius: var(--radius) 0 0 var(--radius);
+      border-right: none;
+      overflow-y: auto;
+    }
+    #editor {
+      border-radius: 0 var(--radius) var(--radius) 0;
+      border-left: none;
+    }
+    .load-error {
+      grid-column: 1 / -1;
+    }
+  }
+
+  /* Mobile: stacked toolbar + editor */
+  @media (max-width: 767px) {
+    .editor-demo {
+      display: flex;
+      flex-direction: column;
+    }
+    .controls {
+      flex-direction: row;
+      flex-wrap: wrap;
+      align-items: center;
+      border-radius: var(--radius) var(--radius) 0 0;
+    }
+    #editor {
+      flex: 1;
+      border-top: none;
+      border-radius: 0 0 var(--radius) var(--radius);
+    }
+  }
+
   .controls {
     display: flex;
-    align-items: center;
     gap: var(--space-md);
     padding: var(--space-sm) var(--space-md);
     background: var(--color-surface);
     border: 1px solid var(--color-border);
-    border-radius: var(--radius) var(--radius) 0 0;
-    flex-wrap: wrap;
   }
 
   .controls label {
@@ -525,26 +564,11 @@ BinaryExpression { expression !add "+" expression }
   }
 
   #editor {
-    flex: 1;
     border: 1px solid var(--color-border);
-    border-top: none;
-    border-radius: 0 0 var(--radius) var(--radius);
     overflow: hidden;
   }
 
   #editor :global(.cm-editor) {
     height: 100%;
-  }
-
-  @media (max-width: 767px) {
-    .controls {
-      border-radius: var(--radius);
-      margin-bottom: var(--space-sm);
-      border-bottom: 1px solid var(--color-border);
-    }
-    #editor {
-      border-top: 1px solid var(--color-border);
-      border-radius: var(--radius);
-    }
   }
 </style>
