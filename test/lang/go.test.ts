@@ -274,4 +274,31 @@ describe("Go language pack", () => {
     const state = EditorState.create({ doc, extensions: [go()] });
     expect(state.doc.length).toBe(doc.length);
   });
+
+  it("go() state doc line text is accessible", () => {
+    const state = EditorState.create({
+      doc: "package main\nimport \"fmt\"",
+      extensions: [go()],
+    });
+    expect(state.doc.line(1).text).toBe("package main");
+    expect(state.doc.line(2).text).toBe("import \"fmt\"");
+  });
+
+  it("go() state deletion transaction works", () => {
+    let state = EditorState.create({ doc: "package main\nimport \"fmt\"", extensions: [go()] });
+    state = state.update({ changes: { from: 12, to: 25 } }).state;
+    expect(state.doc.toString()).toBe("package main");
+  });
+
+  it("goLanguage parser tree has correct length", () => {
+    const code = "package main\nfunc main() { fmt.Println(\"hello\") }";
+    const tree = goLanguage.parser.parse(code);
+    expect(tree.length).toBe(code.length);
+  });
+
+  it("go() state with unicode content works", () => {
+    const doc = "// こんにちは\npackage main";
+    const state = EditorState.create({ doc, extensions: [go()] });
+    expect(state.doc.toString()).toBe(doc);
+  });
 });

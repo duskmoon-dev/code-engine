@@ -268,4 +268,30 @@ describe("Rust language pack", () => {
     expect(state.selection.main.from).toBe(0);
     expect(state.selection.main.to).toBe(12);
   });
+
+  it("rust() state doc line text is accessible", () => {
+    const state = EditorState.create({
+      doc: "use std::collections::HashMap;\nfn main() {}",
+      extensions: [rust()],
+    });
+    expect(state.doc.line(1).text).toBe("use std::collections::HashMap;");
+  });
+
+  it("rust() state deletion transaction works", () => {
+    let state = EditorState.create({ doc: "fn main() {}\nfn helper() {}", extensions: [rust()] });
+    state = state.update({ changes: { from: 12, to: 27 } }).state;
+    expect(state.doc.toString()).toBe("fn main() {}");
+  });
+
+  it("rustLanguage parser tree has correct length", () => {
+    const code = "struct Point { x: f64, y: f64 }";
+    const tree = rustLanguage.parser.parse(code);
+    expect(tree.length).toBe(code.length);
+  });
+
+  it("rust() state with unicode comment works", () => {
+    const doc = "// こんにちは\nfn main() {}";
+    const state = EditorState.create({ doc, extensions: [rust()] });
+    expect(state.doc.toString()).toBe(doc);
+  });
 });

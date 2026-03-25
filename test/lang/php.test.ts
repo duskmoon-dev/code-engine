@@ -250,4 +250,33 @@ describe("PHP language pack", () => {
     const state = EditorState.create({ doc, extensions: [php()] });
     expect(state.doc.length).toBe(doc.length);
   });
+
+  it("php() state doc line text is accessible", () => {
+    const state = EditorState.create({
+      doc: "<?php\n$x = 1;\n$y = 2;",
+      extensions: [php()],
+    });
+    expect(state.doc.line(1).text).toBe("<?php");
+    expect(state.doc.line(2).text).toBe("$x = 1;");
+  });
+
+  it("php() state deletion transaction works", () => {
+    let state = EditorState.create({ doc: "<?php $x = 1;\n$y = 2;", extensions: [php()] });
+    state = state.update({ changes: { from: 13, to: 21 } }).state;
+    expect(state.doc.toString()).toBe("<?php $x = 1;");
+  });
+
+  it("phpLanguage parser tree has correct length", () => {
+    const code = "<?php function greet($name) { return 'Hello ' . $name; }";
+    const tree = phpLanguage.parser.parse(code);
+    expect(tree.length).toBe(code.length);
+  });
+
+  it("php() with htmlLanguage base state integrates", () => {
+    const state = EditorState.create({
+      doc: "<html><body><?php echo 'hi'; ?></body></html>",
+      extensions: [php({ baseLanguage: htmlLanguage })],
+    });
+    expect(state.doc.toString()).toContain("<?php");
+  });
 });

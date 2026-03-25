@@ -299,5 +299,31 @@ describe("WAST language pack", () => {
       state = state.update({ changes: { from: 8, to: 18, insert: "(func)" } }).state;
       expect(state.doc.toString()).toBe("(module (func))");
     });
+
+    it("wast() state doc length invariant holds", () => {
+      const doc = "(module (func (result i32) (i32.const 42)))";
+      const state = EditorState.create({ doc, extensions: [wast()] });
+      expect(state.doc.length).toBe(doc.length);
+    });
+
+    it("wastLanguage parser tree has correct length", () => {
+      const code = "(module (func (export \"main\") (result i32) (i32.const 0)))";
+      const tree = wastLanguage.parser.parse(code);
+      expect(tree.length).toBe(code.length);
+    });
+
+    it("wast() state deletion transaction works", () => {
+      let state = EditorState.create({ doc: "(module)\n(module (func))", extensions: [wast()] });
+      state = state.update({ changes: { from: 8, to: 24 } }).state;
+      expect(state.doc.toString()).toBe("(module)");
+    });
+
+    it("wast() state with multiple operations parses correctly", () => {
+      const state = EditorState.create({
+        doc: "(module\n  (func $add (param i32 i32) (result i32)\n    local.get 0\n    local.get 1\n    i32.add))",
+        extensions: [wast()],
+      });
+      expect(state.doc.lines).toBe(5);
+    });
   });
 });

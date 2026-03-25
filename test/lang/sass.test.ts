@@ -260,5 +260,32 @@ describe("Sass language pack", () => {
       });
       expect(state.doc.lines).toBe(4);
     });
+
+    it("sass() state doc line text is accessible", () => {
+      const state = EditorState.create({
+        doc: "$primary: red;\n$secondary: blue;",
+        extensions: [sass()],
+      });
+      expect(state.doc.line(1).text).toBe("$primary: red;");
+      expect(state.doc.line(2).text).toBe("$secondary: blue;");
+    });
+
+    it("sass() state deletion transaction works", () => {
+      let state = EditorState.create({ doc: "$a: 1;\n$b: 2;\n$c: 3;", extensions: [sass()] });
+      state = state.update({ changes: { from: 13, to: 20 } }).state;
+      expect(state.doc.lines).toBe(2);
+    });
+
+    it("sassLanguage parser tree has correct length", () => {
+      const code = ".container { display: flex; flex-wrap: wrap; }";
+      const tree = sassLanguage.parser.parse(code);
+      expect(tree.length).toBe(code.length);
+    });
+
+    it("sass() state with unicode content works", () => {
+      const doc = "/* こんにちは */\n$color: red;";
+      const state = EditorState.create({ doc, extensions: [sass()] });
+      expect(state.doc.toString()).toBe(doc);
+    });
   });
 });

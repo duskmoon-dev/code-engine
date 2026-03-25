@@ -276,5 +276,32 @@ describe("Less language pack", () => {
       expect(state.selection.main.from).toBe(0);
       expect(state.selection.main.to).toBe(6);
     });
+
+    it("less() state doc line text is accessible", () => {
+      const state = EditorState.create({
+        doc: "@primary: red;\n@secondary: blue;",
+        extensions: [less()],
+      });
+      expect(state.doc.line(1).text).toBe("@primary: red;");
+      expect(state.doc.line(2).text).toBe("@secondary: blue;");
+    });
+
+    it("less() state deletion transaction works", () => {
+      let state = EditorState.create({ doc: "@a: 1;\n@b: 2;\n@c: 3;", extensions: [less()] });
+      state = state.update({ changes: { from: 13, to: 20 } }).state;
+      expect(state.doc.lines).toBe(2);
+    });
+
+    it("lessLanguage parser tree has correct length", () => {
+      const code = ".container { .inner { color: red; } }";
+      const tree = lessLanguage.parser.parse(code);
+      expect(tree.length).toBe(code.length);
+    });
+
+    it("less() state with unicode content works", () => {
+      const doc = "/* 日本語 */\n@color: red;";
+      const state = EditorState.create({ doc, extensions: [less()] });
+      expect(state.doc.toString()).toBe(doc);
+    });
   });
 });

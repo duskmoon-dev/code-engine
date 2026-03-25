@@ -329,5 +329,39 @@ describe("Jinja language pack", () => {
       expect(tree.length).toBeGreaterThan(0);
       expect(tree.type.isTop).toBe(true);
     });
+
+    it("jinja() state doc line count is correct", () => {
+      const state = EditorState.create({
+        doc: "{% if user %}\n  Hello {{ user.name }}\n{% endif %}",
+        extensions: [jinja()],
+      });
+      expect(state.doc.lines).toBe(3);
+    });
+
+    it("jinja() state doc line text is accessible", () => {
+      const state = EditorState.create({
+        doc: "{% block title %}My App{% endblock %}\n{% block content %}{% endblock %}",
+        extensions: [jinja()],
+      });
+      expect(state.doc.line(1).text).toBe("{% block title %}My App{% endblock %}");
+    });
+
+    it("jinja() state allows mutation via transaction", () => {
+      let state = EditorState.create({ doc: "{{ message }}", extensions: [jinja()] });
+      state = state.update({ changes: { from: 13, insert: "\n{{ name }}" } }).state;
+      expect(state.doc.lines).toBe(2);
+    });
+
+    it("jinja() state doc length invariant holds", () => {
+      const doc = "Hello {{ name }}!";
+      const state = EditorState.create({ doc, extensions: [jinja()] });
+      expect(state.doc.length).toBe(doc.length);
+    });
+
+    it("jinja() state replacement transaction works", () => {
+      let state = EditorState.create({ doc: "{{ old }}", extensions: [jinja()] });
+      state = state.update({ changes: { from: 3, to: 6, insert: "new" } }).state;
+      expect(state.doc.toString()).toBe("{{ new }}");
+    });
   });
 });

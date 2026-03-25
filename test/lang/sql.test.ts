@@ -256,4 +256,39 @@ describe("SQL language pack", () => {
     expect(tree.length).toBeGreaterThan(0);
     expect(tree.type.isTop).toBe(true);
   });
+
+  it("sql() state doc line count is correct", () => {
+    const state = EditorState.create({
+      doc: "SELECT id, name\nFROM users\nWHERE active = 1",
+      extensions: [sql()],
+    });
+    expect(state.doc.lines).toBe(3);
+  });
+
+  it("sql() state doc line text is accessible", () => {
+    const state = EditorState.create({
+      doc: "SELECT *\nFROM orders\nLIMIT 10",
+      extensions: [sql()],
+    });
+    expect(state.doc.line(1).text).toBe("SELECT *");
+    expect(state.doc.line(2).text).toBe("FROM orders");
+  });
+
+  it("sql() state allows mutation via transaction", () => {
+    let state = EditorState.create({ doc: "SELECT 1", extensions: [sql()] });
+    state = state.update({ changes: { from: 8, insert: ";\nSELECT 2" } }).state;
+    expect(state.doc.lines).toBe(2);
+  });
+
+  it("sql() state doc length invariant holds", () => {
+    const doc = "SELECT id FROM users;";
+    const state = EditorState.create({ doc, extensions: [sql()] });
+    expect(state.doc.length).toBe(doc.length);
+  });
+
+  it("sql() state replacement transaction works", () => {
+    let state = EditorState.create({ doc: "SELECT * FROM users", extensions: [sql()] });
+    state = state.update({ changes: { from: 7, to: 8, insert: "id, name" } }).state;
+    expect(state.doc.toString()).toContain("id, name");
+  });
 });

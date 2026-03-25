@@ -304,5 +304,30 @@ describe("theme/duskmoon", () => {
       const state = EditorState.create({ doc, extensions: [duskMoon()] });
       expect(state.doc.length).toBe(doc.length);
     });
+
+    it("duskMoon state sequential transactions update doc correctly", () => {
+      let state = EditorState.create({ doc: "a", extensions: [duskMoon()] });
+      state = state.update({ changes: { from: 1, insert: "b" } }).state;
+      state = state.update({ changes: { from: 2, insert: "c" } }).state;
+      expect(state.doc.toString()).toBe("abc");
+    });
+
+    it("duskMoon state replacement transaction works", () => {
+      let state = EditorState.create({ doc: "foo bar", extensions: [duskMoon()] });
+      state = state.update({ changes: { from: 4, to: 7, insert: "baz" } }).state;
+      expect(state.doc.toString()).toBe("foo baz");
+    });
+
+    it("duskMoon state deletion transaction works", () => {
+      let state = EditorState.create({ doc: "hello world", extensions: [duskMoon()] });
+      state = state.update({ changes: { from: 5, to: 11 } }).state;
+      expect(state.doc.toString()).toBe("hello");
+    });
+
+    it("duskMoon state with unicode content works", () => {
+      const doc = "こんにちは世界";
+      const state = EditorState.create({ doc, extensions: [duskMoon()] });
+      expect(state.doc.toString()).toBe(doc);
+    });
   });
 });
