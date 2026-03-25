@@ -298,16 +298,106 @@ describe("Prec", () => {
 });
 
 describe("RangeSet", () => {
+  class Mark extends RangeValue {
+    constructor(readonly label: string) { super(); }
+    eq(other: RangeValue) { return other instanceof Mark && this.label === other.label; }
+  }
+
+  function buildSet(...ranges: [number, number, string][]) {
+    const builder = new RangeSetBuilder<Mark>();
+    for (const [from, to, label] of ranges) builder.add(from, to, new Mark(label));
+    return builder.finish();
+  }
+
   it("RangeSet.empty is defined", () => {
     expect(RangeSet.empty).toBeDefined();
+    expect(RangeSet.empty.size).toBe(0);
   });
 
   it("RangeSetBuilder can build a range set", () => {
-    class TestRange extends RangeValue {}
-    const builder = new RangeSetBuilder<TestRange>();
-    builder.add(0, 5, new TestRange());
-    const set = builder.finish();
+    const set = buildSet([0, 5, "a"]);
     expect(set).toBeDefined();
+    expect(set.size).toBe(1);
+  });
+
+  it("size counts all ranges", () => {
+    const set = buildSet([0, 3, "a"], [5, 8, "b"], [10, 15, "c"]);
+    expect(set.size).toBe(3);
+  });
+
+  it("iter walks ranges in order", () => {
+    const set = buildSet([0, 3, "a"], [5, 8, "b"]);
+    const iter = set.iter();
+    expect(iter.from).toBe(0);
+    expect(iter.to).toBe(3);
+    iter.next();
+    expect(iter.from).toBe(5);
+    expect(iter.to).toBe(8);
+    iter.next();
+    expect(iter.value).toBe(null);
+  });
+
+  it("between calls function for ranges in a range", () => {
+    const set = buildSet([0, 3, "a"], [5, 8, "b"], [10, 15, "c"]);
+    const found: string[] = [];
+    set.between(4, 12, (from, to, value) => { found.push(value.label); });
+    expect(found).toContain("b");
+    expect(found).toContain("c");
+  });
+
+  it("update adds new ranges", () => {
+    const set = buildSet([0, 3, "a"]);
+    const updated = set.update({
+      add: [new Mark("b").range(5, 8)],
+    });
+    expect(updated.size).toBe(2);
+  });
+
+  it("update with filter removes ranges", () => {
+    const set = buildSet([0, 3, "a"], [5, 8, "b"]);
+    const updated = set.update({
+      filter: (from) => from > 0,
+    });
+    expect(updated.size).toBe(1);
+  });
+
+  it("update with filter and add works together", () => {
+    const set = buildSet([0, 3, "a"], [5, 8, "b"]);
+    const updated = set.update({
+      filter: (from) => from > 0,
+      add: [new Mark("c").range(10, 15)],
+    });
+    expect(updated.size).toBe(2);
+  });
+
+  it("map through empty changes returns same set", () => {
+    const set = buildSet([0, 3, "a"]);
+    const changes = ChangeSet.of([], 10);
+    expect(set.map(changes)).toBe(set);
+  });
+
+  it("map through insert shifts ranges", () => {
+    const set = buildSet([5, 8, "a"]);
+    const changes = ChangeSet.of([{ from: 0, insert: "xx" }], 10);
+    const mapped = set.map(changes);
+    const iter = mapped.iter();
+    expect(iter.from).toBe(7);
+    expect(iter.to).toBe(10);
+  });
+
+  it("RangeSet.of creates set from array", () => {
+    const ranges = [
+      new Mark("b").range(5, 8),
+      new Mark("a").range(0, 3),
+    ];
+    const set = RangeSet.of(ranges, true);
+    expect(set.size).toBe(2);
+    const iter = set.iter();
+    expect(iter.from).toBe(0);
+  });
+
+  it("empty set isEmpty returns true", () => {
+    expect(RangeSet.empty.size).toBe(0);
   });
 });
 
