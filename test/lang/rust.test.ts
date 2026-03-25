@@ -64,4 +64,10 @@ describe("Rust language pack", () => {
     do { nodeCount++; } while (cursor.next() && nodeCount < 100);
     expect(nodeCount).toBeGreaterThan(1);
   });
+
+  it("rustLanguage can parse enum declaration", () => {
+    const tree = rustLanguage.parser.parse("enum Color { Red, Green, Blue }");
+    expect(tree.length).toBeGreaterThan(0);
+    expect(tree.type.isTop).toBe(true);
+  });
 });

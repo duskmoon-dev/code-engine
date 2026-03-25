@@ -58,4 +58,10 @@ describe("C++ language pack", () => {
     do { nodeCount++; } while (cursor.next() && nodeCount < 100);
     expect(nodeCount).toBeGreaterThan(1);
   });
+
+  it("cppLanguage can parse class declaration", () => {
+    const tree = cppLanguage.parser.parse("class Point { public: int x, y; Point(int x, int y): x(x), y(y) {} };");
+    expect(tree.length).toBeGreaterThan(0);
+    expect(tree.type.isTop).toBe(true);
+  });
 });

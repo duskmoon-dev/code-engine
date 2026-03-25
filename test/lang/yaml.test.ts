@@ -81,4 +81,15 @@ describe("YAML language pack", () => {
     });
     expect(state.doc.toString()).toContain("title: Test");
   });
+
+  it("yamlLanguage cursor traversal works on docker-compose style config", () => {
+    const code = "services:\n  web:\n    image: nginx\n    ports:\n      - \"80:80\"";
+    const tree = yamlLanguage.parser.parse(code);
+    const cursor = tree.cursor();
+    let nodeCount = 0;
+    do { nodeCount++; } while (cursor.next() && nodeCount < 100);
+    expect(nodeCount).toBeGreaterThan(1);
+    expect(tree.length).toBeGreaterThan(0);
+    expect(tree.type.isTop).toBe(true);
+  });
 });

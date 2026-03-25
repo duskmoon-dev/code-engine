@@ -57,4 +57,10 @@ describe("Java language pack", () => {
     do { nodeCount++; } while (cursor.next() && nodeCount < 100);
     expect(nodeCount).toBeGreaterThan(1);
   });
+
+  it("javaLanguage can parse interface", () => {
+    const tree = javaLanguage.parser.parse("interface Runnable { void run(); }");
+    expect(tree.length).toBeGreaterThan(0);
+    expect(tree.type.isTop).toBe(true);
+  });
 });

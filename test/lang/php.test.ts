@@ -71,4 +71,15 @@ describe("PHP language pack", () => {
     expect(tree.length).toBeGreaterThan(0);
     expect(tree.type.isTop).toBe(true);
   });
+
+  it("phpLanguage cursor traversal works on function with call", () => {
+    const code = "<?php function add($a, $b) { return $a + $b; } echo add(1, 2); ?>";
+    const tree = phpLanguage.parser.parse(code);
+    const cursor = tree.cursor();
+    let nodeCount = 0;
+    do { nodeCount++; } while (cursor.next() && nodeCount < 100);
+    expect(nodeCount).toBeGreaterThan(1);
+    expect(tree.length).toBeGreaterThan(0);
+    expect(tree.type.isTop).toBe(true);
+  });
 });
