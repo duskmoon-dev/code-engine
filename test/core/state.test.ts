@@ -904,3 +904,58 @@ describe("Facet with combine function", () => {
     expect(value).toContain("world");
   });
 });
+
+describe("charCategorizer and wordAt", () => {
+  it("charCategorizer classifies letters as Word", () => {
+    const state = EditorState.create({ doc: "hello" });
+    const cat = state.charCategorizer(0);
+    expect(cat("a")).toBe(CharCategory.Word);
+    expect(cat("Z")).toBe(CharCategory.Word);
+    expect(cat("0")).toBe(CharCategory.Word);
+  });
+
+  it("charCategorizer classifies whitespace as Space", () => {
+    const state = EditorState.create({ doc: "hello" });
+    const cat = state.charCategorizer(0);
+    expect(cat(" ")).toBe(CharCategory.Space);
+    expect(cat("\t")).toBe(CharCategory.Space);
+  });
+
+  it("charCategorizer classifies punctuation as Other", () => {
+    const state = EditorState.create({ doc: "hello" });
+    const cat = state.charCategorizer(0);
+    expect(cat("!")).toBe(CharCategory.Other);
+    expect(cat(",")).toBe(CharCategory.Other);
+  });
+
+  it("wordAt returns the word range at a position", () => {
+    const state = EditorState.create({ doc: "hello world" });
+    const range = state.wordAt(3);
+    expect(range).not.toBe(null);
+    expect(range!.from).toBe(0);
+    expect(range!.to).toBe(5);
+  });
+
+  it("wordAt at space adjacent to word returns that word", () => {
+    const state = EditorState.create({ doc: "hello world" });
+    // position 5 is space, but backward scan finds "hello"
+    const range = state.wordAt(5);
+    expect(range).not.toBe(null);
+    expect(range!.from).toBe(0);
+    expect(range!.to).toBe(5);
+  });
+
+  it("wordAt returns null in pure whitespace", () => {
+    const state = EditorState.create({ doc: "   " });
+    const range = state.wordAt(1);
+    expect(range).toBe(null);
+  });
+
+  it("wordAt works at second word", () => {
+    const state = EditorState.create({ doc: "hello world" });
+    const range = state.wordAt(8);
+    expect(range).not.toBe(null);
+    expect(range!.from).toBe(6);
+    expect(range!.to).toBe(11);
+  });
+});

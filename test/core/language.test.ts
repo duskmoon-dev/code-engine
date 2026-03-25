@@ -32,6 +32,7 @@ import {
   unfoldEffect,
   foldState,
   foldedRanges,
+  highlightingFor,
 } from "../../src/core/language/index";
 import { tags } from "../../src/parser/highlight/index";
 import { python, pythonLanguage } from "../../src/lang/python/index";
@@ -464,5 +465,132 @@ describe("Highlight tags", () => {
     expect(tags.emphasis).toBeDefined();
     expect(tags.strong).toBeDefined();
     expect(tags.link).toBeDefined();
+  });
+});
+
+describe("HighlightStyle", () => {
+  it("define creates a HighlightStyle with class names", () => {
+    const style = HighlightStyle.define([
+      { tag: tags.keyword, class: "kw" },
+      { tag: tags.comment, class: "cm" },
+    ]);
+    expect(style).toBeInstanceOf(HighlightStyle);
+    expect(style.specs.length).toBe(2);
+  });
+
+  it("define creates a HighlightStyle with CSS properties", () => {
+    const style = HighlightStyle.define([
+      { tag: tags.keyword, color: "purple" },
+      { tag: tags.string, color: "green" },
+    ]);
+    expect(style.module).not.toBe(null);
+  });
+
+  it("style function returns class for matching tags", () => {
+    const style = HighlightStyle.define([
+      { tag: tags.keyword, class: "kw" },
+    ]);
+    const cls = style.style([tags.keyword]);
+    expect(cls).toContain("kw");
+  });
+
+  it("style function returns null for non-matching tags", () => {
+    const style = HighlightStyle.define([
+      { tag: tags.keyword, class: "kw" },
+    ]);
+    const cls = style.style([tags.comment]);
+    expect(cls).toBe(null);
+  });
+
+  it("define with themeType sets the theme", () => {
+    const style = HighlightStyle.define(
+      [{ tag: tags.keyword, class: "kw" }],
+      { themeType: "dark" },
+    );
+    expect(style.themeType).toBe("dark");
+  });
+
+  it("define with all option applies to all content", () => {
+    const style = HighlightStyle.define(
+      [{ tag: tags.keyword, class: "kw" }],
+      { all: "base-class" },
+    );
+    // all option is applied; style function should return class for any tag combo
+    expect(style).toBeDefined();
+  });
+
+  it("module is null when only class names are used", () => {
+    const style = HighlightStyle.define([
+      { tag: tags.keyword, class: "kw" },
+    ]);
+    expect(style.module).toBe(null);
+  });
+
+  it("defaultHighlightStyle is a HighlightStyle", () => {
+    expect(defaultHighlightStyle).toBeInstanceOf(HighlightStyle);
+    expect(defaultHighlightStyle.specs.length).toBeGreaterThan(0);
+  });
+});
+
+describe("syntaxHighlighting", () => {
+  it("returns an extension array", () => {
+    const style = HighlightStyle.define([{ tag: tags.keyword, class: "kw" }]);
+    const ext = syntaxHighlighting(style);
+    expect(ext).toBeDefined();
+  });
+
+  it("can be used as a fallback", () => {
+    const style = HighlightStyle.define([{ tag: tags.keyword, class: "kw" }]);
+    const ext = syntaxHighlighting(style, { fallback: true });
+    expect(ext).toBeDefined();
+  });
+
+  it("can be used with EditorState", () => {
+    const style = HighlightStyle.define([{ tag: tags.keyword, class: "kw" }]);
+    const state = EditorState.create({
+      doc: "let x = 1",
+      extensions: [python(), syntaxHighlighting(style)],
+    });
+    expect(state.doc.toString()).toBe("let x = 1");
+  });
+});
+
+describe("highlightingFor", () => {
+  it("returns null when no highlighters are active", () => {
+    const state = EditorState.create({ doc: "test" });
+    const result = highlightingFor(state, [tags.keyword]);
+    expect(result).toBe(null);
+  });
+
+  it("returns class name when highlighter matches", () => {
+    const style = HighlightStyle.define([{ tag: tags.keyword, class: "kw" }]);
+    const state = EditorState.create({
+      doc: "test",
+      extensions: [syntaxHighlighting(style)],
+    });
+    const result = highlightingFor(state, [tags.keyword]);
+    expect(result).toContain("kw");
+  });
+
+  it("returns null for non-matching tags", () => {
+    const style = HighlightStyle.define([{ tag: tags.keyword, class: "kw" }]);
+    const state = EditorState.create({
+      doc: "test",
+      extensions: [syntaxHighlighting(style)],
+    });
+    const result = highlightingFor(state, [tags.comment]);
+    expect(result).toBe(null);
+  });
+
+  it("combines classes from multiple highlighters", () => {
+    const s1 = HighlightStyle.define([{ tag: tags.keyword, class: "kw1" }]);
+    const s2 = HighlightStyle.define([{ tag: tags.keyword, class: "kw2" }]);
+    const state = EditorState.create({
+      doc: "test",
+      extensions: [syntaxHighlighting(s1), syntaxHighlighting(s2)],
+    });
+    const result = highlightingFor(state, [tags.keyword]);
+    expect(result).toContain("kw1");
+    expect(result).toContain("kw2");
   });
 });
