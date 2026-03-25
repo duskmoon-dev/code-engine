@@ -6,6 +6,7 @@
     <label for="lang-select">
       Language
       <select id="lang-select" aria-label="Select programming language"></select>
+      <span id="lang-loading" class="loading" hidden aria-live="polite" aria-label="Loading language">…</span>
     </label>
     <label for="theme-select">
       Theme
@@ -398,9 +399,11 @@ BinaryExpression { expression !add "+" expression }
   }
 
   const loadError = document.getElementById('load-error') as HTMLElement
+  const langLoading = document.getElementById('lang-loading') as HTMLElement
 
   async function switchLanguage(key: string) {
     langSelect.disabled = true
+    langLoading.hidden = false
     loadError.hidden = true
     try {
       const factory = await loadLanguage(key)
@@ -416,6 +419,7 @@ BinaryExpression { expression !add "+" expression }
       )?.value ?? 'javascript'
     } finally {
       langSelect.disabled = false
+      langLoading.hidden = true
     }
   }
 
@@ -492,6 +496,18 @@ BinaryExpression { expression !add "+" expression }
   .controls select:disabled {
     opacity: 0.5;
     cursor: wait;
+  }
+
+  .loading {
+    font-size: 0.8rem;
+    color: var(--color-text-muted);
+    margin-left: 0.25rem;
+    animation: pulse 1s ease-in-out infinite;
+  }
+
+  @keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.3; }
   }
 
   .controls input[type="checkbox"] {
