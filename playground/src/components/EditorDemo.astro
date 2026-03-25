@@ -369,11 +369,16 @@ BinaryExpression { expression !add "+" expression }
   }
 
   async function switchLanguage(key: string) {
-    const factory = await loadLanguage(key)
-    view.dispatch({
-      changes: { from: 0, to: view.state.doc.length, insert: sampleCode[key] ?? '' },
-      effects: languageCompartment.reconfigure(factory()),
-    })
+    langSelect.disabled = true
+    try {
+      const factory = await loadLanguage(key)
+      view.dispatch({
+        changes: { from: 0, to: view.state.doc.length, insert: sampleCode[key] ?? '' },
+        effects: languageCompartment.reconfigure(factory()),
+      })
+    } finally {
+      langSelect.disabled = false
+    }
   }
 
   function reconfigureExtensions() {
@@ -436,6 +441,11 @@ BinaryExpression { expression !add "+" expression }
     padding: 0.25rem 0.5rem;
     font-size: 0.85rem;
     font-family: var(--font-sans);
+  }
+
+  .controls select:disabled {
+    opacity: 0.5;
+    cursor: wait;
   }
 
   .controls input[type="checkbox"] {
