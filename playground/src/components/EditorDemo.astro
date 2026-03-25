@@ -328,11 +328,37 @@ BinaryExpression { expression !add "+" expression }
   const vimCheckbox = document.getElementById('ext-vim') as HTMLInputElement
   const emacsCheckbox = document.getElementById('ext-emacs') as HTMLInputElement
 
+  const languageLabels: Record<string, string> = {
+    javascript: 'JavaScript',
+    typescript: 'TypeScript',
+    python: 'Python',
+    html: 'HTML',
+    css: 'CSS',
+    json: 'JSON',
+    markdown: 'Markdown',
+    xml: 'XML',
+    sql: 'SQL',
+    rust: 'Rust',
+    go: 'Go',
+    java: 'Java',
+    cpp: 'C++',
+    php: 'PHP',
+    sass: 'Sass',
+    less: 'Less',
+    yaml: 'YAML',
+    angular: 'Angular',
+    vue: 'Vue',
+    liquid: 'Liquid',
+    wast: 'WebAssembly Text',
+    jinja: 'Jinja2',
+    lezer: 'Lezer',
+  }
+
   // Populate language dropdown
   for (const key of Object.keys(languageLoaders)) {
     const opt = document.createElement('option')
     opt.value = key
-    opt.textContent = key
+    opt.textContent = languageLabels[key] ?? key
     langSelect.appendChild(opt)
   }
 
