@@ -4,6 +4,11 @@ import { join } from 'node:path'
 
 const distDir = join(import.meta.dir, '../../playground/dist')
 const hasBuilt = existsSync(join(distDir, 'index.html'))
+const pkgPath = join(import.meta.dir, '../../package.json')
+const pkg = JSON.parse(readFileSync(pkgPath, 'utf-8'))
+const exportKeys = Object.keys(pkg.exports)
+const exportCount = exportKeys.length
+const langCount = exportKeys.filter((k: string) => k.startsWith('./lang/') && !k.includes('*')).length
 
 function requireBuild(fn: () => void) {
   return () => {
@@ -50,7 +55,6 @@ describe('playground build output', () => {
 
   it('homepage reads version from package.json', requireBuild(() => {
     const html = readFileSync(join(distDir, 'index.html'), 'utf-8')
-    const pkg = JSON.parse(readFileSync(join(import.meta.dir, '../../package.json'), 'utf-8'))
     expect(html).toContain(`v${pkg.version}`)
   }))
 
@@ -121,8 +125,8 @@ describe('playground build output', () => {
 
   it('homepage has correct export count', requireBuild(() => {
     const html = readFileSync(join(distDir, 'index.html'), 'utf-8')
-    expect(html).toContain('23 languages')
-    expect(html).toContain('43 Subpath Exports')
+    expect(html).toContain(`${langCount} language packs`)
+    expect(html).toContain(`${exportCount} Subpath Exports`)
   }))
 
   it('playground has status bar', requireBuild(() => {
@@ -204,8 +208,8 @@ describe('playground build output', () => {
 
   it('homepage has feature highlights section', requireBuild(() => {
     const html = readFileSync(join(distDir, 'index.html'), 'utf-8')
-    expect(html).toContain('43 Subpath Exports')
-    expect(html).toContain('22 Languages')
+    expect(html).toContain(`${exportCount} Subpath Exports`)
+    expect(html).toContain(`${langCount} Languages`)
     expect(html).toContain('Single Package')
   }))
 
@@ -371,7 +375,6 @@ describe('playground build output', () => {
     const html = readFileSync(join(distDir, 'index.html'), 'utf-8')
     expect(html).toContain('MIT License')
     expect(html).toContain('Zero Dependencies')
-    const pkg = JSON.parse(readFileSync(join(import.meta.dir, '../../package.json'), 'utf-8'))
     expect(html).toContain(`v${pkg.version}`)
   }))
 
@@ -440,7 +443,7 @@ describe('playground build output', () => {
     expect(html).toContain('changelog')
   }))
 
-  it('playground has all 23 language loaders', requireBuild(() => {
+  it('playground has language loaders for all languages', requireBuild(() => {
     const html = readFileSync(join(distDir, 'playground/index.html'), 'utf-8')
     const astroDir = join(distDir, '_astro')
     if (!existsSync(astroDir)) return
@@ -515,6 +518,6 @@ describe('playground build output', () => {
 
   it('docs page description mentions correct export count', requireBuild(() => {
     const html = readFileSync(join(distDir, 'docs/index.html'), 'utf-8')
-    expect(html).toContain('43 subpath exports')
+    expect(html).toContain(`${exportCount} subpath exports`)
   }))
 })
