@@ -39,6 +39,12 @@
     Failed to load language pack. Check your network connection.
   </p>
   <div id="editor" role="region" aria-label="Code editor"></div>
+  <noscript>
+    <div class="noscript-msg">
+      <p>JavaScript is required for the interactive editor.</p>
+      <p>Install the package with <code>bun add @duskmoon-dev/code-engine</code> and try it in your own project.</p>
+    </div>
+  </noscript>
 </div>
 
 <script>
@@ -673,5 +679,16 @@ BinaryExpression { expression !add "+" expression }
 
   #editor :global(.cm-editor) {
     height: 100%;
+  }
+
+  .noscript-msg {
+    padding: var(--space-lg);
+    text-align: center;
+    color: var(--color-text-muted);
+  }
+  .noscript-msg code {
+    background: var(--color-surface);
+    padding: 0.15rem 0.4rem;
+    border-radius: 4px;
   }
 </style>
