@@ -19,10 +19,16 @@ function renderMarkdown(md: string): string {
     .replace(/^# (.+)$/gm, '<h2>$1</h2>')
     // horizontal rules
     .replace(/^(?:---|\*\*\*|___)\s*$/gm, '<hr>')
-    // blockquotes (consecutive > lines grouped)
-    .replace(/(^> .+\n?)+/gm, (match) => {
-      const inner = match.replace(/^> ?/gm, '').trim()
-      return `<blockquote><p>${inner}</p></blockquote>`
+    // blockquotes (consecutive > lines grouped, preserving line breaks)
+    .replace(/(^>.*\n?)+/gm, (match) => {
+      const lines = match.replace(/^> ?/gm, '').trim().split('\n')
+      const paragraphs = lines.reduce<string[][]>((acc, line) => {
+        if (line.trim() === '') acc.push([])
+        else (acc.at(-1) ?? (acc.push([]), acc.at(-1)!)).push(line)
+        return acc
+      }, [[]])
+      const html = paragraphs.filter(p => p.length).map(p => `<p>${p.join('<br>')}</p>`).join('')
+      return `<blockquote>${html}</blockquote>`
     })
     // bold & italic
     .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')

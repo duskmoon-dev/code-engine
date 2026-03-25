@@ -82,7 +82,7 @@ const categories = categoryOrder
 
 <div class="export-filter">
   <input type="search" id="export-search" placeholder="Filter exports…" aria-label="Filter exports" />
-  <span id="export-match-count" class="match-count"></span>
+  <span id="export-match-count" class="match-count" aria-live="polite" aria-atomic="true"></span>
 </div>
 
 {categories.map(cat => (
