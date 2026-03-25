@@ -19,6 +19,7 @@ Initial release — deep fork of CodeMirror 6 + Lezer ecosystem.
 ### Infrastructure
 
 - GitHub Actions CI (typecheck, test, build)
-- 503 tests across 37 test files
+- 2900+ tests across 51 test files
 - Export verification script (84 paths verified)
 - Upstream tracking in UPSTREAM.md (52 modules with commit SHAs)
+- Interactive playground and API reference at [duskmoon-dev.github.io/code-engine](https://duskmoon-dev.github.io/code-engine/)
