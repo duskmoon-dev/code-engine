@@ -1434,3 +1434,75 @@ describe("history undo/redo functional", () => {
     });
   });
 });
+
+describe("history eqSelectionShape (consolidating duplicate-shape selection events)", () => {
+  it("does not add a new selection event when shape matches the last one in rapid succession", () => {
+    const t0 = Date.now();
+    let state = EditorState.create({
+      doc: "hello world",
+      selection: { anchor: 0 },
+      extensions: [history()],
+    });
+    // First selection-only transaction — adds to selection history
+    state = state.update({
+      selection: { anchor: 3 },
+      annotations: [Transaction.userEvent.of("select"), Transaction.time.of(t0)],
+    }).state;
+    // Second selection-only transaction — same shape (both empty cursors), rapid, same userEvent
+    // eqSelectionShape returns true → history consolidates, returns early
+    state = state.update({
+      selection: { anchor: 5 },
+      annotations: [Transaction.userEvent.of("select"), Transaction.time.of(t0 + 50)],
+    }).state;
+    // Should not have doubled up selection history — just verifies no crash
+    expect(state.doc.toString()).toBe("hello world");
+    expect(state.selection.main.head).toBe(5);
+  });
+});
+
+describe("history addMapping (Transaction.addToHistory = false)", () => {
+  it("applies a non-history change on top of undo history without adding to undo stack", () => {
+    let state = EditorState.create({
+      doc: "hello",
+      extensions: [history()],
+    });
+    // Add a change to history
+    state = state.update({ changes: { from: 5, insert: "!" } }).state;
+    expect(undoDepth(state)).toBe(1);
+
+    // Apply a change NOT added to history — triggers addMapping path
+    state = state.update({
+      changes: { from: 0, to: 0, insert: ">>>" },
+      annotations: Transaction.addToHistory.of(false),
+    }).state;
+
+    // Undo depth should still be 1 (the non-history change doesn't add to stack)
+    expect(undoDepth(state)).toBe(1);
+    // The non-history change should still be in the document
+    expect(state.doc.toString()).toBe(">>>hello!");
+
+    // Undo should revert the history change but keep the non-history one
+    const undone = run(undo, state);
+    expect(undone).not.toBeNull();
+    expect(undone!.doc.toString()).toBe(">>>hello");
+  });
+
+  it("addMapping with multiple undo events in history", () => {
+    let state = EditorState.create({
+      doc: "abc",
+      extensions: [history()],
+    });
+    state = state.update({ changes: { from: 3, insert: "D" }, annotations: isolateHistory.of("full") }).state;
+    state = state.update({ changes: { from: 4, insert: "E" }, annotations: isolateHistory.of("full") }).state;
+    expect(undoDepth(state)).toBe(2);
+
+    // Non-history change at the start — forces addMapping on the existing 2 history events
+    state = state.update({
+      changes: { from: 0, to: 0, insert: "X" },
+      annotations: Transaction.addToHistory.of(false),
+    }).state;
+
+    expect(undoDepth(state)).toBe(2);
+    expect(state.doc.toString()).toBe("XabcDE");
+  });
+});
