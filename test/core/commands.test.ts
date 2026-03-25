@@ -835,6 +835,34 @@ describe("comment commands with JavaScript", () => {
     expect(run(lineComment, state)).toBe(null);
     expect(run(blockComment, state)).toBe(null);
   });
+
+  it("blockUncomment with selection including comment markers covers findBlockComment second path", () => {
+    // Selection includes the /* and */ markers — triggers the startText/endText check (lines 99-106)
+    const state = jsState("/* let x = 1 */", 0, 15);
+    const result = run(blockUncomment, state)!;
+    expect(result.doc.toString()).toBe("let x = 1");
+  });
+
+  it("blockUncomment with large selection (>100 chars) covers else branch in findBlockComment", () => {
+    // to - from > 2*SearchMargin(50)=100 triggers the else branch (lines 95-96)
+    const inner = "x".repeat(120);
+    const doc = `/* ${inner} */`;
+    const state = jsState(doc, 0, doc.length);
+    const result = run(blockUncomment, state)!;
+    expect(result.doc.toString()).toBe(inner);
+  });
+
+  it("blockComment returns false when selection is already block-commented", () => {
+    // blockComment (CommentOption.Comment) on already-commented code returns null (line 151)
+    const state = jsState("/* let x = 1 */", 0, 15);
+    expect(run(blockComment, state)).toBe(null);
+  });
+
+  it("lineComment returns false when all lines are already commented", () => {
+    // lineComment (CommentOption.Comment) on already-commented line returns null (line 200)
+    const state = jsState("// let x = 1", 0);
+    expect(run(lineComment, state)).toBe(null);
+  });
 });
 
 describe("history undo/redo functional", () => {
