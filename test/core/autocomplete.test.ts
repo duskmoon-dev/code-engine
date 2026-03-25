@@ -221,6 +221,44 @@ describe("completeFromList", () => {
     ]);
     expect(typeof source).toBe("function");
   });
+
+  it("returns completions when cursor is after a word prefix", () => {
+    const source = completeFromList(["forEach", "filter", "find"]);
+    const state = EditorState.create({ doc: "arr.fo", selection: { anchor: 6 } });
+    const ctx = new CompletionContext(state, 6, false);
+    const result = source(ctx);
+    expect(result).not.toBeNull();
+    expect(result!.options.some(o => o.label === "forEach")).toBe(true);
+  });
+
+  it("returns null when no word prefix and not explicit", () => {
+    const source = completeFromList(["foo", "bar"]);
+    const state = EditorState.create({ doc: "let x = " });
+    const ctx = new CompletionContext(state, 8, false);
+    const result = source(ctx);
+    expect(result).toBeNull();
+  });
+
+  it("returns all completions on explicit trigger with no prefix", () => {
+    const source = completeFromList(["alpha", "beta", "gamma"]);
+    const state = EditorState.create({ doc: "x = " });
+    const ctx = new CompletionContext(state, 4, true);
+    const result = source(ctx);
+    expect(result).not.toBeNull();
+    expect(result!.options.length).toBe(3);
+  });
+
+  it("returns completions with Completion objects", () => {
+    const source = completeFromList([
+      { label: "myFunc", detail: "a function", type: "function" },
+      { label: "myConst", detail: "a constant", type: "variable" },
+    ]);
+    const state = EditorState.create({ doc: "my" });
+    const ctx = new CompletionContext(state, 2, false);
+    const result = source(ctx);
+    expect(result).not.toBeNull();
+    expect(result!.options.some(o => o.label === "myFunc")).toBe(true);
+  });
 });
 
 describe("snippetCompletion", () => {
