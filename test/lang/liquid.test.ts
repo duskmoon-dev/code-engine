@@ -7,6 +7,7 @@ import {
   type LiquidCompletionConfig,
 } from "../../src/lang/liquid/index";
 import { EditorState } from "../../src/core/state/index";
+import { syntaxTree } from "../../src/core/language/index";
 
 describe("Liquid language pack", () => {
   describe("exports", () => {
@@ -227,6 +228,27 @@ describe("Liquid language pack", () => {
         ],
       });
       expect(state.doc.toString()).toContain("product");
+    });
+  });
+
+  describe("parse tree", () => {
+    it("liquidLanguage parser produces a non-empty tree", () => {
+      const tree = liquidLanguage.parser.parse("{{ product.title | upcase }}");
+      expect(tree.length).toBeGreaterThan(0);
+    });
+
+    it("liquidLanguage parser tree has a top-level type", () => {
+      const tree = liquidLanguage.parser.parse("{% for item in collection.products %}<p>{{ item.title }}</p>{% endfor %}");
+      expect(tree.type.isTop).toBe(true);
+    });
+
+    it("syntaxTree from EditorState with liquid() is non-empty", () => {
+      const state = EditorState.create({
+        doc: "{% if user.admin %}<div>Admin panel</div>{% endif %}",
+        extensions: [liquid()],
+      });
+      const tree = syntaxTree(state);
+      expect(tree.length).toBeGreaterThan(0);
     });
   });
 });

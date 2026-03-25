@@ -7,6 +7,7 @@ import {
   type JinjaCompletionConfig,
 } from "../../src/lang/jinja/index";
 import { EditorState } from "../../src/core/state/index";
+import { syntaxTree } from "../../src/core/language/index";
 
 describe("Jinja language pack", () => {
   describe("exports", () => {
@@ -241,6 +242,27 @@ describe("Jinja language pack", () => {
         extensions: [jinja()],
       });
       expect(state.doc.toString()).toBe(doc);
+    });
+  });
+
+  describe("parse tree", () => {
+    it("jinjaLanguage parser produces a non-empty tree", () => {
+      const tree = jinjaLanguage.parser.parse("{{ user.name | upper }}");
+      expect(tree.length).toBeGreaterThan(0);
+    });
+
+    it("jinjaLanguage parser tree has a top-level type", () => {
+      const tree = jinjaLanguage.parser.parse("{% for item in items %}<p>{{ item }}</p>{% endfor %}");
+      expect(tree.type.isTop).toBe(true);
+    });
+
+    it("syntaxTree from EditorState with jinja() is non-empty", () => {
+      const state = EditorState.create({
+        doc: "{% if user.is_admin %}<div>Admin</div>{% endif %}",
+        extensions: [jinja()],
+      });
+      const tree = syntaxTree(state);
+      expect(tree.length).toBeGreaterThan(0);
     });
   });
 });
