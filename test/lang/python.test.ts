@@ -61,4 +61,27 @@ describe("Python language pack", () => {
     const tree = syntaxTree(state);
     expect(tree.length).toBeGreaterThan(0);
   });
+
+  it("python parse tree cursor traversal works", () => {
+    const tree = pythonLanguage.parser.parse("class Foo:\n    def __init__(self):\n        self.x = 1");
+    const cursor = tree.cursor();
+    let nodeCount = 0;
+    do { nodeCount++; } while (cursor.next() && nodeCount < 100);
+    expect(nodeCount).toBeGreaterThan(1);
+  });
+
+  it("python parse tree resolves node at position", () => {
+    const code = "import os\nprint(os.getcwd())";
+    const tree = pythonLanguage.parser.parse(code);
+    const node = tree.resolve(0);
+    expect(node).toBeDefined();
+    expect(node.type).toBeDefined();
+  });
+
+  it("python parse tree can parse complex expressions", () => {
+    const code = "result = [x**2 for x in range(10) if x % 2 == 0]";
+    const tree = pythonLanguage.parser.parse(code);
+    expect(tree.length).toBe(code.length);
+    expect(tree.type.isTop).toBe(true);
+  });
 });

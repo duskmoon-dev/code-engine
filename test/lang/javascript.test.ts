@@ -133,4 +133,30 @@ describe("JavaScript language pack", () => {
     const tree = syntaxTree(state);
     expect(tree.length).toBeGreaterThan(0);
   });
+
+  it("javascriptLanguage parser cursor traversal works", () => {
+    const tree = javascriptLanguage.parser.parse("function add(a, b) { return a + b; }");
+    const cursor = tree.cursor();
+    let nodeCount = 0;
+    do { nodeCount++; } while (cursor.next() && nodeCount < 100);
+    expect(nodeCount).toBeGreaterThan(1);
+  });
+
+  it("javascriptLanguage parser resolves node at position", () => {
+    const code = "const x = 42;";
+    const tree = javascriptLanguage.parser.parse(code);
+    const node = tree.resolve(6);
+    expect(node).toBeDefined();
+    expect(node.type).toBeDefined();
+  });
+
+  it("jsxLanguage is defined and has a name", () => {
+    expect(jsxLanguage).toBeDefined();
+    expect(jsxLanguage.name).toBeDefined();
+  });
+
+  it("tsxLanguage is defined and has a name", () => {
+    expect(tsxLanguage).toBeDefined();
+    expect(tsxLanguage.name).toBeDefined();
+  });
 });
