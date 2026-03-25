@@ -2,10 +2,13 @@
 import Layout from '../layouts/Layout.astro'
 import ExportList from '../components/ExportList.astro'
 import Changelog from '../components/Changelog.astro'
+const base = import.meta.env.BASE_URL
 ---
 <Layout title="API Reference">
   <h1>API Reference</h1>
-  <p>All exports from <code>@duskmoon-dev/code-engine</code>, organized by category.</p>
+  <p>All exports from <code>@duskmoon-dev/code-engine</code>, organized by category.
+    <a href={`${base}playground`} class="try-link">→ Try in Playground</a>
+  </p>
 
   <section class="exports">
     <h2>Exports</h2>
@@ -29,6 +32,11 @@ import Changelog from '../components/Changelog.astro'
 <style>
   h1 {
     margin-bottom: var(--space-sm);
+  }
+  .try-link {
+    margin-left: var(--space-sm);
+    font-size: 0.9em;
+    white-space: nowrap;
   }
   h2 {
     color: var(--color-accent);
