@@ -284,7 +284,7 @@ describe("Markdown language pack", () => {
 
   it("markdown() state deletion transaction works", () => {
     let state = EditorState.create({ doc: "# Title\n\nParagraph.", extensions: [markdown()] });
-    state = state.update({ changes: { from: 7, to: 20 } }).state;
+    state = state.update({ changes: { from: 7, to: 19 } }).state;
     expect(state.doc.toString()).toBe("# Title");
   });
 

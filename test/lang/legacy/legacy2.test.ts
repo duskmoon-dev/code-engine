@@ -413,7 +413,7 @@ describe("Legacy language packs (batch 2)", () => {
     it("commonLisp doc replacement transaction works", () => {
       const lang = StreamLanguage.define(commonLisp);
       let state = EditorState.create({ doc: "(defun foo () nil)", extensions: [new LanguageSupport(lang)] });
-      state = state.update({ changes: { from: 8, to: 11, insert: "bar" } }).state;
+      state = state.update({ changes: { from: 7, to: 10, insert: "bar" } }).state;
       expect(state.doc.toString()).toBe("(defun bar () nil)");
     });
 

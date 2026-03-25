@@ -350,7 +350,7 @@ describe("WAST language pack", () => {
 
     it("wast() state replacement transaction works", () => {
       let state = EditorState.create({ doc: "(module (memory 1))", extensions: [wast()] });
-      state = state.update({ changes: { from: 15, to: 16, insert: "2" } }).state;
+      state = state.update({ changes: { from: 16, to: 17, insert: "2" } }).state;
       expect(state.doc.toString()).toBe("(module (memory 2))");
     });
 

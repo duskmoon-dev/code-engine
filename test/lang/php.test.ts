@@ -290,7 +290,7 @@ describe("PHP language pack", () => {
 
   it("php() state allows multiple sequential transactions", () => {
     let state = EditorState.create({ doc: "<?php\n$x = 1;", extensions: [php()] });
-    state = state.update({ changes: { from: 14, insert: "\n$y = 2;" } }).state;
+    state = state.update({ changes: { from: 13, insert: "\n$y = 2;" } }).state;
     state = state.update({ changes: { from: state.doc.length, insert: "\n$z = 3;" } }).state;
     expect(state.doc.lines).toBe(4);
   });

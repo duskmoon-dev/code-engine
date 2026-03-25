@@ -406,7 +406,7 @@ describe("Legacy language packs (batch 8 - coverage completion)", () => {
       const lang = StreamLanguage.define(mirc);
       let state = EditorState.create({ doc: "on !*:TEXT:*:#:", extensions: [new LanguageSupport(lang)] });
       state = state.update({ changes: { from: 3, to: 4, insert: "*" } }).state;
-      expect(state.doc.toString()).toBe("on !*:TEXT:*:#:");
+      expect(state.doc.toString()).toBe("on **:TEXT:*:#:");
     });
 
     it("legacySql doc line count is correct", () => {
