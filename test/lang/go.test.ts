@@ -60,6 +60,22 @@ describe("Go language pack", () => {
     expect(tree.length).toBeGreaterThan(0);
   });
 
+  it("parse tree can be traversed with cursor", () => {
+    const code = "package main\nfunc main() {}";
+    const tree = goLanguage.parser.parse(code);
+    const cursor = tree.cursor();
+    let nodeCount = 0;
+    do { nodeCount++; } while (cursor.next() && nodeCount < 100);
+    expect(nodeCount).toBeGreaterThan(1);
+  });
+
+  it("parse tree resolve() finds node at position", () => {
+    const code = "package main\nimport \"fmt\"";
+    const tree = goLanguage.parser.parse(code);
+    const node = tree.resolve(0);
+    expect(node).toBeDefined();
+  });
+
   it("localCompletionSource returns null for non-word context", () => {
     const state = EditorState.create({
       doc: "package main\n\nfunc main() {\n  \n}",

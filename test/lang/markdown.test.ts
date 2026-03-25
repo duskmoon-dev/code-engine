@@ -94,4 +94,37 @@ describe("Markdown language pack", () => {
     expect(tree).toBeDefined();
     expect(tree.length).toBeGreaterThan(0);
   });
+
+  it("parser produces a tree with a top-level type", () => {
+    const tree = parser.parse("# Heading\n\nParagraph text.");
+    expect(tree.type.isTop).toBe(true);
+  });
+
+  it("parser can parse a table (GFM)", () => {
+    const tree = parser.configure([Table]).parse("| a | b |\n|---|---|\n| 1 | 2 |");
+    expect(tree.length).toBeGreaterThan(0);
+  });
+
+  it("parser can parse strikethrough (GFM)", () => {
+    const tree = parser.configure([Strikethrough]).parse("~~deleted text~~");
+    expect(tree.length).toBeGreaterThan(0);
+  });
+
+  it("markdownLanguage parser produces a tree from complex document", () => {
+    const doc = [
+      "# Title",
+      "",
+      "## Section",
+      "",
+      "- item 1",
+      "- item 2",
+      "",
+      "```js",
+      "const x = 1;",
+      "```",
+    ].join("\n");
+    const tree = markdownLanguage.parser.parse(doc);
+    expect(tree.length).toBeGreaterThan(0);
+    expect(tree.type.isTop).toBe(true);
+  });
 });

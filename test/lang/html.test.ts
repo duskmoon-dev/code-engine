@@ -98,4 +98,25 @@ describe("HTML language pack", () => {
     const tree = syntaxTree(state);
     expect(tree.length).toBeGreaterThan(0);
   });
+
+  it("html parser can traverse tree with cursor", () => {
+    const tree = htmlLanguage.parser.parse("<ul><li>item 1</li><li>item 2</li></ul>");
+    const cursor = tree.cursor();
+    let nodeCount = 0;
+    do { nodeCount++; } while (cursor.next() && nodeCount < 100);
+    expect(nodeCount).toBeGreaterThan(1);
+  });
+
+  it("html parser resolves a node at a position", () => {
+    const code = "<div id=\"main\">content</div>";
+    const tree = htmlLanguage.parser.parse(code);
+    const node = tree.resolve(5);
+    expect(node).toBeDefined();
+    expect(node.type).toBeDefined();
+  });
+
+  it("html() accepts selfClosingTags option", () => {
+    const support = html({ selfClosingTags: true });
+    expect(support).toBeDefined();
+  });
 });
