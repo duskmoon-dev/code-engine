@@ -124,4 +124,19 @@ describe('playground build output', () => {
     expect(html).toContain('23 languages')
     expect(html).toContain('43 exports')
   }))
+
+  it('playground has status bar', requireBuild(() => {
+    const html = readFileSync(join(distDir, 'playground/index.html'), 'utf-8')
+    expect(html).toContain('status-bar')
+    expect(html).toContain('status-pos')
+    expect(html).toContain('status-lang')
+    expect(html).toContain('status-doc')
+  }))
+
+  it('docs and playground pages have specific meta descriptions', requireBuild(() => {
+    const docs = readFileSync(join(distDir, 'docs/index.html'), 'utf-8')
+    expect(docs).toContain('Full API reference')
+    const playground = readFileSync(join(distDir, 'playground/index.html'), 'utf-8')
+    expect(playground).toContain('Interactive code editor playground')
+  }))
 })

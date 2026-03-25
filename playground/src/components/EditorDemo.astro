@@ -45,6 +45,7 @@
   </div>
   <div class="status-bar" role="status" aria-live="polite" aria-label="Editor status">
     <span id="status-pos">Ln 1, Col 1</span>
+    <span id="status-doc"></span>
     <span id="status-lang">JavaScript</span>
   </div>
   <noscript>
@@ -387,7 +388,14 @@ BinaryExpression { expression !add "+" expression }
 
   // Status bar elements
   const statusPos = document.getElementById('status-pos')!
+  const statusDoc = document.getElementById('status-doc')!
   const statusLang = document.getElementById('status-lang')!
+
+  function updateDocStats(doc: typeof EditorState.prototype.doc) {
+    const lines = doc.lines
+    const chars = doc.length
+    statusDoc.textContent = `${lines} line${lines !== 1 ? 's' : ''}, ${chars} char${chars !== 1 ? 's' : ''}`
+  }
 
   const statusBarUpdater = EditorView.updateListener.of((update) => {
     if (update.selectionSet || update.docChanged) {
@@ -395,6 +403,9 @@ BinaryExpression { expression !add "+" expression }
       const line = update.state.doc.lineAt(pos)
       const col = pos - line.from + 1
       statusPos.textContent = `Ln ${line.number}, Col ${col}`
+    }
+    if (update.docChanged) {
+      updateDocStats(update.state.doc)
     }
   })
 
@@ -428,6 +439,9 @@ BinaryExpression { expression !add "+" expression }
     }),
     parent: document.getElementById('editor')!,
   })
+
+  // Initialize doc stats
+  updateDocStats(view.state.doc)
 
   async function loadLanguage(key: string): Promise<() => LanguageSupport> {
     const cached = resolvedFactories.get(key)
