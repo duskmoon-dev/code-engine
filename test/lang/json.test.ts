@@ -175,5 +175,42 @@ describe("JSON language pack", () => {
         expect(node).toBeDefined();
       }
     });
+
+    it("jsonLanguage can parse nested array of arrays", () => {
+      const tree = jsonLanguage.parser.parse("[[1,2],[3,4],[5,6]]");
+      expect(tree.length).toBeGreaterThan(0);
+      expect(tree.type.isTop).toBe(true);
+    });
+
+    it("jsonLanguage can parse string escape sequences", () => {
+      const tree = jsonLanguage.parser.parse('{"text": "line1\\nline2\\ttab\\\"quote\\\\backslash"}');
+      expect(tree.length).toBeGreaterThan(0);
+    });
+
+    it("jsonLanguage can parse large integer values", () => {
+      const tree = jsonLanguage.parser.parse('{"big": 9007199254740992, "neg": -9007199254740992}');
+      expect(tree.length).toBeGreaterThan(0);
+      expect(tree.type.isTop).toBe(true);
+    });
+
+    it("jsonLanguage tree.toString() is non-empty", () => {
+      const tree = jsonLanguage.parser.parse('{"key": "value"}');
+      expect(typeof tree.toString()).toBe("string");
+      expect(tree.toString().length).toBeGreaterThan(0);
+    });
+
+    it("jsonLanguage can parse complex package.json-like structure", () => {
+      const code = '{"name":"pkg","version":"1.0.0","scripts":{"build":"tsc","test":"jest"},"dependencies":{"react":"^18.0.0"},"devDependencies":{"typescript":"^5.0.0"}}';
+      const tree = jsonLanguage.parser.parse(code);
+      expect(tree.length).toBe(code.length);
+      expect(tree.type.isTop).toBe(true);
+    });
+
+    it("jsonLanguage cursor counts reasonable node count for complex JSON", () => {
+      const tree = jsonLanguage.parser.parse('[{"id":1,"name":"Alice"},{"id":2,"name":"Bob"},{"id":3,"name":"Charlie"}]');
+      let nodeCount = 0;
+      tree.iterate({ enter: () => { nodeCount++; } });
+      expect(nodeCount).toBeGreaterThan(10);
+    });
   });
 });

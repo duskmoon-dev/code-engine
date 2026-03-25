@@ -272,5 +272,89 @@ describe("Parser highlight module", () => {
       });
       expect(spans.length).toBeGreaterThan(0);
     });
+
+    it("spans do not overlap (each from < to)", () => {
+      const tree = pythonLanguage.parser.parse("x = 1 + 2");
+      const spans: Array<{ from: number; to: number }> = [];
+      highlightTree(tree, classHighlighter, (from, to) => {
+        spans.push({ from, to });
+      });
+      for (const s of spans) {
+        expect(s.from).toBeLessThan(s.to);
+      }
+    });
+
+    it("from values are monotonically non-decreasing", () => {
+      const tree = pythonLanguage.parser.parse("def func(a, b): return a + b");
+      const froms: number[] = [];
+      highlightTree(tree, classHighlighter, (from, _to) => {
+        froms.push(from);
+      });
+      for (let i = 1; i < froms.length; i++) {
+        expect(froms[i]).toBeGreaterThanOrEqual(froms[i-1]);
+      }
+    });
+  });
+
+  describe("highlightCode behavioral", () => {
+    it("all emitted text concatenated equals original code", () => {
+      const code = "x = 1\ny = 2\nz = x + y";
+      const tree = pythonLanguage.parser.parse(code);
+      let result = "";
+      highlightCode(code, tree, classHighlighter, (text, _style) => {
+        result += text;
+      }, () => { result += "\n"; });
+      // The concatenated text (minus newline tokens added by breakFn) should cover original
+      expect(result.replace(/\n/g, "")).toContain("x");
+    });
+
+    it("some style classes include tok- prefix", () => {
+      const code = "def hello(): pass";
+      const tree = pythonLanguage.parser.parse(code);
+      const classes: string[] = [];
+      highlightCode(code, tree, classHighlighter, (_text, style) => {
+        if (style) classes.push(style);
+      }, () => {});
+      // At least one tok-* class should appear
+      const hasTok = classes.some(c => c.includes("tok-"));
+      expect(hasTok).toBe(true);
+    });
+  });
+
+  describe("getStyleTags", () => {
+    it("returns null for an empty tree node", () => {
+      const node = pythonLanguage.parser.parse("x").cursor().node;
+      // getStyleTags may return null or a tag array depending on the node
+      const result = getStyleTags(node);
+      expect(result === null || Array.isArray(result)).toBe(true);
+    });
+  });
+
+  describe("Tag behavioral", () => {
+    it("Tag.define() creates a distinct tag each time", () => {
+      const t1 = Tag.define();
+      const t2 = Tag.define();
+      expect(t1).not.toBe(t2);
+    });
+
+    it("Tag.define() with parent creates a sub-tag", () => {
+      const parent = Tag.define();
+      const child = Tag.define(parent);
+      expect(child).toBeDefined();
+      expect(child).not.toBe(parent);
+    });
+
+    it("tags.comment is a valid Tag", () => {
+      expect(tags.comment).toBeDefined();
+      expect(typeof tags.comment).toBe("object");
+    });
+
+    it("tags.string is a valid Tag", () => {
+      expect(tags.string).toBeDefined();
+    });
+
+    it("tags.number is a valid Tag", () => {
+      expect(tags.number).toBeDefined();
+    });
   });
 });

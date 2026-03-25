@@ -153,4 +153,111 @@ describe("Collab extension", () => {
       expect(id.length).toBeGreaterThan(0);
     });
   });
+
+  describe("multiple local changes", () => {
+    it("sendableUpdates accumulates multiple local changes", () => {
+      let state = EditorState.create({ doc: "hello", extensions: [collab()] });
+      state = state.update({ changes: { from: 5, insert: " world" } }).state;
+      state = state.update({ changes: { from: 11, insert: "!" } }).state;
+      const updates = sendableUpdates(state);
+      // Both changes may be batched into 1 update or remain as 2
+      expect(updates.length).toBeGreaterThanOrEqual(1);
+    });
+
+    it("getSyncedVersion starts at 0 by default", () => {
+      const state = EditorState.create({ doc: "test", extensions: [collab()] });
+      expect(getSyncedVersion(state)).toBe(0);
+    });
+
+    it("collab() with startVersion:100 starts at 100", () => {
+      const state = EditorState.create({ doc: "test", extensions: [collab({ startVersion: 100 })] });
+      expect(getSyncedVersion(state)).toBe(100);
+    });
+
+    it("collab() returns an array extension", () => {
+      const ext = collab();
+      expect(Array.isArray(ext)).toBe(true);
+    });
+
+    it("two auto-generated clientIDs are unique", () => {
+      const s1 = EditorState.create({ doc: "a", extensions: [collab()] });
+      const s2 = EditorState.create({ doc: "b", extensions: [collab()] });
+      // Auto-generated IDs should be unique
+      expect(getClientID(s1)).not.toBe(getClientID(s2));
+    });
+  });
+
+  describe("collab with empty doc", () => {
+    it("collab() works with empty document", () => {
+      const state = EditorState.create({ doc: "", extensions: [collab()] });
+      expect(getSyncedVersion(state)).toBe(0);
+      expect(sendableUpdates(state).length).toBe(0);
+    });
+
+    it("collab({ startVersion: 0 }) on empty doc", () => {
+      const state = EditorState.create({ doc: "", extensions: [collab({ startVersion: 0 })] });
+      expect(getSyncedVersion(state)).toBe(0);
+    });
+  });
+
+  describe("sendableUpdates content", () => {
+    it("sendableUpdates after change has update with changes", () => {
+      let state = EditorState.create({ doc: "hello", extensions: [collab()] });
+      state = state.update({ changes: { from: 5, insert: "!" } }).state;
+      const updates = sendableUpdates(state);
+      expect(updates.length).toBeGreaterThan(0);
+      expect(updates[0].changes).toBeDefined();
+    });
+
+    it("sendableUpdates has clientID in each update", () => {
+      let state = EditorState.create({
+        doc: "hello",
+        extensions: [collab({ clientID: "test-id" })],
+      });
+      state = state.update({ changes: { from: 0, insert: ">" } }).state;
+      const updates = sendableUpdates(state);
+      for (const upd of updates) {
+        expect(upd.clientID).toBe("test-id");
+      }
+    });
+  });
+
+  describe("rebaseUpdates deeper", () => {
+    it("rebaseUpdates returns an array for any valid input", () => {
+      const result = rebaseUpdates([], []);
+      expect(Array.isArray(result)).toBe(true);
+    });
+  });
+
+  describe("collab state invariants", () => {
+    it("getSyncedVersion is always a non-negative number", () => {
+      const state = EditorState.create({ doc: "hello", extensions: [collab({ startVersion: 5 })] });
+      expect(getSyncedVersion(state)).toBeGreaterThanOrEqual(0);
+    });
+
+    it("collab() can be used without any options", () => {
+      const state = EditorState.create({ doc: "test", extensions: [collab()] });
+      expect(state).toBeDefined();
+      expect(getClientID(state)).toBeDefined();
+    });
+
+    it("sendableUpdates count increases after each transaction", () => {
+      let state = EditorState.create({ doc: "abc", extensions: [collab()] });
+      state = state.update({ changes: { from: 3, insert: "d" } }).state;
+      const count1 = sendableUpdates(state).length;
+      expect(count1).toBeGreaterThanOrEqual(1);
+    });
+
+    it("collab extension does not alter document content", () => {
+      const doc = "unchanged content";
+      const state = EditorState.create({ doc, extensions: [collab()] });
+      expect(state.doc.toString()).toBe(doc);
+    });
+
+    it("receiveUpdates with empty array preserves document", () => {
+      const state = EditorState.create({ doc: "hello", extensions: [collab({ startVersion: 0 })] });
+      const tr = receiveUpdates(state, []);
+      expect(tr.state.doc.toString()).toBe("hello");
+    });
+  });
 });

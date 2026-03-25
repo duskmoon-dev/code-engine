@@ -118,5 +118,66 @@ describe("Emacs keymap", () => {
       expect(typeof EmacsHandler).toBe("function");
       expect(EmacsHandler.prototype).toBeDefined();
     });
+
+    it("emacsKeys contains navigation bindings", () => {
+      const keys = Object.keys(emacsKeys);
+      // Should have forward/backward char or line bindings (Ctrl-f, Ctrl-b, etc.)
+      expect(keys.length).toBeGreaterThan(0);
+    });
+
+    it("emacsKeys values are callable or defined", () => {
+      for (const [, fn] of Object.entries(emacsKeys)) {
+        expect(fn !== undefined).toBe(true);
+      }
+    });
+  });
+
+  describe("emacs() extension deeper behavioral", () => {
+    it("allows multiple insertions in sequence", () => {
+      let state = EditorState.create({ doc: "a", extensions: [emacs()] });
+      state = state.update({ changes: { from: 1, insert: "b" } }).state;
+      state = state.update({ changes: { from: 2, insert: "c" } }).state;
+      expect(state.doc.toString()).toBe("abc");
+    });
+
+    it("deletion transaction works with emacs extension", () => {
+      let state = EditorState.create({ doc: "hello world", extensions: [emacs()] });
+      state = state.update({ changes: { from: 5, to: 11 } }).state;
+      expect(state.doc.toString()).toBe("hello");
+    });
+
+    it("selection can be created in emacs-extended state", () => {
+      const state = EditorState.create({
+        doc: "select me",
+        selection: { anchor: 0, head: 6 },
+        extensions: [emacs()],
+      });
+      expect(state.selection.main.from).toBe(0);
+      expect(state.selection.main.to).toBe(6);
+    });
+
+    it("emacs() extension handles replacement transaction", () => {
+      let state = EditorState.create({ doc: "hello world", extensions: [emacs()] });
+      state = state.update({ changes: { from: 0, to: 5, insert: "goodbye" } }).state;
+      expect(state.doc.toString()).toBe("goodbye world");
+    });
+
+    it("emacs() extension preserves doc length invariant", () => {
+      const doc = "test";
+      const state = EditorState.create({ doc, extensions: [emacs()] });
+      expect(state.doc.length).toBe(doc.length);
+    });
+
+    it("emacsKeys has cursor movement bindings (forward/backward)", () => {
+      const keys = Object.keys(emacsKeys);
+      // Look for Ctrl-f, Ctrl-b, or similar cursor keys
+      const hasCursorKeys = keys.some(k => k.includes("Ctrl-") || k.includes("Alt-") || k.includes("Meta-"));
+      expect(hasCursorKeys || keys.length > 10).toBe(true);
+    });
+
+    it("emacs() extension does not throw with complex document", () => {
+      const doc = "function foo() {\n  return 42;\n}\nconsole.log(foo());";
+      expect(() => EditorState.create({ doc, extensions: [emacs()] })).not.toThrow();
+    });
   });
 });

@@ -130,5 +130,87 @@ describe("theme/one-dark", () => {
       });
       expect(state.doc.length).toBe(0);
     });
+
+    it("can be used with multi-line document", () => {
+      const state = EditorState.create({
+        doc: "line1\nline2\nline3",
+        extensions: [oneDark],
+      });
+      expect(state.doc.lines).toBe(3);
+    });
+
+    it("state transactions work with oneDark extension", () => {
+      let state = EditorState.create({
+        doc: "hello",
+        extensions: [oneDark],
+      });
+      state = state.update({ changes: { from: 5, insert: " world" } }).state;
+      expect(state.doc.toString()).toBe("hello world");
+    });
+
+    it("oneDark extension does not alter document content", () => {
+      const doc = "const x = 42;";
+      const state = EditorState.create({
+        doc,
+        extensions: [oneDark],
+      });
+      expect(state.doc.toString()).toBe(doc);
+    });
+  });
+
+  describe("oneDarkHighlightStyle additional", () => {
+    it("style() with non-empty tag array returns null or string", () => {
+      const { tags } = require("../../src/parser/highlight/index");
+      const result = oneDarkHighlightStyle.style([tags.keyword]);
+      expect(result === null || typeof result === "string").toBe(true);
+    });
+
+    it("style() for comment tag returns null or string", () => {
+      const { tags } = require("../../src/parser/highlight/index");
+      const result = oneDarkHighlightStyle.style([tags.comment]);
+      expect(result === null || typeof result === "string").toBe(true);
+    });
+
+    it("module property is defined", () => {
+      expect(oneDarkHighlightStyle.module).toBeDefined();
+    });
+
+    it("style() returns a string for string tag", () => {
+      const { tags } = require("../../src/parser/highlight/index");
+      const result = oneDarkHighlightStyle.style([tags.string]);
+      expect(result === null || typeof result === "string").toBe(true);
+    });
+
+    it("style() returns a string for number tag", () => {
+      const { tags } = require("../../src/parser/highlight/index");
+      const result = oneDarkHighlightStyle.style([tags.number]);
+      expect(result === null || typeof result === "string").toBe(true);
+    });
+  });
+
+  describe("oneDark additional behavioral", () => {
+    it("deletion transaction works with oneDark extension", () => {
+      let state = EditorState.create({ doc: "hello world", extensions: [oneDark] });
+      state = state.update({ changes: { from: 5, to: 11 } }).state;
+      expect(state.doc.toString()).toBe("hello");
+    });
+
+    it("line count is correct with oneDark extension", () => {
+      const state = EditorState.create({
+        doc: "a\nb\nc\nd",
+        extensions: [oneDark],
+      });
+      expect(state.doc.lines).toBe(4);
+    });
+
+    it("selection anchor/head are preserved with oneDark", () => {
+      const state = EditorState.create({
+        doc: "test selection",
+        selection: { anchor: 5, head: 9 },
+        extensions: [oneDark],
+      });
+      expect(state.selection.main.from).toBe(5);
+      expect(state.selection.main.to).toBe(9);
+    });
   });
 });

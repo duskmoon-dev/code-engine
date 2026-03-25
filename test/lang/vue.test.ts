@@ -199,5 +199,41 @@ describe("Vue language pack", () => {
       expect(tree.length).toBeGreaterThan(0);
       expect(tree.type.isTop).toBe(true);
     });
+
+    it("vueLanguage can parse emits option", () => {
+      const tree = vueLanguage.parser.parse("<script>\nexport default {\n  emits: ['update', 'submit'],\n  methods: { submit() { this.$emit('submit') } }\n}\n</script>");
+      expect(tree.length).toBeGreaterThan(0);
+    });
+
+    it("vueLanguage can parse watch option", () => {
+      const tree = vueLanguage.parser.parse("<script>\nexport default {\n  watch: {\n    count(newVal, oldVal) { console.log(newVal, oldVal); },\n    items: { handler(val) {}, deep: true, immediate: true }\n  }\n}\n</script>");
+      expect(tree.length).toBeGreaterThan(0);
+      expect(tree.type.isTop).toBe(true);
+    });
+
+    it("vueLanguage can parse Composition API with defineProps", () => {
+      const tree = vueLanguage.parser.parse("<script setup>\nconst props = defineProps({ title: String, count: { type: Number, default: 0 } })\nconst emit = defineEmits(['update'])\n</script>");
+      expect(tree.length).toBeGreaterThan(0);
+    });
+
+    it("vueLanguage tree.toString() returns non-empty string", () => {
+      const tree = vueLanguage.parser.parse("<template><div>hello</div></template>");
+      expect(typeof tree.toString()).toBe("string");
+      expect(tree.toString().length).toBeGreaterThan(0);
+    });
+
+    it("tree.resolveInner() finds innermost node in Vue template", () => {
+      const tree = vueLanguage.parser.parse("<template><p>text</p></template>");
+      const node = tree.resolveInner(12);
+      expect(node).toBeDefined();
+      expect(node.from).toBeLessThanOrEqual(12);
+      expect(node.to).toBeGreaterThanOrEqual(12);
+    });
+
+    it("vueLanguage can parse teleport component", () => {
+      const tree = vueLanguage.parser.parse("<template><Teleport to=\"body\"><modal-dialog v-if=\"open\"/></Teleport></template>");
+      expect(tree.length).toBeGreaterThan(0);
+      expect(tree.type.isTop).toBe(true);
+    });
   });
 });

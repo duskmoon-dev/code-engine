@@ -144,5 +144,51 @@ describe("Less language pack", () => {
       const tree = lessLanguage.parser.parse("@import (reference) \"variables\";\n@import \"mixins\";");
       expect(tree.length).toBeGreaterThan(0);
     });
+
+    it("lessLanguage can parse pseudo-classes and pseudo-elements", () => {
+      const tree = lessLanguage.parser.parse("a:hover { color: blue; } p::first-line { font-weight: bold; }");
+      expect(tree.length).toBeGreaterThan(0);
+      expect(tree.type.isTop).toBe(true);
+    });
+
+    it("lessLanguage can parse media queries", () => {
+      const tree = lessLanguage.parser.parse("@media (max-width: 768px) { .container { width: 100%; } }");
+      expect(tree.length).toBeGreaterThan(0);
+    });
+
+    it("lessLanguage can parse gradient functions", () => {
+      const tree = lessLanguage.parser.parse(".gradient { background: linear-gradient(to right, #f00, #00f); }");
+      expect(tree.length).toBeGreaterThan(0);
+      expect(tree.type.isTop).toBe(true);
+    });
+
+    it("lessLanguage can parse detached rulesets", () => {
+      const tree = lessLanguage.parser.parse("@my-rules: { color: blue; font-size: 14px; }; .foo { @my-rules(); }");
+      expect(tree.length).toBeGreaterThan(0);
+    });
+
+    it("lessLanguage can parse parametric mixin with defaults", () => {
+      const tree = lessLanguage.parser.parse(".border-radius(@radius: 5px) { border-radius: @radius; }\n.box { .border-radius(10px); }");
+      expect(tree.length).toBeGreaterThan(0);
+      expect(tree.type.isTop).toBe(true);
+    });
+
+    it("lessLanguage can parse parent selector reference", () => {
+      const tree = lessLanguage.parser.parse(".link { color: blue; &:hover { color: red; } &.active { font-weight: bold; } }");
+      expect(tree.length).toBeGreaterThan(0);
+    });
+
+    it("lessLanguage can parse string interpolation", () => {
+      const tree = lessLanguage.parser.parse("@base-url: 'http://fonts.google.com'; .class { background: url(\"@{base-url}/logo.png\"); }");
+      expect(tree.length).toBeGreaterThan(0);
+    });
+
+    it("tree.resolveInner() finds innermost node in less code", () => {
+      const tree = lessLanguage.parser.parse("@color: red;\n.box { color: @color; }");
+      const node = tree.resolveInner(5);
+      expect(node).toBeDefined();
+      expect(node.from).toBeLessThanOrEqual(5);
+      expect(node.to).toBeGreaterThanOrEqual(5);
+    });
   });
 });

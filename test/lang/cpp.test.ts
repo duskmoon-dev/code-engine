@@ -133,4 +133,53 @@ describe("C++ language pack", () => {
     expect(tree.length).toBeGreaterThan(0);
     expect(tree.type.isTop).toBe(true);
   });
+
+  it("cppLanguage can parse inheritance", () => {
+    const tree = cppLanguage.parser.parse("class Animal { public: virtual void speak() = 0; };\nclass Dog : public Animal { public: void speak() override { } };");
+    expect(tree.length).toBeGreaterThan(0);
+    expect(tree.type.isTop).toBe(true);
+  });
+
+  it("cppLanguage can parse operator overloading", () => {
+    const tree = cppLanguage.parser.parse("struct Vec2 { float x, y; Vec2 operator+(const Vec2& o) const { return {x+o.x, y+o.y}; } };");
+    expect(tree.length).toBeGreaterThan(0);
+    expect(tree.type.isTop).toBe(true);
+  });
+
+  it("cppLanguage can parse multiple inheritance", () => {
+    const tree = cppLanguage.parser.parse("class C : public A, public B { };");
+    expect(tree.length).toBeGreaterThan(0);
+  });
+
+  it("cppLanguage can parse static member function", () => {
+    const tree = cppLanguage.parser.parse("class Counter { static int count; public: static int get() { return count; } };");
+    expect(tree.length).toBeGreaterThan(0);
+  });
+
+  it("cppLanguage can parse type alias with using", () => {
+    const tree = cppLanguage.parser.parse("using StringVec = std::vector<std::string>;\nusing Callback = std::function<void(int)>;");
+    expect(tree.length).toBeGreaterThan(0);
+    expect(tree.type.isTop).toBe(true);
+  });
+
+  it("cppLanguage can parse try-catch with multiple exceptions", () => {
+    const tree = cppLanguage.parser.parse("try { risky(); } catch (const std::runtime_error& e) { } catch (const std::exception& e) { } catch (...) { }");
+    expect(tree.length).toBeGreaterThan(0);
+  });
+
+  it("cppLanguage can parse nullptr and modern cast", () => {
+    const tree = cppLanguage.parser.parse("int* p = nullptr; int x = static_cast<int>(3.14); auto* q = dynamic_cast<Derived*>(p);");
+    expect(tree.length).toBeGreaterThan(0);
+  });
+
+  it("cppLanguage can parse structured bindings", () => {
+    const tree = cppLanguage.parser.parse("auto [x, y] = getPoint(); auto& [key, val] = *map.begin();");
+    expect(tree.length).toBeGreaterThan(0);
+  });
+
+  it("cppLanguage can parse conditional expression chains", () => {
+    const tree = cppLanguage.parser.parse("int sign = (x > 0) ? 1 : (x < 0) ? -1 : 0;");
+    expect(tree.length).toBeGreaterThan(0);
+    expect(tree.type.isTop).toBe(true);
+  });
 });

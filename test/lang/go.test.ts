@@ -145,6 +145,53 @@ describe("Go language pack", () => {
     expect(tree.length).toBeGreaterThan(0);
   });
 
+  it("goLanguage can parse map literal", () => {
+    const tree = goLanguage.parser.parse("m := map[string]int{\"a\": 1, \"b\": 2}\nm[\"c\"] = 3");
+    expect(tree.length).toBeGreaterThan(0);
+    expect(tree.type.isTop).toBe(true);
+  });
+
+  it("goLanguage can parse type assertion", () => {
+    const tree = goLanguage.parser.parse("var i interface{} = \"hello\"\ns, ok := i.(string)\nif ok { fmt.Println(s) }");
+    expect(tree.length).toBeGreaterThan(0);
+  });
+
+  it("goLanguage can parse switch statement", () => {
+    const tree = goLanguage.parser.parse("switch x := 5; { case x < 0: fmt.Println(\"neg\") case x == 0: fmt.Println(\"zero\") default: fmt.Println(\"pos\") }");
+    expect(tree.length).toBeGreaterThan(0);
+    expect(tree.type.isTop).toBe(true);
+  });
+
+  it("goLanguage can parse type switch", () => {
+    const tree = goLanguage.parser.parse("switch v := i.(type) { case int: fmt.Printf(\"int %d\", v) case string: fmt.Printf(\"string %s\", v) default: fmt.Println(\"other\") }");
+    expect(tree.length).toBeGreaterThan(0);
+  });
+
+  it("goLanguage can parse const block", () => {
+    const tree = goLanguage.parser.parse("const ( A = iota; B; C; D )");
+    expect(tree.length).toBeGreaterThan(0);
+    expect(tree.type.isTop).toBe(true);
+  });
+
+  it("goLanguage can parse pointer operations", () => {
+    const tree = goLanguage.parser.parse("x := 42\np := &x\n*p = 100\nfmt.Println(x)");
+    expect(tree.length).toBeGreaterThan(0);
+  });
+
+  it("goLanguage can parse multiple return values", () => {
+    const tree = goLanguage.parser.parse("func divide(a, b float64) (float64, error) { if b == 0 { return 0, errors.New(\"div by zero\") }\nreturn a / b, nil }");
+    expect(tree.length).toBeGreaterThan(0);
+    expect(tree.type.isTop).toBe(true);
+  });
+
+  it("tree.resolveInner() finds innermost node in Go code", () => {
+    const tree = goLanguage.parser.parse("package main\nfunc main() { x := 1 }");
+    const node = tree.resolveInner(20);
+    expect(node).toBeDefined();
+    expect(node.from).toBeLessThanOrEqual(20);
+    expect(node.to).toBeGreaterThanOrEqual(20);
+  });
+
   it("localCompletionSource returns null for non-word context", () => {
     const state = EditorState.create({
       doc: "package main\n\nfunc main() {\n  \n}",

@@ -134,5 +134,45 @@ describe("Vim keymap", () => {
     it("Vim.mapCommand is a function if available", () => {
       expect(Vim.mapCommand === undefined || typeof Vim.mapCommand === "function").toBe(true);
     });
+
+    it("vim() extension allows deletion", () => {
+      let state = EditorState.create({ doc: "hello world", extensions: [vim()] });
+      state = state.update({ changes: { from: 5, to: 11 } }).state;
+      expect(state.doc.toString()).toBe("hello");
+    });
+
+    it("vim() extension with empty document works", () => {
+      const state = EditorState.create({ doc: "", extensions: [vim()] });
+      expect(state.doc.length).toBe(0);
+    });
+
+    it("vim() preserves selection in state", () => {
+      const state = EditorState.create({
+        doc: "select me",
+        selection: { anchor: 0, head: 6 },
+        extensions: [vim()],
+      });
+      expect(state.selection.main.from).toBe(0);
+      expect(state.selection.main.to).toBe(6);
+    });
+
+    it("multiple sequential transactions work with vim extension", () => {
+      let state = EditorState.create({ doc: "a", extensions: [vim()] });
+      state = state.update({ changes: { from: 1, insert: "b" } }).state;
+      state = state.update({ changes: { from: 2, insert: "c" } }).state;
+      expect(state.doc.toString()).toBe("abc");
+    });
+
+    it("Vim.defineEx can register custom command", () => {
+      expect(() => {
+        Vim.defineEx("test-noop", "", () => {});
+      }).not.toThrow();
+    });
+
+    it("Vim.setOption can set vim options", () => {
+      expect(() => {
+        Vim.setOption("filetype", "javascript");
+      }).not.toThrow();
+    });
   });
 });

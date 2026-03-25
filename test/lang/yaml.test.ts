@@ -150,4 +150,48 @@ describe("YAML language pack", () => {
       expect(node).toBeDefined();
     }
   });
+
+  it("yamlLanguage can parse anchors and aliases", () => {
+    const tree = yamlLanguage.parser.parse("defaults: &defaults\n  color: blue\n  size: large\nbtn:\n  <<: *defaults\n  color: red");
+    expect(tree.length).toBeGreaterThan(0);
+    expect(tree.type.isTop).toBe(true);
+  });
+
+  it("yamlLanguage can parse explicit document markers", () => {
+    const tree = yamlLanguage.parser.parse("---\nkey: value\n...");
+    expect(tree.length).toBeGreaterThan(0);
+  });
+
+  it("yamlLanguage can parse quoted strings", () => {
+    const tree = yamlLanguage.parser.parse("single: 'hello world'\ndouble: \"foo: bar\"\nnewline: \"line1\\nline2\"");
+    expect(tree.length).toBeGreaterThan(0);
+    expect(tree.type.isTop).toBe(true);
+  });
+
+  it("yamlLanguage can parse deeply nested mapping", () => {
+    const tree = yamlLanguage.parser.parse("a:\n  b:\n    c:\n      d:\n        e: value");
+    expect(tree.length).toBeGreaterThan(0);
+  });
+
+  it("yamlLanguage cursor counts reasonable node count", () => {
+    const code = "name: Alice\nage: 30\nroles:\n  - admin\n  - user\naddress:\n  city: NYC\n  zip: '10001'";
+    const tree = yamlLanguage.parser.parse(code);
+    let nodeCount = 0;
+    tree.iterate({ enter: () => { nodeCount++; } });
+    expect(nodeCount).toBeGreaterThan(5);
+  });
+
+  it("yamlLanguage tree.toString() returns non-empty string", () => {
+    const tree = yamlLanguage.parser.parse("key: value");
+    expect(typeof tree.toString()).toBe("string");
+    expect(tree.toString().length).toBeGreaterThan(0);
+  });
+
+  it("tree.resolveInner() finds innermost node in YAML", () => {
+    const tree = yamlLanguage.parser.parse("key: value\nother: 42");
+    const node = tree.resolveInner(5);
+    expect(node).toBeDefined();
+    expect(node.from).toBeLessThanOrEqual(5);
+    expect(node.to).toBeGreaterThanOrEqual(5);
+  });
 });

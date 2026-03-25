@@ -232,3 +232,57 @@ describe("setDiagnostics severity types", () => {
     expect(diagnosticCount(state)).toBe(1);
   });
 });
+
+describe("setDiagnosticsEffect", () => {
+  it("is a StateEffect instance", () => {
+    expect(setDiagnosticsEffect).toBeDefined();
+    // StateEffect has 'of' method
+    expect(typeof setDiagnosticsEffect.of).toBe("function");
+  });
+});
+
+describe("lintKeymap depth", () => {
+  it("lintKeymap has at least 2 bindings", () => {
+    expect(lintKeymap.length).toBeGreaterThanOrEqual(2);
+  });
+
+  it("all lintKeymap keys are non-empty strings", () => {
+    for (const binding of lintKeymap) {
+      expect(binding.key.length).toBeGreaterThan(0);
+    }
+  });
+});
+
+describe("diagnosticCount after clearing", () => {
+  it("returns 0 after clearing diagnostics", () => {
+    let state = EditorState.create({ doc: "test" });
+    const setSpec = setDiagnostics(state, [
+      { from: 0, to: 4, severity: "error", message: "oops" },
+    ]);
+    state = state.update(setSpec).state;
+    expect(diagnosticCount(state)).toBe(1);
+
+    const clearSpec = setDiagnostics(state, []);
+    state = state.update(clearSpec).state;
+    expect(diagnosticCount(state)).toBe(0);
+  });
+});
+
+describe("forEachDiagnostic provides correct position info", () => {
+  it("diagnostic has correct from/to positions", () => {
+    const state = EditorState.create({ doc: "hello world" });
+    const spec = setDiagnostics(state, [
+      { from: 0, to: 5, severity: "error", message: "first word" },
+      { from: 6, to: 11, severity: "warning", message: "second word" },
+    ]);
+    const newState = state.update(spec).state;
+    const positions: Array<{from: number, to: number}> = [];
+    forEachDiagnostic(newState, (d, from, to) => {
+      positions.push({ from, to });
+    });
+    expect(positions[0].from).toBe(0);
+    expect(positions[0].to).toBe(5);
+    expect(positions[1].from).toBe(6);
+    expect(positions[1].to).toBe(11);
+  });
+});

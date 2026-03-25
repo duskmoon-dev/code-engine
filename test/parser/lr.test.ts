@@ -145,5 +145,44 @@ describe("LR Parser module", () => {
       const name = parser.getName(0);
       expect(typeof name).toBe("string");
     });
+
+    it("LRParser.eofTerm is a number", () => {
+      const parser = pythonLanguage.parser as LRParser;
+      expect(typeof parser.eofTerm).toBe("number");
+    });
+
+    it("LRParser.nodeSet.types includes named types", () => {
+      const parser = pythonLanguage.parser as LRParser;
+      const named = parser.nodeSet.types.filter(t => t.name !== "");
+      expect(named.length).toBeGreaterThan(0);
+    });
+
+    it("parsed tree toString() returns a string", () => {
+      const tree = pythonLanguage.parser.parse("x = 1");
+      expect(typeof tree.toString()).toBe("string");
+      expect(tree.toString().length).toBeGreaterThan(0);
+    });
+
+    it("tree.iterate() visits at least one node", () => {
+      const tree = pythonLanguage.parser.parse("x = 1 + 2");
+      let count = 0;
+      tree.iterate({ enter: () => { count++; } });
+      expect(count).toBeGreaterThan(0);
+    });
+
+    it("tree.resolveInner() finds innermost node", () => {
+      const tree = pythonLanguage.parser.parse("print(42)");
+      const node = tree.resolveInner(6);
+      expect(node).toBeDefined();
+      expect(node.from).toBeLessThanOrEqual(6);
+      expect(node.to).toBeGreaterThanOrEqual(6);
+    });
+
+    it("LRParser.nodeSet has types with id property", () => {
+      const parser = pythonLanguage.parser as LRParser;
+      for (const t of parser.nodeSet.types.slice(0, 5)) {
+        expect(typeof t.id).toBe("number");
+      }
+    });
   });
 });

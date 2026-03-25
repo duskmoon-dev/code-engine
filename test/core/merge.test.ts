@@ -214,4 +214,41 @@ describe("diff behavioral tests", () => {
       expect(changes[i].fromA).toBeGreaterThanOrEqual(changes[i - 1].toA);
     }
   });
+
+  it("diff handles multiline strings", () => {
+    const a = "line1\nline2\nline3";
+    const b = "line1\nLINE2\nline3";
+    const changes = diff(a, b);
+    expect(changes.length).toBeGreaterThan(0);
+    let result = "";
+    let pos = 0;
+    for (const c of changes) {
+      result += a.slice(pos, c.fromA);
+      result += b.slice(c.fromB, c.toB);
+      pos = c.toA;
+    }
+    result += a.slice(pos);
+    expect(result).toBe(b);
+  });
+
+  it("diff with same prefix and suffix, changed middle", () => {
+    const a = "prefix MIDDLE suffix";
+    const b = "prefix changed suffix";
+    const changes = diff(a, b);
+    expect(changes.length).toBeGreaterThan(0);
+  });
+
+  it("presentableDiff with no changes returns empty array", () => {
+    const result = presentableDiff("abc", "abc");
+    expect(Array.isArray(result)).toBe(true);
+    expect(result.length).toBe(0);
+  });
+
+  it("Change constructor stores correct values", () => {
+    const c = new Change(10, 20, 15, 25);
+    expect(c.fromA).toBe(10);
+    expect(c.toA).toBe(20);
+    expect(c.fromB).toBe(15);
+    expect(c.toB).toBe(25);
+  });
 });

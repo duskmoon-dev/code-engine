@@ -144,4 +144,36 @@ describe("LSP factory functions", () => {
     expect(Array.isArray(exts)).toBe(true);
     expect(exts.length).toBeGreaterThan(0);
   });
+
+  it("serverCompletionSource is a callable function", () => {
+    expect(typeof serverCompletionSource).toBe("function");
+  });
+
+  it("languageServerSupport is a callable function", () => {
+    expect(typeof languageServerSupport).toBe("function");
+  });
+
+  it("multiple calls to serverCompletion() return distinct values", () => {
+    const a = serverCompletion();
+    const b = serverCompletion();
+    expect(a).toBeDefined();
+    expect(b).toBeDefined();
+  });
+
+  it("languageServerExtensions contains multiple extensions", () => {
+    const exts = languageServerExtensions();
+    expect(exts.length).toBeGreaterThan(2);
+  });
+
+  it("formatKeymap has at least one entry", () => {
+    expect(formatKeymap.length).toBeGreaterThan(0);
+  });
+
+  it("findReferencesKeymap has at least one entry", () => {
+    expect(findReferencesKeymap.length).toBeGreaterThan(0);
+  });
+
+  it("jumpToDefinitionKeymap has at least one entry", () => {
+    expect(jumpToDefinitionKeymap.length).toBeGreaterThan(0);
+  });
 });

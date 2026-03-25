@@ -217,5 +217,35 @@ describe("Lezer language pack", () => {
       const tree = lezerLanguage.parser.parse("@top Expr { @specialize[@name=Add]<Expr, \"+\"> | Number }");
       expect(tree.length).toBeGreaterThan(0);
     });
+
+    it("lezerLanguage tree.toString() returns non-empty string", () => {
+      const tree = lezerLanguage.parser.parse("@top Program { statement* }");
+      expect(typeof tree.toString()).toBe("string");
+      expect(tree.toString().length).toBeGreaterThan(0);
+    });
+
+    it("tree.resolveInner() finds innermost node in lezer grammar", () => {
+      const tree = lezerLanguage.parser.parse("@top Program { expr* }\nexpr { Number | String }");
+      const node = tree.resolveInner(5);
+      expect(node).toBeDefined();
+      expect(node.from).toBeLessThanOrEqual(5);
+      expect(node.to).toBeGreaterThanOrEqual(5);
+    });
+
+    it("lezerLanguage can parse @local tokens", () => {
+      const tree = lezerLanguage.parser.parse("@local tokens { String { '\"' (![\"])* '\"' } }");
+      expect(tree.length).toBeGreaterThan(0);
+    });
+
+    it("lezerLanguage can parse precedence annotation", () => {
+      const tree = lezerLanguage.parser.parse("expression[@isGroup=Expression] { Number | expression !left \"+\" expression }");
+      expect(tree.length).toBeGreaterThan(0);
+      expect(tree.type.isTop).toBe(true);
+    });
+
+    it("lezerLanguage can parse external tokens", () => {
+      const tree = lezerLanguage.parser.parse("@external tokens tokenizer from \"./tokens\" { Identifier String Number }");
+      expect(tree.length).toBeGreaterThan(0);
+    });
   });
 });

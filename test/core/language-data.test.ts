@@ -172,4 +172,74 @@ describe("LanguageDescription.load()", () => {
     const support = await desc.load();
     expect(support).toBeDefined();
   });
+
+  it("Sass load() returns a LanguageSupport", async () => {
+    const desc = languages.find(l => l.name === "Sass");
+    if (desc) {
+      const support = await desc.load();
+      expect(support).toBeDefined();
+    }
+  });
+
+  it("Less load() returns a LanguageSupport", async () => {
+    const desc = languages.find(l => l.name === "Less");
+    if (desc) {
+      const support = await desc.load();
+      expect(support).toBeDefined();
+    }
+  });
+
+  it("PHP load() returns a LanguageSupport", async () => {
+    const desc = languages.find(l => l.name === "PHP");
+    if (desc) {
+      const support = await desc.load();
+      expect(support).toBeDefined();
+    }
+  });
+});
+
+describe("LanguageDescription extra matching", () => {
+  it("matches .scss to Sass or SCSS", () => {
+    const match = LanguageDescription.matchFilename(languages, "styles.scss");
+    // May be Sass or SCSS depending on language entries
+    if (match) {
+      expect(typeof match.name).toBe("string");
+    }
+  });
+
+  it("matches .go to Go", () => {
+    const match = LanguageDescription.matchFilename(languages, "main.go");
+    expect(match).toBeDefined();
+    expect(match!.name).toBe("Go");
+  });
+
+  it("matches .java to Java", () => {
+    const match = LanguageDescription.matchFilename(languages, "Main.java");
+    expect(match).toBeDefined();
+    expect(match!.name).toBe("Java");
+  });
+
+  it("matches .md to Markdown", () => {
+    const match = LanguageDescription.matchFilename(languages, "README.md");
+    expect(match).toBeDefined();
+    expect(match!.name).toBe("Markdown");
+  });
+
+  it("matches .yaml to YAML", () => {
+    const match = LanguageDescription.matchFilename(languages, "config.yaml");
+    expect(match).toBeDefined();
+    expect(match!.name).toBe("YAML");
+  });
+
+  it("matches .xml to XML", () => {
+    const match = LanguageDescription.matchFilename(languages, "data.xml");
+    expect(match).toBeDefined();
+    expect(match!.name).toBe("XML");
+  });
+
+  it("matchLanguageName is case-insensitive", () => {
+    const match = LanguageDescription.matchLanguageName(languages, "javascript");
+    expect(match).toBeDefined();
+    expect(match!.name).toBe("JavaScript");
+  });
 });

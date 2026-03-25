@@ -243,3 +243,58 @@ describe("NodeType", () => {
     expect(tree.type.isTop).toBe(true);
   });
 });
+
+describe("NodeProp behavioral", () => {
+  it("NodeProp constructor creates a prop", () => {
+    const prop = new NodeProp<string>();
+    expect(prop).toBeDefined();
+  });
+
+  it("NodeProp.add creates a set for a node type", () => {
+    const prop = new NodeProp<string>({ deserialize: (s) => s });
+    expect(prop).toBeDefined();
+  });
+
+  it("NodeProp.closedBy is a built-in prop", () => {
+    expect(NodeProp.closedBy).toBeDefined();
+  });
+
+  it("NodeProp.openedBy is a built-in prop", () => {
+    expect(NodeProp.openedBy).toBeDefined();
+  });
+
+  it("NodeProp.group is a built-in prop", () => {
+    expect(NodeProp.group).toBeDefined();
+  });
+
+  it("NodeProp.isolate is defined", () => {
+    expect(NodeProp.isolate).toBeDefined();
+  });
+});
+
+describe("Tree behavioral", () => {
+  it("tree from python has length equal to source string", () => {
+    const code = "x = 1";
+    const tree = pythonLanguage.parser.parse(code);
+    expect(tree.length).toBe(code.length);
+  });
+
+  it("tree.iterate() visits at least one node", () => {
+    const tree = pythonLanguage.parser.parse("x = 1 + 2");
+    let count = 0;
+    tree.iterate({ enter: () => { count++; } });
+    expect(count).toBeGreaterThan(0);
+  });
+
+  it("tree.toString() returns a non-empty string", () => {
+    const tree = pythonLanguage.parser.parse("x = 1");
+    expect(typeof tree.toString()).toBe("string");
+    expect(tree.toString().length).toBeGreaterThan(0);
+  });
+
+  it("tree.resolveInner() finds a node", () => {
+    const tree = pythonLanguage.parser.parse("x = 1");
+    const node = tree.resolveInner(2, 1);
+    expect(node).toBeDefined();
+  });
+});

@@ -132,4 +132,56 @@ describe("Java language pack", () => {
     expect(tree.length).toBeGreaterThan(0);
     expect(tree.type.isTop).toBe(true);
   });
+
+  it("javaLanguage can parse inner class", () => {
+    const tree = javaLanguage.parser.parse("class Outer { private int x; class Inner { int getX() { return x; } } }");
+    expect(tree.length).toBeGreaterThan(0);
+    expect(tree.type.isTop).toBe(true);
+  });
+
+  it("javaLanguage can parse varargs", () => {
+    const tree = javaLanguage.parser.parse("public static int sum(int... numbers) { int total = 0; for (int n : numbers) total += n; return total; }");
+    expect(tree.length).toBeGreaterThan(0);
+  });
+
+  it("javaLanguage can parse multiple interface implementation", () => {
+    const tree = javaLanguage.parser.parse("class MyClass implements Runnable, Comparable<MyClass> { public void run() {} public int compareTo(MyClass o) { return 0; } }");
+    expect(tree.length).toBeGreaterThan(0);
+    expect(tree.type.isTop).toBe(true);
+  });
+
+  it("javaLanguage can parse sealed class (Java 17)", () => {
+    const tree = javaLanguage.parser.parse("sealed class Shape permits Circle, Rectangle {}");
+    expect(tree.length).toBeGreaterThan(0);
+  });
+
+  it("javaLanguage can parse pattern matching instanceof", () => {
+    const tree = javaLanguage.parser.parse("if (obj instanceof String s) { System.out.println(s.length()); }");
+    expect(tree.length).toBeGreaterThan(0);
+    expect(tree.type.isTop).toBe(true);
+  });
+
+  it("javaLanguage can parse optional chaining", () => {
+    const tree = javaLanguage.parser.parse("Optional<String> opt = Optional.of(\"hello\"); String result = opt.filter(s -> s.length() > 3).map(String::toUpperCase).orElse(\"default\");");
+    expect(tree.length).toBeGreaterThan(0);
+  });
+
+  it("javaLanguage can parse synchronized block", () => {
+    const tree = javaLanguage.parser.parse("public synchronized void increment() { count++; } public void safe() { synchronized(this) { list.add(item); } }");
+    expect(tree.length).toBeGreaterThan(0);
+    expect(tree.type.isTop).toBe(true);
+  });
+
+  it("javaLanguage can parse ternary and compound assignment", () => {
+    const tree = javaLanguage.parser.parse("int max = a > b ? a : b; int x = 0; x += 5; x *= 2; x %= 3;");
+    expect(tree.length).toBeGreaterThan(0);
+  });
+
+  it("tree.resolveInner() finds innermost node in java code", () => {
+    const tree = javaLanguage.parser.parse("class Foo { int x = 42; }");
+    const node = tree.resolveInner(10);
+    expect(node).toBeDefined();
+    expect(node.from).toBeLessThanOrEqual(10);
+    expect(node.to).toBeGreaterThanOrEqual(10);
+  });
 });

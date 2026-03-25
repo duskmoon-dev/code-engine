@@ -163,4 +163,46 @@ describe("CSS language pack", () => {
     expect(tree.length).toBeGreaterThan(0);
     expect(tree.type.isTop).toBe(true);
   });
+
+  it("cssLanguage can parse @import", () => {
+    const tree = cssLanguage.parser.parse("@import url('normalize.css');\n@import 'variables.css';");
+    expect(tree.length).toBeGreaterThan(0);
+    expect(tree.type.isTop).toBe(true);
+  });
+
+  it("cssLanguage can parse adjacent sibling selector", () => {
+    const tree = cssLanguage.parser.parse("h1 + p { margin-top: 0; } h2 ~ p { color: gray; }");
+    expect(tree.length).toBeGreaterThan(0);
+  });
+
+  it("cssLanguage can parse :not() and :is() pseudo-class", () => {
+    const tree = cssLanguage.parser.parse("a:not(.active) { opacity: 0.7; } :is(h1, h2, h3) { font-weight: bold; }");
+    expect(tree.length).toBeGreaterThan(0);
+    expect(tree.type.isTop).toBe(true);
+  });
+
+  it("cssLanguage can parse clip-path and transform", () => {
+    const tree = cssLanguage.parser.parse(".hero { clip-path: polygon(0 0, 100% 0, 100% 80%, 0 100%); transform: perspective(500px) rotateY(10deg); }");
+    expect(tree.length).toBeGreaterThan(0);
+  });
+
+  it("tree.resolveInner() finds innermost node in CSS", () => {
+    const tree = cssLanguage.parser.parse("body { color: red; }");
+    const node = tree.resolveInner(7);
+    expect(node).toBeDefined();
+    expect(node.from).toBeLessThanOrEqual(7);
+    expect(node.to).toBeGreaterThanOrEqual(7);
+  });
+
+  it("cssLanguage tree.toString() returns non-empty string", () => {
+    const tree = cssLanguage.parser.parse("p { font-size: 16px; }");
+    expect(typeof tree.toString()).toBe("string");
+    expect(tree.toString().length).toBeGreaterThan(0);
+  });
+
+  it("cssLanguage can parse CSS logical properties", () => {
+    const tree = cssLanguage.parser.parse(".box { margin-inline: 1rem; padding-block: 0.5rem; border-inline-start: 2px solid; }");
+    expect(tree.length).toBeGreaterThan(0);
+    expect(tree.type.isTop).toBe(true);
+  });
 });

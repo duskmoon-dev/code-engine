@@ -154,5 +154,46 @@ describe("Sass language pack", () => {
       expect(tree.length).toBeGreaterThan(0);
       expect(tree.type.isTop).toBe(true);
     });
+
+    it("sassLanguage can parse media queries", () => {
+      const tree = sassLanguage.parser.parse("@media (min-width: 768px) {\n  .container { max-width: 960px; }\n}");
+      expect(tree.length).toBeGreaterThan(0);
+    });
+
+    it("sassLanguage can parse @mixin with arguments", () => {
+      const tree = sassLanguage.parser.parse("@mixin respond-to($breakpoint) { @media (min-width: $breakpoint) { @content; } }\n.hero { @include respond-to(768px) { font-size: 2rem; } }");
+      expect(tree.length).toBeGreaterThan(0);
+      expect(tree.type.isTop).toBe(true);
+    });
+
+    it("sassLanguage can parse map data type", () => {
+      const tree = sassLanguage.parser.parse("$colors: ('primary': blue, 'secondary': red, 'accent': green);\n$primary: map-get($colors, 'primary');");
+      expect(tree.length).toBeGreaterThan(0);
+    });
+
+    it("sassLanguage can parse @debug and @warn", () => {
+      const tree = sassLanguage.parser.parse("$x: 5;\n@debug \"value: #{$x}\";\n@warn \"deprecated: use new-fn() instead\";");
+      expect(tree.length).toBeGreaterThan(0);
+      expect(tree.type.isTop).toBe(true);
+    });
+
+    it("sassLanguage can parse pseudo-selectors and attribute selectors", () => {
+      const tree = sassLanguage.parser.parse("input[type='text'] { border: 1px solid; }\na:not(.active):hover { opacity: 0.7; }");
+      expect(tree.length).toBeGreaterThan(0);
+    });
+
+    it("sassLanguage tree.toString() returns non-empty string", () => {
+      const tree = sassLanguage.parser.parse("$color: blue;\n.box { color: $color; }");
+      expect(typeof tree.toString()).toBe("string");
+      expect(tree.toString().length).toBeGreaterThan(0);
+    });
+
+    it("tree.resolveInner() finds innermost node in SCSS", () => {
+      const tree = sassLanguage.parser.parse("$base: 16px;\n.box { font-size: $base; }");
+      const node = tree.resolveInner(8);
+      expect(node).toBeDefined();
+      expect(node.from).toBeLessThanOrEqual(8);
+      expect(node.to).toBeGreaterThanOrEqual(8);
+    });
   });
 });

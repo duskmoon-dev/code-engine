@@ -239,4 +239,50 @@ describe("Import verification", () => {
     expect(mod.LRLanguage).toBeDefined();
     expect(mod.defaultKeymap).toBeDefined();
   });
+
+  it("imports from core/view", async () => {
+    const mod = await import("../src/core/view/index");
+    expect(mod.EditorView).toBeDefined();
+  });
+
+  it("imports from lang/legacy barrel", async () => {
+    const mod = await import("../src/lang/legacy/index");
+    expect(Object.keys(mod).length).toBeGreaterThan(0);
+  });
+
+  it("core/state exports Compartment", async () => {
+    const mod = await import("../src/core/state/index");
+    expect(mod.Compartment).toBeDefined();
+  });
+
+  it("core/state exports EditorSelection", async () => {
+    const mod = await import("../src/core/state/index");
+    expect(mod.EditorSelection).toBeDefined();
+  });
+
+  it("core/state exports ChangeSet", async () => {
+    const mod = await import("../src/core/state/index");
+    expect(mod.ChangeSet).toBeDefined();
+  });
+
+  it("core/language exports syntaxTree function", async () => {
+    const mod = await import("../src/core/language/index");
+    expect(typeof mod.syntaxTree).toBe("function");
+  });
+
+  it("parser/common exports NodeProp", async () => {
+    const mod = await import("../src/parser/common/index");
+    expect(mod.NodeProp).toBeDefined();
+  });
+
+  it("parser/highlight exports tags object", async () => {
+    const mod = await import("../src/parser/highlight/index");
+    expect(typeof mod.tags).toBe("object");
+    expect(mod.tags).not.toBeNull();
+  });
+
+  it("imports from lang/lezer have expected exports", async () => {
+    const mod = await import("../src/lang/lezer/index");
+    expect(mod.lezerLanguage).toBeDefined();
+  });
 });

@@ -215,5 +215,47 @@ describe("Angular language pack", () => {
       const tree = angularLanguage.parser.parse("<div>@if (show) { <p>Shown</p> } @else { <p>Hidden</p> }</div>");
       expect(tree.length).toBeGreaterThan(0);
     });
+
+    it("angularLanguage can parse @switch control flow", () => {
+      const tree = angularLanguage.parser.parse("<div>@switch (status) { @case ('active') { <span>Active</span> } @default { <span>Unknown</span> } }</div>");
+      expect(tree.length).toBeGreaterThan(0);
+      expect(tree.type.isTop).toBe(true);
+    });
+
+    it("angularLanguage can parse ng-template", () => {
+      const tree = angularLanguage.parser.parse("<ng-template #loading><div class=\"spinner\">Loading...</div></ng-template>");
+      expect(tree.length).toBeGreaterThan(0);
+    });
+
+    it("angularLanguage can parse two-way binding", () => {
+      const tree = angularLanguage.parser.parse("<input [(ngModel)]=\"value\" (ngModelChange)=\"onChange($event)\"/>");
+      expect(tree.length).toBeGreaterThan(0);
+      expect(tree.type.isTop).toBe(true);
+    });
+
+    it("angularLanguage can parse structural directive with let", () => {
+      const tree = angularLanguage.parser.parse("<ng-container *ngFor=\"let item of items; let i = index\">{{ i }}: {{ item }}</ng-container>");
+      expect(tree.length).toBeGreaterThan(0);
+    });
+
+    it("angularLanguage tree.toString() returns non-empty string", () => {
+      const tree = angularLanguage.parser.parse("<div class=\"app\">{{ title }}</div>");
+      expect(typeof tree.toString()).toBe("string");
+      expect(tree.toString().length).toBeGreaterThan(0);
+    });
+
+    it("tree.resolveInner() finds innermost node in Angular template", () => {
+      const tree = angularLanguage.parser.parse("<div>{{ message }}</div>");
+      const node = tree.resolveInner(5);
+      expect(node).toBeDefined();
+      expect(node.from).toBeLessThanOrEqual(5);
+      expect(node.to).toBeGreaterThanOrEqual(5);
+    });
+
+    it("angularLanguage can parse multiple bindings on one element", () => {
+      const tree = angularLanguage.parser.parse("<div [class.active]=\"isActive\" [style.color]=\"color\" (click)=\"toggle()\" [attr.aria-label]=\"label\">content</div>");
+      expect(tree.length).toBeGreaterThan(0);
+      expect(tree.type.isTop).toBe(true);
+    });
   });
 });

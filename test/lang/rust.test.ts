@@ -140,4 +140,46 @@ describe("Rust language pack", () => {
     expect(tree.length).toBeGreaterThan(0);
     expect(tree.type.isTop).toBe(true);
   });
+
+  it("rustLanguage can parse type alias", () => {
+    const tree = rustLanguage.parser.parse("type Result<T> = std::result::Result<T, Box<dyn Error>>;\ntype Point = (f64, f64);");
+    expect(tree.length).toBeGreaterThan(0);
+    expect(tree.type.isTop).toBe(true);
+  });
+
+  it("rustLanguage can parse const and static", () => {
+    const tree = rustLanguage.parser.parse("const MAX_SIZE: usize = 1024;\nstatic GREETING: &str = \"hello\";");
+    expect(tree.length).toBeGreaterThan(0);
+    expect(tree.type.isTop).toBe(true);
+  });
+
+  it("rustLanguage can parse Box and Rc types", () => {
+    const tree = rustLanguage.parser.parse("let b: Box<i32> = Box::new(42);\nlet rc = Rc::new(RefCell::new(vec![1, 2, 3]));");
+    expect(tree.length).toBeGreaterThan(0);
+  });
+
+  it("rustLanguage can parse pattern matching with destructuring", () => {
+    const tree = rustLanguage.parser.parse("let (x, y, z) = (1, 2, 3); let Point { x, y } = point; if let Some(val) = opt { println!(\"{}\", val); }");
+    expect(tree.length).toBeGreaterThan(0);
+    expect(tree.type.isTop).toBe(true);
+  });
+
+  it("rustLanguage can parse iterator chains", () => {
+    const tree = rustLanguage.parser.parse("let sum: i32 = (0..10).filter(|x| x % 2 == 0).map(|x| x * x).sum();");
+    expect(tree.length).toBeGreaterThan(0);
+  });
+
+  it("rustLanguage can parse module declaration", () => {
+    const tree = rustLanguage.parser.parse("mod utils { pub fn helper() -> &'static str { \"help\" } }\npub use utils::helper;");
+    expect(tree.length).toBeGreaterThan(0);
+    expect(tree.type.isTop).toBe(true);
+  });
+
+  it("tree.resolveInner() finds innermost node in rust code", () => {
+    const tree = rustLanguage.parser.parse("fn main() { let x = 42; }");
+    const node = tree.resolveInner(14);
+    expect(node).toBeDefined();
+    expect(node.from).toBeLessThanOrEqual(14);
+    expect(node.to).toBeGreaterThanOrEqual(14);
+  });
 });

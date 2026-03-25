@@ -139,5 +139,53 @@ describe("Setup extensions", () => {
       state = state.update({ changes: { from: 7, insert: "\nthree" } }).state;
       expect(state.doc.lines).toBe(3);
     });
+
+    it("basicSetup state doc length matches inserted string", () => {
+      const state = EditorState.create({ doc: "hello", extensions: basicSetup });
+      expect(state.doc.length).toBe(5);
+    });
+
+    it("minimalSetup state doc length matches inserted string", () => {
+      const state = EditorState.create({ doc: "hi", extensions: minimalSetup });
+      expect(state.doc.length).toBe(2);
+    });
+
+    it("basicSetup allows replacement transaction", () => {
+      let state = EditorState.create({ doc: "hello world", extensions: basicSetup });
+      state = state.update({ changes: { from: 0, to: 5, insert: "goodbye" } }).state;
+      expect(state.doc.toString()).toBe("goodbye world");
+    });
+
+    it("minimalSetup allows replacement transaction", () => {
+      let state = EditorState.create({ doc: "foo bar", extensions: minimalSetup });
+      state = state.update({ changes: { from: 4, to: 7, insert: "baz" } }).state;
+      expect(state.doc.toString()).toBe("foo baz");
+    });
+  });
+
+  describe("setup module extra", () => {
+    it("EditorView is a class/function", () => {
+      expect(typeof EditorView).toBe("function");
+    });
+
+    it("basicSetup is not empty", () => {
+      expect((basicSetup as unknown[]).length).toBeGreaterThan(0);
+    });
+
+    it("minimalSetup is not empty", () => {
+      expect((minimalSetup as unknown[]).length).toBeGreaterThan(0);
+    });
+
+    it("basicSetup contains at least 5 extensions", () => {
+      expect((basicSetup as unknown[]).length).toBeGreaterThanOrEqual(5);
+    });
+
+    it("states created with basicSetup have same doc as input", () => {
+      const docs = ["", "x", "foo\nbar\nbaz"];
+      for (const doc of docs) {
+        const state = EditorState.create({ doc, extensions: basicSetup });
+        expect(state.doc.toString()).toBe(doc);
+      }
+    });
   });
 });

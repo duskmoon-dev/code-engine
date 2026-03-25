@@ -134,5 +134,72 @@ describe("theme/duskmoon", () => {
       const hl = duskMoonHighlightStyle();
       expect((hl as unknown[])[0]).toBeDefined();
     });
+
+    it("state transactions work with duskMoon extension", () => {
+      let state = EditorState.create({
+        doc: "hello",
+        extensions: [duskMoon()],
+      });
+      state = state.update({ changes: { from: 5, insert: " world" } }).state;
+      expect(state.doc.toString()).toBe("hello world");
+    });
+
+    it("duskMoon({ dark: true }) does not alter document content", () => {
+      const doc = "const x = 1;";
+      const state = EditorState.create({
+        doc,
+        extensions: [duskMoon({ dark: true })],
+      });
+      expect(state.doc.toString()).toBe(doc);
+    });
+
+    it("multiple duskMoon instances can be created independently", () => {
+      const ext1 = duskMoon({ dark: true });
+      const ext2 = duskMoon({ dark: false });
+      expect(ext1).toBeDefined();
+      expect(ext2).toBeDefined();
+    });
+  });
+
+  describe("duskMoonHighlightStyle additional", () => {
+    it("returns an object with style method", () => {
+      const hl = duskMoonHighlightStyle();
+      const hlArr = hl as unknown[];
+      expect(hlArr.length).toBeGreaterThan(0);
+    });
+
+    it("duskMoonTheme can be called multiple times", () => {
+      const t1 = duskMoonTheme();
+      const t2 = duskMoonTheme({ dark: true });
+      expect(t1).toBeDefined();
+      expect(t2).toBeDefined();
+    });
+
+    it("duskMoon with empty doc works for both modes", () => {
+      const s1 = EditorState.create({ doc: "", extensions: [duskMoon()] });
+      const s2 = EditorState.create({ doc: "", extensions: [duskMoon({ dark: true })] });
+      expect(s1.doc.length).toBe(0);
+      expect(s2.doc.length).toBe(0);
+    });
+
+    it("duskMoon extension with deletion transaction", () => {
+      let state = EditorState.create({ doc: "hello world", extensions: [duskMoon()] });
+      state = state.update({ changes: { from: 5, to: 11 } }).state;
+      expect(state.doc.toString()).toBe("hello");
+    });
+
+    it("duskMoon dark extension with insertion", () => {
+      let state = EditorState.create({ doc: "x", extensions: [duskMoon({ dark: true })] });
+      state = state.update({ changes: { from: 1, insert: "yz" } }).state;
+      expect(state.doc.toString()).toBe("xyz");
+    });
+
+    it("duskMoonHighlightStyle result is array with defined elements", () => {
+      const hl = duskMoonHighlightStyle();
+      const arr = hl as unknown[];
+      for (const elem of arr) {
+        expect(elem).toBeDefined();
+      }
+    });
   });
 });

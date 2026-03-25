@@ -213,4 +213,40 @@ describe("XML language pack", () => {
     const tree = xmlLanguage.parser.parse(code);
     expect(tree.length).toBeGreaterThan(0);
   });
+
+  it("xmlLanguage tree.toString() returns non-empty string", () => {
+    const tree = xmlLanguage.parser.parse("<root><child/></root>");
+    expect(typeof tree.toString()).toBe("string");
+    expect(tree.toString().length).toBeGreaterThan(0);
+  });
+
+  it("xmlLanguage can parse attributes with single quotes", () => {
+    const code = "<elem attr='single' other='value'/>";
+    const tree = xmlLanguage.parser.parse(code);
+    expect(tree.length).toBeGreaterThan(0);
+    expect(tree.type.isTop).toBe(true);
+  });
+
+  it("tree.resolveInner() finds innermost node in XML", () => {
+    const tree = xmlLanguage.parser.parse("<root><child>text</child></root>");
+    const node = tree.resolveInner(8);
+    expect(node).toBeDefined();
+    expect(node.from).toBeLessThanOrEqual(8);
+    expect(node.to).toBeGreaterThanOrEqual(8);
+  });
+
+  it("xmlLanguage can parse SVG-like structure", () => {
+    const code = "<svg viewBox=\"0 0 100 100\"><circle cx=\"50\" cy=\"50\" r=\"40\" fill=\"red\"/><rect x=\"10\" y=\"10\" width=\"80\" height=\"80\"/></svg>";
+    const tree = xmlLanguage.parser.parse(code);
+    expect(tree.length).toBeGreaterThan(0);
+    expect(tree.type.isTop).toBe(true);
+  });
+
+  it("xmlLanguage can parse multiple siblings", () => {
+    const code = "<items><a>1</a><b>2</b><c>3</c><d>4</d><e>5</e></items>";
+    const tree = xmlLanguage.parser.parse(code);
+    let nodeCount = 0;
+    tree.iterate({ enter: () => { nodeCount++; } });
+    expect(nodeCount).toBeGreaterThan(5);
+  });
 });

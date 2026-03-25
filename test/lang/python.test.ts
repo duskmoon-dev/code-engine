@@ -159,4 +159,58 @@ describe("Python language pack", () => {
     const tree = pythonLanguage.parser.parse("msg = f'Hello {name!r}, you are {age:.1f} years old'");
     expect(tree.length).toBeGreaterThan(0);
   });
+
+  it("pythonLanguage can parse class with multiple inheritance", () => {
+    const tree = pythonLanguage.parser.parse("class Mixin: pass\nclass Base: pass\nclass Child(Base, Mixin):\n    def __init__(self):\n        super().__init__()");
+    expect(tree.length).toBeGreaterThan(0);
+    expect(tree.type.isTop).toBe(true);
+  });
+
+  it("pythonLanguage can parse context manager protocol", () => {
+    const tree = pythonLanguage.parser.parse("class Ctx:\n    def __enter__(self): return self\n    def __exit__(self, exc_type, exc_val, exc_tb): return False");
+    expect(tree.length).toBeGreaterThan(0);
+  });
+
+  it("pythonLanguage can parse exception chaining", () => {
+    const tree = pythonLanguage.parser.parse("try:\n    risky()\nexcept ValueError as e:\n    raise RuntimeError('failed') from e");
+    expect(tree.length).toBeGreaterThan(0);
+    expect(tree.type.isTop).toBe(true);
+  });
+
+  it("pythonLanguage tree.toString() returns non-empty string", () => {
+    const tree = pythonLanguage.parser.parse("x = 1");
+    expect(typeof tree.toString()).toBe("string");
+    expect(tree.toString().length).toBeGreaterThan(0);
+  });
+
+  it("pythonLanguage can parse tuple unpacking", () => {
+    const tree = pythonLanguage.parser.parse("a, b, *rest = [1, 2, 3, 4, 5]\n(x, y), z = (1, 2), 3");
+    expect(tree.length).toBeGreaterThan(0);
+  });
+
+  it("pythonLanguage tree.iterate() visits multiple nodes", () => {
+    const tree = pythonLanguage.parser.parse("for i in range(10):\n    print(i)");
+    let count = 0;
+    tree.iterate({ enter: () => { count++; } });
+    expect(count).toBeGreaterThan(3);
+  });
+
+  it("tree.resolveInner() in python finds innermost node", () => {
+    const tree = pythonLanguage.parser.parse("def foo():\n    return 42");
+    const node = tree.resolveInner(10);
+    expect(node).toBeDefined();
+    expect(node.from).toBeLessThanOrEqual(10);
+    expect(node.to).toBeGreaterThanOrEqual(10);
+  });
+
+  it("pythonLanguage can parse class method with classmethod decorator", () => {
+    const tree = pythonLanguage.parser.parse("class Factory:\n    @classmethod\n    def create(cls, *args): return cls(*args)");
+    expect(tree.length).toBeGreaterThan(0);
+    expect(tree.type.isTop).toBe(true);
+  });
+
+  it("pythonLanguage can parse global and nonlocal declarations", () => {
+    const tree = pythonLanguage.parser.parse("x = 0\ndef outer():\n    def inner():\n        nonlocal x\n        global y\n        x += 1");
+    expect(tree.length).toBeGreaterThan(0);
+  });
 });

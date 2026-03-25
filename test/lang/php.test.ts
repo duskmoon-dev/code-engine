@@ -139,4 +139,56 @@ describe("PHP language pack", () => {
       expect(node).toBeDefined();
     }
   });
+
+  it("phpLanguage can parse match expression (PHP 8)", () => {
+    const tree = phpLanguage.parser.parse("<?php $result = match($status) { 'active' => 'Active user', 'banned' => 'Banned user', default => 'Unknown' }; ?>");
+    expect(tree.length).toBeGreaterThan(0);
+    expect(tree.type.isTop).toBe(true);
+  });
+
+  it("phpLanguage can parse named arguments (PHP 8)", () => {
+    const tree = phpLanguage.parser.parse("<?php htmlspecialchars(string: $str, encoding: 'UTF-8'); ?>");
+    expect(tree.length).toBeGreaterThan(0);
+  });
+
+  it("phpLanguage can parse nullsafe operator", () => {
+    const tree = phpLanguage.parser.parse("<?php $city = $user?->getAddress()?->city; ?>");
+    expect(tree.length).toBeGreaterThan(0);
+    expect(tree.type.isTop).toBe(true);
+  });
+
+  it("phpLanguage can parse union types", () => {
+    const tree = phpLanguage.parser.parse("<?php function process(int|string $value): int|float { return is_string($value) ? strlen($value) : $value * 1.0; } ?>");
+    expect(tree.length).toBeGreaterThan(0);
+  });
+
+  it("phpLanguage can parse enum (PHP 8.1)", () => {
+    const tree = phpLanguage.parser.parse("<?php enum Status: string { case Active = 'active'; case Inactive = 'inactive'; } ?>");
+    expect(tree.length).toBeGreaterThan(0);
+    expect(tree.type.isTop).toBe(true);
+  });
+
+  it("phpLanguage can parse constructor property promotion", () => {
+    const tree = phpLanguage.parser.parse("<?php class User { public function __construct(public readonly string $name, private int $age) {} } ?>");
+    expect(tree.length).toBeGreaterThan(0);
+  });
+
+  it("phpLanguage can parse fibers (PHP 8.1)", () => {
+    const tree = phpLanguage.parser.parse("<?php $fiber = new Fiber(function(): void { $value = Fiber::suspend('hello'); echo $value; }); $value = $fiber->start(); ?>");
+    expect(tree.length).toBeGreaterThan(0);
+    expect(tree.type.isTop).toBe(true);
+  });
+
+  it("phpLanguage can parse spread operator", () => {
+    const tree = phpLanguage.parser.parse("<?php $arr1 = [1, 2, 3]; $arr2 = [4, 5, 6]; $merged = [...$arr1, ...$arr2]; ?>");
+    expect(tree.length).toBeGreaterThan(0);
+  });
+
+  it("tree.resolveInner() finds innermost node in PHP", () => {
+    const tree = phpLanguage.parser.parse("<?php $x = 42; echo $x; ?>");
+    const node = tree.resolveInner(10);
+    expect(node).toBeDefined();
+    expect(node.from).toBeLessThanOrEqual(10);
+    expect(node.to).toBeGreaterThanOrEqual(10);
+  });
 });
