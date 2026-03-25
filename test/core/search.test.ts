@@ -683,3 +683,33 @@ describe("selectNextOccurrence", () => {
     expect(result).toBe(false);
   });
 });
+
+describe("RegExpCursor nextLine coverage", () => {
+  it("handles $ (end-of-line) regex on multi-line text, triggering nextLine()", () => {
+    // $ with gm flags matches at end of each line — when match starts at line end,
+    // nextLine() is called to advance to the next line
+    const text = Text.of(["hello", "world"]);
+    const cursor = new RegExpCursor(text, "$");
+    const matches: Array<{from: number, to: number}> = [];
+    while (!cursor.next().done) {
+      matches.push({ from: cursor.value.from, to: cursor.value.to });
+    }
+    // $ should match at end of "hello" (pos 5) and end of "world" (pos 11)
+    expect(matches.length).toBe(2);
+    expect(matches[0]).toEqual({ from: 5, to: 5 });
+    expect(matches[1]).toEqual({ from: 11, to: 11 });
+  });
+
+  it("nextLine advances past end of search range", () => {
+    // Search only within first line — nextLine() should detect curLineStart > to
+    const text = Text.of(["hello", "world"]);
+    const cursor = new RegExpCursor(text, "$", {}, 0, 5); // to=5 (end of first line)
+    const matches: Array<{from: number, to: number}> = [];
+    while (!cursor.next().done) {
+      matches.push({ from: cursor.value.from, to: cursor.value.to });
+    }
+    // Only one $ match (at pos 5), within the range
+    expect(matches.length).toBe(1);
+    expect(matches[0]).toEqual({ from: 5, to: 5 });
+  });
+});
