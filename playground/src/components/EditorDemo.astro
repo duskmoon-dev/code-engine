@@ -38,7 +38,11 @@
   <p id="load-error" class="load-error" role="alert" hidden>
     Failed to load language pack. Check your network connection.
   </p>
-  <div id="editor" role="region" aria-label="Code editor"></div>
+  <div id="editor" role="region" aria-label="Code editor">
+    <div class="editor-loading" aria-label="Loading editor">
+      <span>Loading editor...</span>
+    </div>
+  </div>
   <noscript>
     <div class="noscript-msg">
       <p>JavaScript is required for the interactive editor.</p>
@@ -679,6 +683,16 @@ BinaryExpression { expression !add "+" expression }
 
   #editor :global(.cm-editor) {
     height: 100%;
+  }
+
+  .editor-loading {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+    color: var(--color-text-muted);
+    font-size: 0.9rem;
+    font-family: var(--font-sans);
   }
 
   .noscript-msg {
