@@ -537,3 +537,335 @@ describe("receiveUpdates with remote changes", () => {
     expect(sendableUpdates(tr.state).length).toBe(1);
   });
 });
+
+describe("collab full round-trip", () => {
+  it("local change -> sendableUpdates -> receiveUpdates confirms the update", () => {
+    // Client makes a local edit
+    let state = EditorState.create({
+      doc: "hello",
+      extensions: [collab({ startVersion: 0, clientID: "client-A" })],
+    });
+    state = state.update({ changes: { from: 5, insert: " world" } }).state;
+    expect(state.doc.toString()).toBe("hello world");
+    expect(getSyncedVersion(state)).toBe(0);
+    expect(sendableUpdates(state).length).toBe(1);
+
+    // Server acknowledges by echoing the update back
+    const pending = sendableUpdates(state);
+    const ack: Update = {
+      changes: pending[0].changes,
+      clientID: pending[0].clientID,
+    };
+    const tr = receiveUpdates(state, [ack]);
+
+    // After acknowledgment: version incremented, no pending updates, doc unchanged
+    expect(getSyncedVersion(tr.state)).toBe(1);
+    expect(sendableUpdates(tr.state).length).toBe(0);
+    expect(tr.state.doc.toString()).toBe("hello world");
+  });
+
+  it("round-trip with multiple local edits acknowledged one by one", () => {
+    let state = EditorState.create({
+      doc: "ab",
+      extensions: [collab({ startVersion: 0, clientID: "c1" })],
+    });
+    // Two local edits
+    state = state.update({ changes: { from: 2, insert: "c" } }).state;
+    state = state.update({ changes: { from: 3, insert: "d" } }).state;
+    expect(sendableUpdates(state).length).toBe(2);
+
+    // Acknowledge both at once
+    const pending = sendableUpdates(state);
+    const acks: Update[] = pending.map((u) => ({
+      changes: u.changes,
+      clientID: u.clientID,
+    }));
+    const tr = receiveUpdates(state, acks);
+    expect(getSyncedVersion(tr.state)).toBe(2);
+    expect(sendableUpdates(tr.state).length).toBe(0);
+    expect(tr.state.doc.toString()).toBe("abcd");
+  });
+
+  it("round-trip preserves document when remote inserts at different position", () => {
+    // Client A
+    let stateA = EditorState.create({
+      doc: "hello",
+      extensions: [collab({ startVersion: 0, clientID: "A" })],
+    });
+    stateA = stateA.update({ changes: { from: 5, insert: "!" } }).state;
+
+    // Client B makes a change at position 0 on original doc
+    const remoteChange = ChangeSet.of([{ from: 0, insert: ">" }], 5);
+
+    // A receives B's change
+    const tr = receiveUpdates(stateA, [{ changes: remoteChange, clientID: "B" }]);
+    // Doc should contain both changes
+    expect(tr.state.doc.toString()).toContain(">");
+    expect(tr.state.doc.toString()).toContain("!");
+    expect(tr.state.doc.toString()).toBe(">hello!");
+    expect(getSyncedVersion(tr.state)).toBe(1);
+    // A's local change is still pending (it was not acknowledged)
+    expect(sendableUpdates(tr.state).length).toBe(1);
+  });
+});
+
+describe("collab rebaseUpdates behavioral", () => {
+  it("rebases two conflicting clients: both insert at same position", () => {
+    // Both clients start from same doc "ab" (length 2)
+    const c1Insert = ChangeSet.of([{ from: 1, insert: "X" }], 2);
+    const c2Insert = ChangeSet.of([{ from: 1, insert: "Y" }], 2);
+
+    // Server accepted c2 first. Now rebase c1's update over c2's accepted change.
+    const rebased = rebaseUpdates(
+      [{ changes: c1Insert, clientID: "c1" }],
+      [{ changes: c2Insert.desc, clientID: "c2" }],
+    );
+    expect(rebased.length).toBe(1);
+    expect(rebased[0].clientID).toBe("c1");
+    // The rebased changeset should apply to a doc of length 3 (original 2 + c2's insert of "Y")
+    expect(rebased[0].changes.length).toBe(3);
+  });
+
+  it("rebases with own update skipped and foreign update kept", () => {
+    // Doc length 5 ("hello"). Client sent 2 updates sequentially:
+    // update 1 (me): insert "A" at 0, applies to doc length 5
+    const myChange = ChangeSet.of([{ from: 0, insert: "A" }], 5);
+    // update 2 (them): insert "B" at end, applies to doc length 6 (after myChange)
+    const theirChange = ChangeSet.of([{ from: 6, insert: "B" }], 6);
+
+    const updates: Update[] = [
+      { changes: myChange, clientID: "me" },
+      { changes: theirChange, clientID: "them" },
+    ];
+    // Server accepted only myChange
+    const over = [
+      { changes: myChange.desc, clientID: "me" },
+    ];
+
+    const result = rebaseUpdates(updates, over);
+    // "me" is skipped (matched), "them" is kept and rebased
+    expect(result.length).toBe(1);
+    expect(result[0].clientID).toBe("them");
+  });
+
+  it("rebases a sequential update chain over a single accepted change", () => {
+    // Doc "abc" length 3. Server accepted a change that inserts "Z" at position 1.
+    const serverChange = ChangeSet.of([{ from: 1, insert: "Z" }], 3);
+
+    // Client sent one update on the original doc (length 3)
+    const u1 = ChangeSet.of([{ from: 0, insert: "1" }], 3);
+
+    const result = rebaseUpdates(
+      [{ changes: u1, clientID: "c1" }],
+      [{ changes: serverChange.desc, clientID: "server" }],
+    );
+    expect(result.length).toBe(1);
+    expect(result[0].clientID).toBe("c1");
+    // Rebased changeset applies to doc of length 4 (3 + "Z")
+    expect(result[0].changes.length).toBe(4);
+  });
+});
+
+describe("collab version tracking", () => {
+  it("getSyncedVersion increments by 1 per received update", () => {
+    let state = EditorState.create({
+      doc: "test",
+      extensions: [collab({ startVersion: 0 })],
+    });
+    expect(getSyncedVersion(state)).toBe(0);
+
+    // Receive 1 update
+    const u1 = { changes: ChangeSet.of([{ from: 4, insert: "!" }], 4), clientID: "r" };
+    state = receiveUpdates(state, [u1]).state;
+    expect(getSyncedVersion(state)).toBe(1);
+
+    // Receive 2 more updates
+    const u2 = { changes: ChangeSet.of([{ from: 5, insert: "?" }], 5), clientID: "r" };
+    const u3 = { changes: ChangeSet.of([{ from: 6, insert: "." }], 6), clientID: "r" };
+    state = receiveUpdates(state, [u2, u3]).state;
+    expect(getSyncedVersion(state)).toBe(3);
+  });
+
+  it("getSyncedVersion does not change from local edits alone", () => {
+    let state = EditorState.create({
+      doc: "abc",
+      extensions: [collab({ startVersion: 5 })],
+    });
+    state = state.update({ changes: { from: 3, insert: "d" } }).state;
+    state = state.update({ changes: { from: 4, insert: "e" } }).state;
+    state = state.update({ changes: { from: 5, insert: "f" } }).state;
+    expect(getSyncedVersion(state)).toBe(5);
+  });
+
+  it("version tracks correctly through mixed local and remote updates", () => {
+    let state = EditorState.create({
+      doc: "xy",
+      extensions: [collab({ startVersion: 10, clientID: "local" })],
+    });
+    // Local edit (does not change version)
+    state = state.update({ changes: { from: 2, insert: "z" } }).state;
+    expect(getSyncedVersion(state)).toBe(10);
+
+    // Receive remote update (version goes to 11)
+    const remote = { changes: ChangeSet.of([{ from: 0, insert: "!" }], 2), clientID: "remote" };
+    state = receiveUpdates(state, [remote]).state;
+    expect(getSyncedVersion(state)).toBe(11);
+
+    // Another local edit (version stays at 11)
+    state = state.update({ changes: { from: state.doc.length, insert: "w" } }).state;
+    expect(getSyncedVersion(state)).toBe(11);
+  });
+});
+
+describe("collab multiple sequential update rounds", () => {
+  it("simulates 5 rounds of remote updates", () => {
+    let state = EditorState.create({
+      doc: "",
+      extensions: [collab({ startVersion: 0 })],
+    });
+
+    for (let i = 0; i < 5; i++) {
+      const insert = String(i);
+      const changes = ChangeSet.of([{ from: state.doc.length, insert }], state.doc.length);
+      state = receiveUpdates(state, [{ changes, clientID: "server" }]).state;
+    }
+
+    expect(state.doc.toString()).toBe("01234");
+    expect(getSyncedVersion(state)).toBe(5);
+  });
+
+  it("alternating local and remote edits produce correct document", () => {
+    let state = EditorState.create({
+      doc: "",
+      extensions: [collab({ startVersion: 0, clientID: "local" })],
+    });
+
+    // Round 1: local edit, then server ack
+    state = state.update({ changes: { from: 0, insert: "A" } }).state;
+    const p1 = sendableUpdates(state);
+    state = receiveUpdates(state, [{ changes: p1[0].changes, clientID: "local" }]).state;
+    expect(getSyncedVersion(state)).toBe(1);
+    expect(sendableUpdates(state).length).toBe(0);
+
+    // Round 2: remote edit
+    const r1 = ChangeSet.of([{ from: 1, insert: "B" }], 1);
+    state = receiveUpdates(state, [{ changes: r1, clientID: "remote" }]).state;
+    expect(getSyncedVersion(state)).toBe(2);
+    expect(state.doc.toString()).toBe("AB");
+
+    // Round 3: local edit, then server ack
+    state = state.update({ changes: { from: 2, insert: "C" } }).state;
+    const p3 = sendableUpdates(state);
+    state = receiveUpdates(state, [{ changes: p3[0].changes, clientID: "local" }]).state;
+    expect(getSyncedVersion(state)).toBe(3);
+    expect(state.doc.toString()).toBe("ABC");
+  });
+
+  it("10 sequential remote insertions build up the document", () => {
+    let state = EditorState.create({
+      doc: "start",
+      extensions: [collab({ startVersion: 0 })],
+    });
+
+    for (let i = 0; i < 10; i++) {
+      const ch = String.fromCharCode(65 + i); // A, B, C, ...
+      const changes = ChangeSet.of([{ from: state.doc.length, insert: ch }], state.doc.length);
+      state = receiveUpdates(state, [{ changes, clientID: `r${i}` }]).state;
+    }
+
+    expect(state.doc.toString()).toBe("startABCDEFGHIJ");
+    expect(getSyncedVersion(state)).toBe(10);
+  });
+});
+
+describe("collab edge cases", () => {
+  it("receiving an update with empty changeset (identity) preserves doc", () => {
+    let state = EditorState.create({
+      doc: "hello",
+      extensions: [collab({ startVersion: 0 })],
+    });
+    const emptyChanges = ChangeSet.empty(5);
+    state = receiveUpdates(state, [{ changes: emptyChanges, clientID: "r" }]).state;
+    expect(state.doc.toString()).toBe("hello");
+    expect(getSyncedVersion(state)).toBe(1);
+  });
+
+  it("local no-op transaction does not create sendable updates", () => {
+    let state = EditorState.create({
+      doc: "hello",
+      extensions: [collab()],
+    });
+    // A transaction with an empty insert is still an empty changeset
+    state = state.update({ changes: { from: 0, insert: "" } }).state;
+    expect(sendableUpdates(state).length).toBe(0);
+  });
+
+  it("receiving own update clears it from pending without changing doc", () => {
+    let state = EditorState.create({
+      doc: "abc",
+      extensions: [collab({ startVersion: 0, clientID: "me" })],
+    });
+    state = state.update({ changes: { from: 3, insert: "d" } }).state;
+    expect(state.doc.toString()).toBe("abcd");
+    expect(sendableUpdates(state).length).toBe(1);
+
+    // Server echoes back the same update
+    const pending = sendableUpdates(state);
+    state = receiveUpdates(state, [{ changes: pending[0].changes, clientID: "me" }]).state;
+
+    // Doc unchanged, pending cleared, version incremented
+    expect(state.doc.toString()).toBe("abcd");
+    expect(sendableUpdates(state).length).toBe(0);
+    expect(getSyncedVersion(state)).toBe(1);
+  });
+
+  it("receiving many empty updates increments version without changing doc", () => {
+    let state = EditorState.create({
+      doc: "test",
+      extensions: [collab({ startVersion: 0 })],
+    });
+    const emptyUpdates = Array.from({ length: 5 }, (_, i) => ({
+      changes: ChangeSet.empty(4),
+      clientID: `r${i}`,
+    }));
+    state = receiveUpdates(state, emptyUpdates).state;
+    expect(state.doc.toString()).toBe("test");
+    expect(getSyncedVersion(state)).toBe(5);
+  });
+
+  it("concurrent edits at the same position from two clients both appear", () => {
+    // Client A inserts at position 0
+    let stateA = EditorState.create({
+      doc: "base",
+      extensions: [collab({ startVersion: 0, clientID: "A" })],
+    });
+    stateA = stateA.update({ changes: { from: 0, insert: "X" } }).state;
+
+    // Server accepted B's insert at position 0 first
+    const bChange = ChangeSet.of([{ from: 0, insert: "Y" }], 4);
+    stateA = receiveUpdates(stateA, [{ changes: bChange, clientID: "B" }]).state;
+
+    // Both X and Y should appear in the document
+    const doc = stateA.doc.toString();
+    expect(doc).toContain("X");
+    expect(doc).toContain("Y");
+    expect(doc).toContain("base");
+    expect(doc.length).toBe(6); // "base" (4) + "X" (1) + "Y" (1)
+  });
+
+  it("replacement (delete+insert) round-trip works", () => {
+    let state = EditorState.create({
+      doc: "foo bar",
+      extensions: [collab({ startVersion: 0, clientID: "c" })],
+    });
+    state = state.update({ changes: { from: 4, to: 7, insert: "baz" } }).state;
+    expect(state.doc.toString()).toBe("foo baz");
+
+    // Acknowledge
+    const pending = sendableUpdates(state);
+    state = receiveUpdates(state, [{ changes: pending[0].changes, clientID: "c" }]).state;
+    expect(state.doc.toString()).toBe("foo baz");
+    expect(getSyncedVersion(state)).toBe(1);
+    expect(sendableUpdates(state).length).toBe(0);
+  });
+});

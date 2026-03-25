@@ -678,7 +678,11 @@ BinaryExpression { expression !add "+" expression }
     const defaultDoc = sampleCode[langSelect.value] ?? ''
     if (doc !== defaultDoc) {
       const bytes = new TextEncoder().encode(doc)
-      const b64 = btoa(String.fromCharCode(...bytes))
+      // Chunked btoa to avoid RangeError on large documents
+      // (String.fromCharCode(...bytes) blows the call stack for >64KB)
+      let binary = ''
+      for (let i = 0; i < bytes.length; i++) binary += String.fromCharCode(bytes[i])
+      const b64 = btoa(binary)
       params.set('code', b64)
     }
     return params.toString()

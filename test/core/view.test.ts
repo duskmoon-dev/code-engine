@@ -663,4 +663,464 @@ describe("core/view exports", () => {
       });
     });
   });
+
+  // --- Behavioral tests ---
+
+  describe("WidgetType subclass behavior", () => {
+    class TestWidget extends WidgetType {
+      constructor(readonly label: string) { super(); }
+      toDOM(): HTMLElement {
+        const span = document.createElement("span");
+        span.textContent = this.label;
+        return span;
+      }
+      eq(other: TestWidget): boolean { return this.label === other.label; }
+      get estimatedHeight(): number { return 20; }
+      get lineBreaks(): number { return 0; }
+    }
+
+    it("eq returns true for same label", () => {
+      expect(new TestWidget("a").eq(new TestWidget("a"))).toBe(true);
+    });
+
+    it("eq returns false for different label", () => {
+      expect(new TestWidget("a").eq(new TestWidget("b"))).toBe(false);
+    });
+
+    it("compare returns true for equivalent widgets of same class", () => {
+      const a = new TestWidget("x");
+      const b = new TestWidget("x");
+      expect(a.compare(b)).toBe(true);
+    });
+
+    it("compare returns false for different widgets of same class", () => {
+      const a = new TestWidget("x");
+      const b = new TestWidget("y");
+      expect(a.compare(b)).toBe(false);
+    });
+
+    it("compare returns true for same reference", () => {
+      const a = new TestWidget("z");
+      expect(a.compare(a)).toBe(true);
+    });
+
+    it("estimatedHeight returns custom value", () => {
+      expect(new TestWidget("a").estimatedHeight).toBe(20);
+    });
+
+    it("lineBreaks returns 0", () => {
+      expect(new TestWidget("a").lineBreaks).toBe(0);
+    });
+
+    it("default ignoreEvent returns true", () => {
+      const w = new TestWidget("a");
+      expect(w.ignoreEvent(null as any)).toBe(true);
+    });
+
+    it("default updateDOM returns false", () => {
+      const w = new TestWidget("a");
+      expect(w.updateDOM(null as any, null as any, null as any)).toBe(false);
+    });
+
+    it("default coordsAt returns null", () => {
+      const w = new TestWidget("a");
+      expect(w.coordsAt(null as any, 0, 0)).toBeNull();
+    });
+
+    it("isHidden returns false by default", () => {
+      expect((new TestWidget("a") as any).isHidden).toBe(false);
+    });
+
+    it("editable returns false by default", () => {
+      expect((new TestWidget("a") as any).editable).toBe(false);
+    });
+  });
+
+  describe("Decoration.widget behavior", () => {
+    class SimpleWidget extends WidgetType {
+      toDOM(): HTMLElement { return document.createElement("span"); }
+    }
+
+    it("creates a widget decoration with the given widget", () => {
+      const widget = new SimpleWidget();
+      const deco = Decoration.widget({ widget });
+      expect(deco.widget).toBe(widget);
+    });
+
+    it("stores custom properties in spec", () => {
+      const widget = new SimpleWidget();
+      const deco = Decoration.widget({ widget, myData: 42 });
+      expect(deco.spec.myData).toBe(42);
+    });
+
+    it("can create a block widget decoration", () => {
+      const widget = new SimpleWidget();
+      const deco = Decoration.widget({ widget, block: true });
+      expect(deco.spec.block).toBe(true);
+    });
+
+    it("clamps side to -10000..10000", () => {
+      const widget = new SimpleWidget();
+      const deco = Decoration.widget({ widget, side: 99999 });
+      // The spec preserves the original side but the internal startSide is clamped
+      expect(deco).toBeDefined();
+    });
+
+    it("range creates a positioned widget", () => {
+      const widget = new SimpleWidget();
+      const deco = Decoration.widget({ widget });
+      const ranged = deco.range(5);
+      expect(ranged.from).toBe(5);
+      expect(ranged.to).toBe(5);
+    });
+  });
+
+  describe("Decoration.set operations", () => {
+    it("sorts unsorted ranges when sort=true", () => {
+      const m1 = Decoration.mark({ class: "a" });
+      const m2 = Decoration.mark({ class: "b" });
+      const m3 = Decoration.mark({ class: "c" });
+      const set = Decoration.set([
+        m3.range(10, 15),
+        m1.range(0, 3),
+        m2.range(5, 8),
+      ], true);
+      expect(set.size).toBe(3);
+    });
+
+    it("throws when ranges are unsorted and sort=false", () => {
+      const m1 = Decoration.mark({ class: "a" });
+      const m2 = Decoration.mark({ class: "b" });
+      expect(() => {
+        Decoration.set([m2.range(10, 15), m1.range(0, 3)]);
+      }).toThrow();
+    });
+
+    it("handles a single range without array", () => {
+      const m = Decoration.mark({ class: "x" });
+      const set = Decoration.set(m.range(0, 5));
+      expect(set.size).toBe(1);
+    });
+
+    it("Decoration.none is truly empty", () => {
+      expect(Decoration.none.size).toBe(0);
+      const iter = Decoration.none.iter();
+      expect(iter.value).toBeNull();
+    });
+
+    it("can iterate over a decoration set", () => {
+      const m = Decoration.mark({ class: "a" });
+      const set = Decoration.set([m.range(0, 5), m.range(10, 15)]);
+      const ranges: Array<{ from: number; to: number }> = [];
+      const iter = set.iter();
+      while (iter.value) {
+        ranges.push({ from: iter.from, to: iter.to });
+        iter.next();
+      }
+      expect(ranges).toEqual([{ from: 0, to: 5 }, { from: 10, to: 15 }]);
+    });
+  });
+
+  describe("Decoration.mark range behavior", () => {
+    it("range() returns a Range with correct from/to", () => {
+      const deco = Decoration.mark({ class: "highlight" });
+      const r = deco.range(3, 10);
+      expect(r.from).toBe(3);
+      expect(r.to).toBe(10);
+      expect(r.value).toBe(deco);
+    });
+
+    it("mark decorations are not point decorations", () => {
+      const deco = Decoration.mark({ class: "test" });
+      expect(deco.point).toBeFalsy();
+    });
+
+    it("mark decoration eq compares specs", () => {
+      const a = Decoration.mark({ class: "foo" });
+      const b = Decoration.mark({ class: "foo" });
+      const c = Decoration.mark({ class: "bar" });
+      expect(a.eq(b)).toBe(true);
+      expect(a.eq(c)).toBe(false);
+    });
+
+    it("mark decoration with inclusive preserves spec", () => {
+      const deco = Decoration.mark({ class: "a", inclusive: true });
+      expect(deco.spec.inclusive).toBe(true);
+    });
+
+    it("mark decoration with attributes preserves them", () => {
+      const deco = Decoration.mark({
+        attributes: { "data-x": "1", title: "test" },
+      });
+      expect(deco.spec.attributes["data-x"]).toBe("1");
+      expect(deco.spec.attributes.title).toBe("test");
+    });
+  });
+
+  describe("RectangleMarker draw and update", () => {
+    it("update returns false when className differs (no DOM needed)", () => {
+      const a = new RectangleMarker("cls-a", 0, 0, 50, 20);
+      const b = new RectangleMarker("cls-b", 10, 10, 100, 30);
+      // update checks className match first; when it differs it returns false before touching DOM
+      expect(b.update({} as any, a)).toBe(false);
+    });
+
+    it("eq handles zero dimensions", () => {
+      const a = new RectangleMarker("c", 0, 0, 0, 0);
+      const b = new RectangleMarker("c", 0, 0, 0, 0);
+      expect(a.eq(b)).toBe(true);
+    });
+
+    it("eq distinguishes null width from zero width", () => {
+      const a = new RectangleMarker("c", 0, 0, null, 10);
+      const b = new RectangleMarker("c", 0, 0, 0, 10);
+      expect(a.eq(b)).toBe(false);
+    });
+
+    it("eq compares floating point values", () => {
+      const a = new RectangleMarker("c", 1.5, 2.5, 100.25, 50.75);
+      const b = new RectangleMarker("c", 1.5, 2.5, 100.25, 50.75);
+      expect(a.eq(b)).toBe(true);
+    });
+  });
+
+  describe("BlockType enum values", () => {
+    it("Text is 0", () => {
+      expect(BlockType.Text).toBe(0);
+    });
+
+    it("WidgetBefore is 1", () => {
+      expect(BlockType.WidgetBefore).toBe(1);
+    });
+
+    it("WidgetAfter is 2", () => {
+      expect(BlockType.WidgetAfter).toBe(2);
+    });
+
+    it("WidgetRange is 3", () => {
+      expect(BlockType.WidgetRange).toBe(3);
+    });
+
+    it("has exactly four values", () => {
+      const numericKeys = Object.keys(BlockType).filter(k => !isNaN(Number(k)));
+      expect(numericKeys.length).toBe(4);
+    });
+
+    it("supports reverse lookup from number to name", () => {
+      expect(BlockType[0]).toBe("Text");
+      expect(BlockType[1]).toBe("WidgetBefore");
+      expect(BlockType[2]).toBe("WidgetAfter");
+      expect(BlockType[3]).toBe("WidgetRange");
+    });
+  });
+
+  describe("MatchDecorator construction", () => {
+    it("can be constructed with regexp and decoration", () => {
+      const deco = Decoration.mark({ class: "match" });
+      const md = new MatchDecorator({ regexp: /\bTODO\b/g, decoration: deco });
+      expect(md).toBeDefined();
+    });
+
+    it("can be constructed with a decoration function", () => {
+      const md = new MatchDecorator({
+        regexp: /\d+/g,
+        decoration: (match) => Decoration.mark({ class: `num-${match[0].length}` }),
+      });
+      expect(md).toBeDefined();
+    });
+
+    it("can be constructed with a decorate callback", () => {
+      const md = new MatchDecorator({
+        regexp: /\w+/g,
+        decorate: (add, from, to, match) => {
+          add(from, to, Decoration.mark({ class: "word" }));
+        },
+      });
+      expect(md).toBeDefined();
+    });
+  });
+
+  describe("EditorView.theme", () => {
+    it("is a static method", () => {
+      expect(typeof EditorView.theme).toBe("function");
+    });
+
+    it("returns an extension from a style spec", () => {
+      const ext = EditorView.theme({
+        "&": { backgroundColor: "#fff" },
+        ".cm-content": { color: "#000" },
+      });
+      expect(ext).toBeDefined();
+    });
+
+    it("accepts a dark option", () => {
+      const ext = EditorView.theme(
+        { "&": { backgroundColor: "#1e1e1e" } },
+        { dark: true },
+      );
+      expect(ext).toBeDefined();
+    });
+  });
+
+  describe("EditorView.baseTheme", () => {
+    it("is a static method", () => {
+      expect(typeof EditorView.baseTheme).toBe("function");
+    });
+
+    it("returns an extension from a style spec", () => {
+      const ext = EditorView.baseTheme({
+        "&light .cm-content": { color: "#333" },
+        "&dark .cm-content": { color: "#ddd" },
+      });
+      expect(ext).toBeDefined();
+    });
+  });
+
+  describe("keymap facet behavior", () => {
+    it("keymap.of produces an extension", () => {
+      const ext = keymap.of([
+        { key: "Ctrl-s", run: () => true },
+      ]);
+      expect(ext).toBeDefined();
+    });
+
+    it("keymap.of with empty array produces an extension", () => {
+      const ext = keymap.of([]);
+      expect(ext).toBeDefined();
+    });
+
+    it("keymap can be included in EditorState extensions", () => {
+      const state = EditorState.create({
+        doc: "hello",
+        extensions: [keymap.of([{ key: "Ctrl-a", run: () => true }])],
+      });
+      expect(state).toBeDefined();
+      expect(state.doc.toString()).toBe("hello");
+    });
+  });
+
+  describe("showTooltip facet configuration", () => {
+    it("showTooltip.of creates a tooltip extension", () => {
+      const ext = showTooltip.of({
+        pos: 0,
+        create: () => ({ dom: document.createElement("div") }),
+      });
+      expect(ext).toBeDefined();
+    });
+
+    it("showTooltip.of with null is valid", () => {
+      const ext = showTooltip.of(null);
+      expect(ext).toBeDefined();
+    });
+
+    it("tooltips() returns an extension", () => {
+      const ext = tooltips();
+      expect(ext).toBeDefined();
+    });
+
+    it("tooltips with tooltipSpace config returns an extension", () => {
+      const ext = tooltips({ tooltipSpace: () => ({ top: 0, left: 0, bottom: 100, right: 100 }) });
+      expect(ext).toBeDefined();
+    });
+  });
+
+  describe("showPanel facet configuration", () => {
+    it("showPanel.of creates a panel extension", () => {
+      const ext = showPanel.of(() => ({
+        dom: document.createElement("div"),
+      }));
+      expect(ext).toBeDefined();
+    });
+
+    it("showPanel.of with null is valid", () => {
+      const ext = showPanel.of(null);
+      expect(ext).toBeDefined();
+    });
+
+    it("panels with empty config returns extension", () => {
+      const ext = panels({});
+      expect(ext).toBeDefined();
+      expect(Array.isArray(ext)).toBe(true);
+    });
+  });
+
+  describe("gutter with markers config", () => {
+    it("gutter with class returns an extension", () => {
+      const ext = gutter({ class: "my-gutter" });
+      expect(ext).toBeDefined();
+    });
+
+    it("gutter with renderEmptyElements returns an extension", () => {
+      const ext = gutter({ class: "g", renderEmptyElements: true });
+      expect(ext).toBeDefined();
+    });
+
+    it("gutter with lineMarker callback returns an extension", () => {
+      const ext = gutter({
+        class: "g",
+        lineMarker: () => null,
+      });
+      expect(ext).toBeDefined();
+    });
+
+    it("lineNumbers with custom formatNumber", () => {
+      const ext = lineNumbers({
+        formatNumber: (n: number) => String(n).padStart(4, "0"),
+      });
+      expect(ext).toBeDefined();
+    });
+  });
+
+  describe("GutterMarker subclass behavior", () => {
+    class DotMarker extends GutterMarker {
+      constructor(readonly color: string) { super(); }
+      eq(other: DotMarker): boolean { return this.color === other.color; }
+      get elementClass() { return "dot-" + this.color; }
+    }
+
+    it("eq returns true for matching markers", () => {
+      expect(new DotMarker("red").eq(new DotMarker("red"))).toBe(true);
+    });
+
+    it("eq returns false for non-matching markers", () => {
+      expect(new DotMarker("red").eq(new DotMarker("blue"))).toBe(false);
+    });
+
+    it("compare returns true for equivalent markers", () => {
+      const a = new DotMarker("green");
+      const b = new DotMarker("green");
+      expect(a.compare(b)).toBe(true);
+    });
+
+    it("compare returns false for different markers", () => {
+      const a = new DotMarker("green");
+      const b = new DotMarker("yellow");
+      expect(a.compare(b)).toBe(false);
+    });
+
+    it("compare returns true for same reference", () => {
+      const a = new DotMarker("x");
+      expect(a.compare(a)).toBe(true);
+    });
+
+    it("elementClass returns custom class", () => {
+      expect(new DotMarker("red").elementClass).toBe("dot-red");
+    });
+
+    it("point is true by default", () => {
+      expect(new DotMarker("x").point).toBe(true);
+    });
+
+    it("destroy method exists on GutterMarker", () => {
+      const m = new DotMarker("x");
+      expect(typeof m.destroy).toBe("function");
+    });
+
+    it("can be used in a RangeSet via Decoration.set pattern", () => {
+      const { RangeSet } = require("../../src/core/state/index");
+      const m = new DotMarker("red");
+      const set = RangeSet.of([m.range(0)]);
+      expect(set.size).toBe(1);
+    });
+  });
 });

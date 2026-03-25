@@ -1092,6 +1092,280 @@ describe("Transaction.reconfigured", () => {
   });
 });
 
+describe("countColumn edge cases", () => {
+  it("returns 0 for an empty string", () => {
+    expect(countColumn("", 4)).toBe(0);
+  });
+
+  it("tab at column 0 advances to tabSize", () => {
+    expect(countColumn("\t", 4)).toBe(4);
+  });
+
+  it("tab at column 1 advances to next tab stop", () => {
+    // "x\t" — 'x' is col 1, tab fills to 4
+    expect(countColumn("x\t", 4)).toBe(4);
+  });
+
+  it("tab at column 3 advances to next tab stop", () => {
+    // "xxx\t" — 3 chars then tab fills to 4
+    expect(countColumn("xxx\t", 4)).toBe(4);
+  });
+
+  it("tab at column 4 advances to 8", () => {
+    // "xxxx\t" — 4 chars then tab fills to 8
+    expect(countColumn("xxxx\t", 4)).toBe(8);
+  });
+
+  it("mixed tabs and spaces", () => {
+    // " \t" — 1 space (col 1), then tab fills to 4
+    expect(countColumn(" \t", 4)).toBe(4);
+    // "  \tx" — 2 spaces (col 2), tab fills to 4, then 'x' is col 5
+    expect(countColumn("  \tx", 4)).toBe(5);
+  });
+
+  it("string with only tabs", () => {
+    expect(countColumn("\t\t", 4)).toBe(8);
+    expect(countColumn("\t\t\t", 3)).toBe(9);
+  });
+
+  it("unicode emoji characters count as 1 column each", () => {
+    // Emoji is a single grapheme cluster — counted as 1 column
+    expect(countColumn("\uD83D\uDE00", 4)).toBe(1);
+    // Two emoji = 2 columns
+    expect(countColumn("\uD83D\uDE00\uD83D\uDE00", 4)).toBe(2);
+  });
+
+  it("combining marks count as part of the base character", () => {
+    // "e\u0301" (e + combining acute) is one grapheme cluster = 1 column
+    expect(countColumn("e\u0301", 4)).toBe(1);
+  });
+
+  it("to parameter limits how far to count", () => {
+    // "hello" with to=3 counts only "hel" = 3 columns
+    expect(countColumn("hello", 4, 3)).toBe(3);
+  });
+
+  it("to parameter works with tabs", () => {
+    // "\thello" with to=1 counts only the tab = 4 columns
+    expect(countColumn("\thello", 4, 1)).toBe(4);
+  });
+
+  it("to=0 returns 0", () => {
+    expect(countColumn("hello", 4, 0)).toBe(0);
+  });
+});
+
+describe("findColumn edge cases", () => {
+  it("returns 0 for column 0", () => {
+    expect(findColumn("hello", 0, 4)).toBe(0);
+  });
+
+  it("finds position in plain text", () => {
+    expect(findColumn("hello", 3, 4)).toBe(3);
+  });
+
+  it("empty string returns 0 for column 0", () => {
+    expect(findColumn("", 0, 4)).toBe(0);
+  });
+
+  it("column beyond string length returns string.length by default", () => {
+    expect(findColumn("hi", 10, 4)).toBe(2);
+  });
+
+  it("column beyond string length with strict=true returns -1", () => {
+    expect(findColumn("hi", 10, 4, true)).toBe(-1);
+  });
+
+  it("tab expansion: column at tab boundary", () => {
+    // "\thello" — tab fills cols 0-3, 'h' at col 4
+    expect(findColumn("\thello", 4, 4)).toBe(1);
+  });
+
+  it("tab expansion: column in the middle of a tab", () => {
+    // "\thello" — tab occupies cols 0-3, col 2 is within the tab
+    // After the tab, n=4 which is >= 2, so findColumn returns 1 (after tab)
+    // Actually: at i=0, n=0, charCode==9, n becomes 4, i becomes 1.
+    // n(4) >= col(2) => return i(1)
+    expect(findColumn("\thello", 2, 4)).toBe(1);
+  });
+
+  it("exact tab boundary with offset spaces", () => {
+    // "  \thello" — 2 spaces (cols 0,1), tab fills to col 4, 'h' at col 4
+    expect(findColumn("  \thello", 4, 4)).toBe(3);
+  });
+
+  it("finds position after multiple tabs", () => {
+    // "\t\tx" — tab1 fills 0-3, tab2 fills 4-7, 'x' at col 8
+    expect(findColumn("\t\tx", 8, 4)).toBe(2);
+  });
+
+  it("strict=false is same as default", () => {
+    expect(findColumn("ab", 10, 4, false)).toBe(2);
+    expect(findColumn("ab", 10, 4)).toBe(2);
+  });
+});
+
+describe("EditorState.create deeper tests", () => {
+  it("multiple extensions combined", () => {
+    const facetA = Facet.define<number, number>({
+      combine: (vs) => vs.reduce((a, b) => a + b, 0),
+    });
+    const facetB = Facet.define<string, string[]>({
+      combine: (vs) => vs,
+    });
+    const state = EditorState.create({
+      doc: "test",
+      extensions: [facetA.of(10), facetA.of(20), facetB.of("x")],
+    });
+    expect(state.facet(facetA)).toBe(30);
+    expect(state.facet(facetB)).toEqual(["x"]);
+  });
+
+  it("facet values compose from nested extension arrays", () => {
+    const myFacet = Facet.define<number, number[]>({
+      combine: (vs) => vs,
+    });
+    const state = EditorState.create({
+      extensions: [
+        [myFacet.of(1), myFacet.of(2)],
+        myFacet.of(3),
+      ],
+    });
+    const values = state.facet(myFacet);
+    expect(values).toContain(1);
+    expect(values).toContain(2);
+    expect(values).toContain(3);
+    expect(values.length).toBe(3);
+  });
+
+  it("transaction filter can modify transactions", () => {
+    const log: string[] = [];
+    const logger = EditorState.transactionFilter.of((tr) => {
+      if (tr.docChanged) log.push("changed");
+      return tr;
+    });
+    const state = EditorState.create({
+      doc: "hello",
+      extensions: [logger],
+    });
+    state.update({ changes: { from: 5, insert: "!" } });
+    expect(log).toEqual(["changed"]);
+  });
+
+  it("change filter can suppress changes", () => {
+    const blocker = EditorState.changeFilter.of(() => false);
+    const state = EditorState.create({
+      doc: "hello",
+      extensions: [blocker],
+    });
+    const tr = state.update({ changes: { from: 5, insert: "!" } });
+    // The change filter suppresses all changes
+    expect(tr.state.doc.toString()).toBe("hello");
+  });
+
+  it("StateField persists across multiple transactions", () => {
+    const increment = StateEffect.define<number>();
+    const counter = StateField.define<number>({
+      create: () => 0,
+      update(value, tr) {
+        for (const e of tr.effects) {
+          if (e.is(increment)) value += e.value;
+        }
+        return value;
+      },
+    });
+    let state = EditorState.create({ extensions: [counter] });
+    state = state.update({ effects: increment.of(1) }).state;
+    state = state.update({ effects: increment.of(2) }).state;
+    state = state.update({ effects: increment.of(3) }).state;
+    expect(state.field(counter)).toBe(6);
+  });
+});
+
+describe("ChangeSet operations", () => {
+  it("compose two ChangeSets applies both", () => {
+    const doc = Text.of(["abcdef"]);
+    const cs1 = ChangeSet.of([{ from: 0, to: 1, insert: "X" }], 6); // Xbcdef
+    const cs2 = ChangeSet.of([{ from: 5, insert: "Y" }], cs1.newLength); // XbcdeYf
+    const composed = cs1.compose(cs2);
+    expect(composed.apply(doc).toString()).toBe("XbcdeYf");
+  });
+
+  it("map positions through changes", () => {
+    const cs = ChangeSet.of([{ from: 2, to: 4, insert: "XYZ" }], 10);
+    // Position before the change is unchanged
+    expect(cs.mapPos(0)).toBe(0);
+    expect(cs.mapPos(1)).toBe(1);
+    // Position after the change is shifted by (3 inserted - 2 deleted) = +1
+    expect(cs.mapPos(5)).toBe(6);
+    expect(cs.mapPos(10)).toBe(11);
+  });
+
+  it("mapPos with assoc=-1 maps deletions to start", () => {
+    const cs = ChangeSet.of([{ from: 2, to: 5 }], 10);
+    // Position 3 is inside deletion, assoc -1 maps to start
+    expect(cs.mapPos(3, -1)).toBe(2);
+  });
+
+  it("mapPos with assoc=1 maps deletions to end (which is start after deletion)", () => {
+    const cs = ChangeSet.of([{ from: 2, to: 5 }], 10);
+    // Position 3 is inside deletion, assoc 1 maps to end of deletion (pos 2, since range collapsed)
+    expect(cs.mapPos(3, 1)).toBe(2);
+  });
+
+  it("invert a changeset undoes the original", () => {
+    const doc = Text.of(["hello world"]);
+    const cs = ChangeSet.of([{ from: 5, to: 11, insert: " there" }], 11);
+    const modified = cs.apply(doc);
+    expect(modified.toString()).toBe("hello there");
+    const inverted = cs.invert(doc);
+    const restored = inverted.apply(modified);
+    expect(restored.toString()).toBe("hello world");
+  });
+
+  it("invert insertion removes it", () => {
+    const doc = Text.of(["abc"]);
+    const cs = ChangeSet.of([{ from: 1, insert: "XY" }], 3);
+    const modified = cs.apply(doc);
+    expect(modified.toString()).toBe("aXYbc");
+    const inverted = cs.invert(doc);
+    expect(inverted.apply(modified).toString()).toBe("abc");
+  });
+
+  it("invert deletion restores it", () => {
+    const doc = Text.of(["abcdef"]);
+    const cs = ChangeSet.of([{ from: 1, to: 4 }], 6);
+    const modified = cs.apply(doc);
+    expect(modified.toString()).toBe("aef");
+    const inverted = cs.invert(doc);
+    expect(inverted.apply(modified).toString()).toBe("abcdef");
+  });
+
+  it("empty changeset has no effect", () => {
+    const doc = Text.of(["hello"]);
+    const cs = ChangeSet.empty(5);
+    expect(cs.apply(doc).toString()).toBe("hello");
+    expect(cs.length).toBe(5);
+    expect(cs.newLength).toBe(5);
+  });
+
+  it("empty changeset composes with another correctly", () => {
+    const empty = ChangeSet.empty(5);
+    const cs = ChangeSet.of([{ from: 0, insert: "X" }], 5);
+    const composed = empty.compose(cs);
+    const doc = Text.of(["hello"]);
+    expect(composed.apply(doc).toString()).toBe("Xhello");
+  });
+
+  it("empty changeset invert is also empty", () => {
+    const doc = Text.of(["hello"]);
+    const cs = ChangeSet.empty(5);
+    const inverted = cs.invert(doc);
+    expect(inverted.length).toBe(5);
+    expect(inverted.newLength).toBe(5);
+  });
+});
+
 describe("Transaction.isUserEvent", () => {
   it("matches exact event", () => {
     const state = EditorState.create({ doc: "hello" });
