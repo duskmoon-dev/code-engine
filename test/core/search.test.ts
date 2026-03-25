@@ -21,6 +21,7 @@ import {
   closeSearchPanel,
   validRegExp,
 } from "../../src/core/search/index";
+import { Text } from "../../src/core/state/index";
 
 describe("search module exports", () => {
   it("exports search as a function", () => {
@@ -210,7 +211,6 @@ describe("SearchQuery", () => {
 
 describe("SearchCursor", () => {
   it("can iterate matches in a text", () => {
-    const { Text } = require("../../src/core/state/index");
     const text = Text.of(["hello world hello"]);
     const cursor = new SearchCursor(text, "hello");
     const first = cursor.next();
@@ -220,7 +220,6 @@ describe("SearchCursor", () => {
   });
 
   it("returns done when no more matches", () => {
-    const { Text } = require("../../src/core/state/index");
     const text = Text.of(["no match here"]);
     const cursor = new SearchCursor(text, "xyz");
     const result = cursor.next();
