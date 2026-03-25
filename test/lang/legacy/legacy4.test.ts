@@ -367,5 +367,44 @@ describe("Legacy language packs (batch 4)", () => {
       const state = EditorState.create({ doc, extensions: [new LanguageSupport(lang)] });
       expect(state.doc.length).toBe(doc.length);
     });
+
+    it("textile doc line count is correct", () => {
+      const lang = StreamLanguage.define(textile);
+      const state = EditorState.create({
+        doc: "h1. Title\n\np. Paragraph one.\n\np. Paragraph two.",
+        extensions: [new LanguageSupport(lang)],
+      });
+      expect(state.doc.lines).toBe(5);
+    });
+
+    it("verilog doc mutation via transaction works", () => {
+      const lang = StreamLanguage.define(verilog);
+      let state = EditorState.create({ doc: "module top;", extensions: [new LanguageSupport(lang)] });
+      state = state.update({ changes: { from: 11, insert: "\nendmodule" } }).state;
+      expect(state.doc.lines).toBe(2);
+    });
+
+    it("forth doc line text is accessible", () => {
+      const lang = StreamLanguage.define(forth);
+      const state = EditorState.create({
+        doc: ": square dup * ;\n: cube dup dup * * ;",
+        extensions: [new LanguageSupport(lang)],
+      });
+      expect(state.doc.line(1).text).toBe(": square dup * ;");
+    });
+
+    it("cobol doc replacement transaction works", () => {
+      const lang = StreamLanguage.define(cobol);
+      let state = EditorState.create({ doc: "IDENTIFICATION DIVISION.", extensions: [new LanguageSupport(lang)] });
+      state = state.update({ changes: { from: 0, to: 14, insert: "ENVIRONMENT" } }).state;
+      expect(state.doc.toString()).toBe("ENVIRONMENT DIVISION.");
+    });
+
+    it("ebnf doc length is correct", () => {
+      const lang = StreamLanguage.define(ebnf);
+      const doc = "digit = '0' | '1' | '2' | '3' | '4' | '5' | '6' | '7' | '8' | '9' ;";
+      const state = EditorState.create({ doc, extensions: [new LanguageSupport(lang)] });
+      expect(state.doc.length).toBe(doc.length);
+    });
   });
 });

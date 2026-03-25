@@ -280,4 +280,35 @@ describe("HTML language pack", () => {
     const state = EditorState.create({ doc, extensions: [html()] });
     expect(state.doc.length).toBe(doc.length);
   });
+
+  it("html() state doc line text is accessible", () => {
+    const state = EditorState.create({
+      doc: "<html>\n<body>\n</body>\n</html>",
+      extensions: [html()],
+    });
+    expect(state.doc.line(1).text).toBe("<html>");
+    expect(state.doc.line(2).text).toBe("<body>");
+  });
+
+  it("html() state deletion transaction works", () => {
+    let state = EditorState.create({ doc: "<div></div>\n<p></p>", extensions: [html()] });
+    state = state.update({ changes: { from: 11, to: 19 } }).state;
+    expect(state.doc.toString()).toBe("<div></div>");
+  });
+
+  it("html() state with unicode content works", () => {
+    const doc = "<!-- こんにちは -->\n<p>world</p>";
+    const state = EditorState.create({ doc, extensions: [html()] });
+    expect(state.doc.toString()).toBe(doc);
+  });
+
+  it("html() state selection can span lines", () => {
+    const state = EditorState.create({
+      doc: "<div>\n  hello\n</div>",
+      selection: { anchor: 0, head: 5 },
+      extensions: [html()],
+    });
+    expect(state.selection.main.from).toBe(0);
+    expect(state.selection.main.to).toBe(5);
+  });
 });

@@ -282,5 +282,40 @@ describe("Emacs keymap", () => {
       expect(state.doc.line(1).text).toBe("line1");
       expect(state.doc.line(2).text).toBe("line2");
     });
+
+    it("emacs() state doc line text is accessible", () => {
+      const state = EditorState.create({
+        doc: "first line\nsecond line\nthird line",
+        extensions: [emacs()],
+      });
+      expect(state.doc.line(1).text).toBe("first line");
+      expect(state.doc.line(2).text).toBe("second line");
+    });
+
+    it("emacs() state deletion transaction works", () => {
+      let state = EditorState.create({ doc: "hello world", extensions: [emacs()] });
+      state = state.update({ changes: { from: 5, to: 11 } }).state;
+      expect(state.doc.toString()).toBe("hello");
+    });
+
+    it("emacs() state replacement transaction works", () => {
+      let state = EditorState.create({ doc: "foo bar baz", extensions: [emacs()] });
+      state = state.update({ changes: { from: 4, to: 7, insert: "qux" } }).state;
+      expect(state.doc.toString()).toBe("foo qux baz");
+    });
+
+    it("emacs() state with unicode content works", () => {
+      const doc = "// こんにちは\nconst x = 1;";
+      const state = EditorState.create({ doc, extensions: [emacs()] });
+      expect(state.doc.toString()).toBe(doc);
+    });
+
+    it("emacs() state line count is correct for multi-line doc", () => {
+      const state = EditorState.create({
+        doc: "a\nb\nc\nd\ne",
+        extensions: [emacs()],
+      });
+      expect(state.doc.lines).toBe(5);
+    });
   });
 });

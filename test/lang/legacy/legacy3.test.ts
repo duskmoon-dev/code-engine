@@ -376,5 +376,44 @@ describe("Legacy language packs (batch 3)", () => {
       state = state.update({ changes: { from: 9, insert: "\n+++ b.txt" } }).state;
       expect(state.doc.lines).toBe(2);
     });
+
+    it("sparql doc length is correct", () => {
+      const lang = StreamLanguage.define(sparql);
+      const doc = "SELECT ?s WHERE { ?s ?p ?o }";
+      const state = EditorState.create({ doc, extensions: [new LanguageSupport(lang)] });
+      expect(state.doc.length).toBe(doc.length);
+    });
+
+    it("turtle doc mutation via transaction works", () => {
+      const lang = StreamLanguage.define(turtle);
+      let state = EditorState.create({ doc: "@prefix ex: <http://example.org/>.", extensions: [new LanguageSupport(lang)] });
+      state = state.update({ changes: { from: 34, insert: "\nex:s ex:p ex:o." } }).state;
+      expect(state.doc.lines).toBe(2);
+    });
+
+    it("pug doc line count is correct", () => {
+      const lang = StreamLanguage.define(pug);
+      const state = EditorState.create({
+        doc: "doctype html\nhtml\n  head\n    title My Site\n  body\n    p Hello",
+        extensions: [new LanguageSupport(lang)],
+      });
+      expect(state.doc.lines).toBe(6);
+    });
+
+    it("cmake doc line text is accessible", () => {
+      const lang = StreamLanguage.define(cmake);
+      const state = EditorState.create({
+        doc: "cmake_minimum_required(VERSION 3.10)\nproject(MyProject)",
+        extensions: [new LanguageSupport(lang)],
+      });
+      expect(state.doc.line(1).text).toBe("cmake_minimum_required(VERSION 3.10)");
+    });
+
+    it("properties doc replacement transaction works", () => {
+      const lang = StreamLanguage.define(properties);
+      let state = EditorState.create({ doc: "key=value", extensions: [new LanguageSupport(lang)] });
+      state = state.update({ changes: { from: 4, to: 9, insert: "newvalue" } }).state;
+      expect(state.doc.toString()).toBe("key=newvalue");
+    });
   });
 });

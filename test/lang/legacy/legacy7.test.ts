@@ -357,5 +357,44 @@ describe("Legacy language packs (batch 7)", () => {
       const state = EditorState.create({ doc, extensions: [new LanguageSupport(lang)] });
       expect(state.doc.length).toBe(doc.length);
     });
+
+    it("csharp doc line count is correct", () => {
+      const lang = StreamLanguage.define(csharp);
+      const state = EditorState.create({
+        doc: "using System;\nnamespace Hello {\n  class Program {\n    static void Main() {}\n  }\n}",
+        extensions: [new LanguageSupport(lang)],
+      });
+      expect(state.doc.lines).toBe(6);
+    });
+
+    it("kotlin doc mutation via transaction works", () => {
+      const lang = StreamLanguage.define(kotlin);
+      let state = EditorState.create({ doc: "fun main() {}", extensions: [new LanguageSupport(lang)] });
+      state = state.update({ changes: { from: 13, insert: "\nfun helper() {}" } }).state;
+      expect(state.doc.lines).toBe(2);
+    });
+
+    it("haxe doc line text is accessible", () => {
+      const lang = StreamLanguage.define(haxe);
+      const state = EditorState.create({
+        doc: "class Main {\n  static public function main() {}\n}",
+        extensions: [new LanguageSupport(lang)],
+      });
+      expect(state.doc.line(1).text).toBe("class Main {");
+    });
+
+    it("velocity doc replacement transaction works", () => {
+      const lang = StreamLanguage.define(velocity);
+      let state = EditorState.create({ doc: "#set( $name = 'World' )", extensions: [new LanguageSupport(lang)] });
+      state = state.update({ changes: { from: 14, to: 21, insert: "'Claude'" } }).state;
+      expect(state.doc.toString()).toBe("#set( $name = 'Claude' )");
+    });
+
+    it("dtd doc length is correct", () => {
+      const lang = StreamLanguage.define(dtd);
+      const doc = "<!ELEMENT note (to, from, body)>";
+      const state = EditorState.create({ doc, extensions: [new LanguageSupport(lang)] });
+      expect(state.doc.length).toBe(doc.length);
+    });
   });
 });

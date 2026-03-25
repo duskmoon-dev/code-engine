@@ -255,4 +255,39 @@ describe("JavaScript language pack", () => {
     const tree = typescriptLanguage.parser.parse("type Readonly<T> = { readonly [P in keyof T]: T[P]; }; type Partial<T> = { [P in keyof T]?: T[P]; };");
     expect(tree.length).toBeGreaterThan(0);
   });
+
+  it("javascript() state doc line text is accessible", () => {
+    const state = EditorState.create({
+      doc: "const x = 1;\nconst y = 2;\nconst z = 3;",
+      extensions: [javascript()],
+    });
+    expect(state.doc.line(1).text).toBe("const x = 1;");
+    expect(state.doc.line(2).text).toBe("const y = 2;");
+  });
+
+  it("javascript() state allows multiple sequential transactions", () => {
+    let state = EditorState.create({ doc: "let a = 1;", extensions: [javascript()] });
+    state = state.update({ changes: { from: 10, insert: "\nlet b = 2;" } }).state;
+    state = state.update({ changes: { from: state.doc.length, insert: "\nlet c = 3;" } }).state;
+    expect(state.doc.lines).toBe(3);
+    expect(state.doc.line(3).text).toBe("let c = 3;");
+  });
+
+  it("javascript() state deletion transaction works", () => {
+    let state = EditorState.create({ doc: "const x = 1;\nconst y = 2;", extensions: [javascript()] });
+    state = state.update({ changes: { from: 12, to: 25 } }).state;
+    expect(state.doc.toString()).toBe("const x = 1;");
+  });
+
+  it("javascript() state with unicode content works", () => {
+    const doc = "// 日本語\nconst greeting = 'こんにちは';";
+    const state = EditorState.create({ doc, extensions: [javascript()] });
+    expect(state.doc.toString()).toBe(doc);
+  });
+
+  it("javascript() extension preserves doc length invariant", () => {
+    const doc = "function hello() { return 'world'; }";
+    const state = EditorState.create({ doc, extensions: [javascript()] });
+    expect(state.doc.length).toBe(doc.length);
+  });
 });

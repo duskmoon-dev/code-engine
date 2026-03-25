@@ -325,5 +325,39 @@ describe("Liquid language pack", () => {
       const tree = liquidLanguage.parser.parse("{% comment %}This is a Liquid comment{% endcomment %}Hello");
       expect(tree.length).toBeGreaterThan(0);
     });
+
+    it("liquid() state doc line text is accessible", () => {
+      const state = EditorState.create({
+        doc: "{% if user %}\n  Hello, {{ user.name }}!\n{% endif %}",
+        extensions: [liquid()],
+      });
+      expect(state.doc.line(1).text).toBe("{% if user %}");
+      expect(state.doc.line(2).text).toBe("  Hello, {{ user.name }}!");
+    });
+
+    it("liquid() state allows multiple sequential transactions", () => {
+      let state = EditorState.create({ doc: "{{ title }}", extensions: [liquid()] });
+      state = state.update({ changes: { from: 11, insert: "\n{{ body }}" } }).state;
+      state = state.update({ changes: { from: state.doc.length, insert: "\n{{ footer }}" } }).state;
+      expect(state.doc.lines).toBe(3);
+    });
+
+    it("liquid() state deletion transaction works", () => {
+      let state = EditorState.create({ doc: "{{ title }}\n{{ body }}", extensions: [liquid()] });
+      state = state.update({ changes: { from: 11, to: 22 } }).state;
+      expect(state.doc.toString()).toBe("{{ title }}");
+    });
+
+    it("liquid() extension preserves doc length invariant", () => {
+      const doc = "{% assign x = 42 %}{{ x }}";
+      const state = EditorState.create({ doc, extensions: [liquid()] });
+      expect(state.doc.length).toBe(doc.length);
+    });
+
+    it("liquid() state with unicode content works", () => {
+      const doc = "{# こんにちは #}\n{{ greeting }}";
+      const state = EditorState.create({ doc, extensions: [liquid()] });
+      expect(state.doc.toString()).toBe(doc);
+    });
   });
 });
