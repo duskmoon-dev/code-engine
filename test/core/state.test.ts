@@ -1003,6 +1003,63 @@ describe("Transaction.effects", () => {
     const tr = state.update({ effects: [e1.of("a"), e2.of(1)] });
     expect(tr.effects.length).toBe(2);
   });
+
+  it("StateEffect.map maps effect through changes", () => {
+    const posEffect = StateEffect.define<number>({
+      map: (val, mapping) => mapping.mapPos(val),
+    });
+    const state = EditorState.create({ doc: "hello" });
+    const effect = posEffect.of(3);
+    const changes = ChangeSet.of([{ from: 0, insert: "XX" }], 5);
+    const mapped = effect.map(changes);
+    expect(mapped).toBeDefined();
+    expect(mapped!.value).toBe(5);
+  });
+});
+
+describe("Transaction.reconfigured", () => {
+  it("reconfigured is false for normal transactions", () => {
+    const state = EditorState.create({ doc: "hello" });
+    const tr = state.update({ changes: { from: 5, insert: "!" } });
+    expect(tr.reconfigured).toBe(false);
+  });
+
+  it("reconfigured is true when compartment changes", () => {
+    const compartment = new Compartment();
+    const facet = Facet.define<string>();
+    const state = EditorState.create({
+      doc: "hello",
+      extensions: [compartment.of(facet.of("a"))],
+    });
+    const tr = state.update({ effects: compartment.reconfigure(facet.of("b")) });
+    expect(tr.reconfigured).toBe(true);
+  });
+});
+
+describe("Transaction.isUserEvent", () => {
+  it("matches exact event", () => {
+    const state = EditorState.create({ doc: "hello" });
+    const tr = state.update({ annotations: Transaction.userEvent.of("select") });
+    expect(tr.isUserEvent("select")).toBe(true);
+  });
+
+  it("matches parent event", () => {
+    const state = EditorState.create({ doc: "hello" });
+    const tr = state.update({ annotations: Transaction.userEvent.of("select.pointer") });
+    expect(tr.isUserEvent("select")).toBe(true);
+  });
+
+  it("does not match different event", () => {
+    const state = EditorState.create({ doc: "hello" });
+    const tr = state.update({ annotations: Transaction.userEvent.of("select") });
+    expect(tr.isUserEvent("input")).toBe(false);
+  });
+
+  it("does not match partial prefix", () => {
+    const state = EditorState.create({ doc: "hello" });
+    const tr = state.update({ annotations: Transaction.userEvent.of("select") });
+    expect(tr.isUserEvent("sel")).toBe(false);
+  });
 });
 
 describe("Facet with combine function", () => {
