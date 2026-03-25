@@ -138,4 +138,79 @@ describe("XML language pack", () => {
     expect(node).toBeDefined();
     expect(node.type).toBeDefined();
   });
+
+  it("xmlLanguage can parse CDATA", () => {
+    const code = "<data><![CDATA[some < special & data]]></data>";
+    const tree = xmlLanguage.parser.parse(code);
+    expect(tree.length).toBe(code.length);
+  });
+
+  it("xmlLanguage can parse XML namespaces", () => {
+    const code = "<svg:svg xmlns:svg=\"http://www.w3.org/2000/svg\"><svg:circle cx=\"50\" cy=\"50\" r=\"40\"/></svg:svg>";
+    const tree = xmlLanguage.parser.parse(code);
+    expect(tree.length).toBe(code.length);
+    expect(tree.type.isTop).toBe(true);
+  });
+
+  it("xmlLanguage can parse processing instructions", () => {
+    const code = "<?xml version=\"1.0\" encoding=\"UTF-8\"?><root/>";
+    const tree = xmlLanguage.parser.parse(code);
+    expect(tree.length).toBe(code.length);
+  });
+
+  it("xmlLanguage can parse comments", () => {
+    const code = "<!-- This is a comment --><root/>";
+    const tree = xmlLanguage.parser.parse(code);
+    expect(tree.length).toBe(code.length);
+  });
+
+  it("tree.resolve() works at multiple positions in XML", () => {
+    const code = "<bookstore><book category=\"fiction\"><title>Great Expectations</title></book></bookstore>";
+    const tree = xmlLanguage.parser.parse(code);
+    for (let i = 0; i < code.length; i += 10) {
+      const node = tree.resolve(i);
+      expect(node).toBeDefined();
+    }
+  });
+
+  it("xmlLanguage can parse self-closing tags", () => {
+    const code = "<br/><hr/><img src=\"photo.jpg\" alt=\"photo\"/>";
+    const tree = xmlLanguage.parser.parse(code);
+    expect(tree.length).toBeGreaterThan(0);
+    expect(tree.type.isTop).toBe(true);
+  });
+
+  it("xmlLanguage can parse deeply nested elements", () => {
+    const code = "<a><b><c><d><e>deep</e></d></c></b></a>";
+    const tree = xmlLanguage.parser.parse(code);
+    expect(tree.length).toBeGreaterThan(0);
+  });
+
+  it("xmlLanguage can parse entities", () => {
+    const code = "<p>Tom &amp; Jerry, &lt;the&gt; cartoon &quot;stars&quot;</p>";
+    const tree = xmlLanguage.parser.parse(code);
+    expect(tree.length).toBeGreaterThan(0);
+  });
+
+  it("xmlLanguage cursor traversal counts more than 5 nodes", () => {
+    const code = "<root><a>1</a><b>2</b><c>3</c><d>4</d></root>";
+    const tree = xmlLanguage.parser.parse(code);
+    const cursor = tree.cursor();
+    let count = 0;
+    do { count++; } while (cursor.next() && count < 200);
+    expect(count).toBeGreaterThan(5);
+  });
+
+  it("xmlLanguage can parse mixed content (text and elements)", () => {
+    const code = "<p>Text before <em>emphasis</em> and after</p>";
+    const tree = xmlLanguage.parser.parse(code);
+    expect(tree.length).toBeGreaterThan(0);
+    expect(tree.type.isTop).toBe(true);
+  });
+
+  it("xmlLanguage can parse DOCTYPE declaration", () => {
+    const code = "<!DOCTYPE html PUBLIC \"-//W3C//DTD HTML 4.01//EN\"><html></html>";
+    const tree = xmlLanguage.parser.parse(code);
+    expect(tree.length).toBeGreaterThan(0);
+  });
 });

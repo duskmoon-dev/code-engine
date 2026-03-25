@@ -127,4 +127,94 @@ describe("Markdown language pack", () => {
     expect(tree.length).toBeGreaterThan(0);
     expect(tree.type.isTop).toBe(true);
   });
+
+  it("markdownLanguage can parse links", () => {
+    const tree = markdownLanguage.parser.parse("[Click here](https://example.com)");
+    expect(tree.length).toBeGreaterThan(0);
+  });
+
+  it("markdownLanguage can parse images", () => {
+    const tree = markdownLanguage.parser.parse("![Alt text](image.png)");
+    expect(tree.length).toBeGreaterThan(0);
+    expect(tree.type.isTop).toBe(true);
+  });
+
+  it("markdownLanguage can parse blockquotes", () => {
+    const tree = markdownLanguage.parser.parse("> This is a blockquote\n> with multiple lines");
+    expect(tree.length).toBeGreaterThan(0);
+  });
+
+  it("markdownLanguage can parse ordered lists", () => {
+    const tree = markdownLanguage.parser.parse("1. First item\n2. Second item\n3. Third item");
+    expect(tree.length).toBeGreaterThan(0);
+    expect(tree.type.isTop).toBe(true);
+  });
+
+  it("markdownLanguage can parse inline code", () => {
+    const tree = markdownLanguage.parser.parse("Use `const x = 1` for assignments.");
+    expect(tree.length).toBeGreaterThan(0);
+  });
+
+  it("markdownLanguage can parse bold and italic", () => {
+    const tree = markdownLanguage.parser.parse("**bold** and *italic* and ***bold italic***");
+    expect(tree.length).toBeGreaterThan(0);
+    expect(tree.type.isTop).toBe(true);
+  });
+
+  it("markdownLanguage cursor traversal works on full document", () => {
+    const doc = "# Header\n\n**Bold** text with `code`.\n\n- item 1\n- item 2\n\n> quote";
+    const tree = markdownLanguage.parser.parse(doc);
+    const cursor = tree.cursor();
+    let nodeCount = 0;
+    do { nodeCount++; } while (cursor.next() && nodeCount < 200);
+    expect(nodeCount).toBeGreaterThan(1);
+  });
+
+  it("tree.resolve() finds nodes at multiple positions", () => {
+    const doc = "# Hello World\n\nThis is a paragraph with **bold** text.";
+    const tree = markdownLanguage.parser.parse(doc);
+    for (let i = 0; i < doc.length; i += 6) {
+      const node = tree.resolve(i);
+      expect(node).toBeDefined();
+    }
+  });
+
+  it("markdownLanguage can parse footnotes", () => {
+    const tree = markdownLanguage.parser.parse("This has a footnote[^1].\n\n[^1]: The footnote text.");
+    expect(tree.length).toBeGreaterThan(0);
+    expect(tree.type.isTop).toBe(true);
+  });
+
+  it("markdownLanguage can parse horizontal rule", () => {
+    const tree = markdownLanguage.parser.parse("Before\n\n---\n\nAfter");
+    expect(tree.length).toBeGreaterThan(0);
+  });
+
+  it("markdownLanguage can parse fenced code block with language", () => {
+    const tree = markdownLanguage.parser.parse("```typescript\nconst x: number = 42;\nconsole.log(x);\n```");
+    expect(tree.length).toBeGreaterThan(0);
+    expect(tree.type.isTop).toBe(true);
+  });
+
+  it("markdownLanguage can parse nested lists", () => {
+    const tree = markdownLanguage.parser.parse("- item 1\n  - nested 1\n  - nested 2\n- item 2\n  1. numbered sub\n  2. numbered sub 2");
+    expect(tree.length).toBeGreaterThan(0);
+  });
+
+  it("markdownLanguage can parse atx headings all levels", () => {
+    const tree = markdownLanguage.parser.parse("# H1\n## H2\n### H3\n#### H4\n##### H5\n###### H6");
+    expect(tree.length).toBeGreaterThan(0);
+    expect(tree.type.isTop).toBe(true);
+  });
+
+  it("markdownLanguage can parse reference-style links", () => {
+    const tree = markdownLanguage.parser.parse("See [the docs][docs].\n\n[docs]: https://example.com \"Documentation\"");
+    expect(tree.length).toBeGreaterThan(0);
+  });
+
+  it("parser.configure() with task list produces non-empty tree", () => {
+    const tree = parser.configure([TaskList]).parse("- [x] done task\n- [ ] pending task");
+    expect(tree.length).toBeGreaterThan(0);
+    expect(tree.type.isTop).toBe(true);
+  });
 });

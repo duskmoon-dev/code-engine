@@ -159,5 +159,63 @@ describe("Lezer language pack", () => {
       do { nodeCount++; } while (cursor.next() && nodeCount < 100);
       expect(nodeCount).toBeGreaterThan(1);
     });
+
+    it("lezerLanguage can parse @skip declaration", () => {
+      const tree = lezerLanguage.parser.parse("@skip { whitespace | Comment }\n@top Program { stmt+ }");
+      expect(tree.length).toBeGreaterThan(0);
+      expect(tree.type.isTop).toBe(true);
+    });
+
+    it("lezerLanguage can parse token rules with character ranges", () => {
+      const tree = lezerLanguage.parser.parse("@tokens { Identifier { $[a-zA-Z_]+ } Number { $[0-9]+ } }");
+      expect(tree.length).toBeGreaterThan(0);
+    });
+
+    it("lezerLanguage can parse inline rules", () => {
+      const tree = lezerLanguage.parser.parse("@top Expr { Number { @digit+ } }");
+      expect(tree.length).toBeGreaterThan(0);
+      expect(tree.type.isTop).toBe(true);
+    });
+
+    it("tree.resolve() finds nodes at positions in lezer grammar", () => {
+      const code = "@top Program { statement* }\nstatement { Number \"+\" Number }";
+      const tree = lezerLanguage.parser.parse(code);
+      for (let i = 0; i < code.length; i += 8) {
+        const node = tree.resolve(i);
+        expect(node).toBeDefined();
+      }
+    });
+
+    it("lezerLanguage can parse @dialect declarations", () => {
+      const tree = lezerLanguage.parser.parse("@dialects { jsx }");
+      expect(tree.length).toBeGreaterThan(0);
+    });
+
+    it("lezerLanguage can parse @context declaration", () => {
+      const tree = lezerLanguage.parser.parse("@context trackNewline from \"./tokens\"");
+      expect(tree.length).toBeGreaterThan(0);
+      expect(tree.type.isTop).toBe(true);
+    });
+
+    it("lezerLanguage can parse @detectDelim", () => {
+      const tree = lezerLanguage.parser.parse("@detectDelim");
+      expect(tree.length).toBeGreaterThan(0);
+    });
+
+    it("lezerLanguage can parse rule with optional and star", () => {
+      const tree = lezerLanguage.parser.parse("@top Program { statement* }\nstatement { identifier \":\" expression? \";\" }");
+      expect(tree.length).toBeGreaterThan(0);
+      expect(tree.type.isTop).toBe(true);
+    });
+
+    it("lezerLanguage can parse rule with pipe alternatives", () => {
+      const tree = lezerLanguage.parser.parse("expression { Number | String | Identifier | \"(\" expression \")\" }");
+      expect(tree.length).toBeGreaterThan(0);
+    });
+
+    it("lezerLanguage can parse @specialize directive", () => {
+      const tree = lezerLanguage.parser.parse("@top Expr { @specialize[@name=Add]<Expr, \"+\"> | Number }");
+      expect(tree.length).toBeGreaterThan(0);
+    });
   });
 });

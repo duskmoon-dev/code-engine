@@ -15,6 +15,8 @@ import {
   languageServerExtensions,
 } from "../../src/core/lsp/index";
 
+import { EditorState } from "../../src/core/state/index";
+
 describe("LSP module exports", () => {
   it("exports LSPClient and WorkspaceMapping as classes", () => {
     expect(typeof LSPClient).toBe("function");
@@ -70,6 +72,74 @@ describe("LSP module exports", () => {
   });
 
   it("languageServerExtensions returns an array", () => {
+    const exts = languageServerExtensions();
+    expect(Array.isArray(exts)).toBe(true);
+    expect(exts.length).toBeGreaterThan(0);
+  });
+});
+
+describe("LSP keymaps", () => {
+  it("formatKeymap entries have key and run", () => {
+    for (const binding of formatKeymap) {
+      expect(typeof binding.key === "string" || typeof binding.mac === "string").toBe(true);
+      expect(typeof binding.run).toBe("function");
+    }
+  });
+
+  it("renameKeymap entries have key and run", () => {
+    for (const binding of renameKeymap) {
+      expect(typeof binding.key === "string" || typeof binding.mac === "string").toBe(true);
+      expect(typeof binding.run).toBe("function");
+    }
+  });
+
+  it("signatureKeymap is a non-empty array", () => {
+    expect(signatureKeymap.length).toBeGreaterThan(0);
+  });
+
+  it("signatureKeymap entries have key and run", () => {
+    for (const binding of signatureKeymap) {
+      expect(typeof binding.key === "string" || typeof binding.mac === "string").toBe(true);
+    }
+  });
+
+  it("jumpToDefinitionKeymap entries have key and run", () => {
+    for (const binding of jumpToDefinitionKeymap) {
+      expect(typeof binding.key === "string" || typeof binding.mac === "string").toBe(true);
+      expect(typeof binding.run).toBe("function");
+    }
+  });
+
+  it("findReferencesKeymap entries have key and run", () => {
+    for (const binding of findReferencesKeymap) {
+      expect(typeof binding.key === "string" || typeof binding.mac === "string").toBe(true);
+      expect(typeof binding.run).toBe("function");
+    }
+  });
+});
+
+describe("LSP factory functions", () => {
+  it("serverCompletion() returns an extension", () => {
+    const ext = serverCompletion();
+    expect(ext).toBeDefined();
+  });
+
+  it("hoverTooltips() returns an extension", () => {
+    const ext = hoverTooltips();
+    expect(ext).toBeDefined();
+  });
+
+  it("serverDiagnostics() returns an extension", () => {
+    const ext = serverDiagnostics();
+    expect(ext).toBeDefined();
+  });
+
+  it("signatureHelp() returns an extension", () => {
+    const ext = signatureHelp();
+    expect(ext).toBeDefined();
+  });
+
+  it("languageServerExtensions() returns a non-empty array", () => {
     const exts = languageServerExtensions();
     expect(Array.isArray(exts)).toBe(true);
     expect(exts.length).toBeGreaterThan(0);

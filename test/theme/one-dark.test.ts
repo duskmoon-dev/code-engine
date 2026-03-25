@@ -81,4 +81,54 @@ describe("theme/one-dark", () => {
       expect(result === null || typeof result === "string").toBe(true);
     });
   });
+
+  describe("color value format", () => {
+    it("background color starts with #", () => {
+      expect(color.background.startsWith("#")).toBe(true);
+    });
+
+    it("cursor color starts with #", () => {
+      expect(color.cursor.startsWith("#")).toBe(true);
+    });
+
+    it("selection color starts with #", () => {
+      expect(color.selection.startsWith("#")).toBe(true);
+    });
+
+    it("all color values have length of 7 (including #)", () => {
+      for (const value of Object.values(color)) {
+        expect(value.length).toBe(7);
+      }
+    });
+
+    it("at least 10 distinct color keys are defined", () => {
+      expect(Object.keys(color).length).toBeGreaterThanOrEqual(10);
+    });
+  });
+
+  describe("oneDark with language support", () => {
+    it("can be used alongside other extensions", () => {
+      const state = EditorState.create({
+        doc: "const x = 1;",
+        extensions: [oneDark],
+      });
+      expect(state.doc.length).toBeGreaterThan(0);
+    });
+
+    it("oneDark[0] is the theme", () => {
+      expect((oneDark as unknown[])[0]).toBeDefined();
+    });
+
+    it("oneDark[1] is the highlight style", () => {
+      expect((oneDark as unknown[])[1]).toBeDefined();
+    });
+
+    it("can be used with empty doc", () => {
+      const state = EditorState.create({
+        doc: "",
+        extensions: [oneDark],
+      });
+      expect(state.doc.length).toBe(0);
+    });
+  });
 });

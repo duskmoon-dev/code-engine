@@ -1,5 +1,5 @@
 import { describe, it, expect } from "bun:test";
-import { StreamLanguage, LanguageSupport } from "../../../src/core/language/index";
+import { StreamLanguage, LanguageSupport, syntaxTree } from "../../../src/core/language/index";
 import { EditorState } from "../../../src/core/state/index";
 
 import { css as legacyCss } from "../../../src/lang/legacy/css";
@@ -167,6 +167,125 @@ describe("Legacy language packs (batch 8 - coverage completion)", () => {
         extensions: [new LanguageSupport(lang)],
       });
       expect(state.doc.toString()).toContain("version: 1.0.0");
+    });
+  });
+
+  describe("syntaxTree integration", () => {
+    it("legacy go syntaxTree is non-empty", () => {
+      const lang = StreamLanguage.define(legacyGo);
+      const state = EditorState.create({
+        doc: "package main\nfunc main() {}",
+        extensions: [new LanguageSupport(lang)],
+      });
+      expect(syntaxTree(state).length).toBeGreaterThan(0);
+    });
+
+    it("legacy rust syntaxTree is non-empty", () => {
+      const lang = StreamLanguage.define(legacyRust);
+      const state = EditorState.create({
+        doc: "fn main() { println!(\"hello\"); }",
+        extensions: [new LanguageSupport(lang)],
+      });
+      expect(syntaxTree(state).length).toBeGreaterThan(0);
+    });
+
+    it("legacy css syntaxTree is non-empty", () => {
+      const lang = StreamLanguage.define(legacyCss);
+      const state = EditorState.create({
+        doc: "body { color: red; }",
+        extensions: [new LanguageSupport(lang)],
+      });
+      expect(syntaxTree(state).length).toBeGreaterThan(0);
+    });
+
+    it("legacy sql syntaxTree is non-empty", () => {
+      const lang = StreamLanguage.define(legacySql);
+      const state = EditorState.create({
+        doc: "SELECT * FROM users;",
+        extensions: [new LanguageSupport(lang)],
+      });
+      expect(syntaxTree(state).length).toBeGreaterThan(0);
+    });
+
+    it("legacy xml syntaxTree is non-empty", () => {
+      const lang = StreamLanguage.define(legacyXml);
+      const state = EditorState.create({
+        doc: "<root><item>hello</item></root>",
+        extensions: [new LanguageSupport(lang)],
+      });
+      expect(syntaxTree(state).length).toBeGreaterThan(0);
+    });
+
+    it("jinja2 syntaxTree is non-empty", () => {
+      const lang = StreamLanguage.define(jinja2);
+      const state = EditorState.create({
+        doc: "{% for item in items %}{{ item }}{% endfor %}",
+        extensions: [new LanguageSupport(lang)],
+      });
+      expect(syntaxTree(state).length).toBeGreaterThan(0);
+    });
+
+    it("legacy yaml syntaxTree is non-empty", () => {
+      const lang = StreamLanguage.define(legacyYaml);
+      const state = EditorState.create({
+        doc: "key: value\nlist:\n  - item1\n  - item2",
+        extensions: [new LanguageSupport(lang)],
+      });
+      expect(syntaxTree(state).length).toBeGreaterThan(0);
+    });
+
+    it("legacy js syntaxTree is non-empty", () => {
+      const lang = StreamLanguage.define(legacyJS);
+      const state = EditorState.create({
+        doc: "const x = 42;\nconsole.log(x);",
+        extensions: [new LanguageSupport(lang)],
+      });
+      expect(syntaxTree(state).length).toBeGreaterThan(0);
+    });
+
+    it("legacy wast syntaxTree is non-empty", () => {
+      const lang = StreamLanguage.define(legacyWast);
+      const state = EditorState.create({
+        doc: "(module (func (result i32) i32.const 42))",
+        extensions: [new LanguageSupport(lang)],
+      });
+      expect(syntaxTree(state).length).toBeGreaterThan(0);
+    });
+
+    it("legacy sass syntaxTree is non-empty", () => {
+      const lang = StreamLanguage.define(legacySass);
+      const state = EditorState.create({
+        doc: "$primary: blue\n.btn\n  color: $primary",
+        extensions: [new LanguageSupport(lang)],
+      });
+      expect(syntaxTree(state).length).toBeGreaterThan(0);
+    });
+
+    it("ttcn syntaxTree is non-empty", () => {
+      const lang = StreamLanguage.define(ttcn);
+      const state = EditorState.create({
+        doc: "module MyTest { type charstring MyStr; }",
+        extensions: [new LanguageSupport(lang)],
+      });
+      expect(syntaxTree(state).length).toBeGreaterThan(0);
+    });
+
+    it("mbox syntaxTree is non-empty", () => {
+      const lang = StreamLanguage.define(mbox);
+      const state = EditorState.create({
+        doc: "From user@example.com Mon Jan  1 00:00:00 2024\nFrom: user@example.com\nSubject: Test\n\nBody text",
+        extensions: [new LanguageSupport(lang)],
+      });
+      expect(syntaxTree(state).length).toBeGreaterThan(0);
+    });
+
+    it("q syntaxTree is non-empty", () => {
+      const lang = StreamLanguage.define(q);
+      const state = EditorState.create({
+        doc: "t:([] name:`Alice`Bob; age:30 25)\nselect from t where age>28",
+        extensions: [new LanguageSupport(lang)],
+      });
+      expect(syntaxTree(state).length).toBeGreaterThan(0);
     });
   });
 });

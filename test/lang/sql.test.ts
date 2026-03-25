@@ -138,4 +138,122 @@ describe("SQL language pack", () => {
     expect(MSSQL).toBeDefined();
     expect(MSSQL.language).toBeDefined();
   });
+
+  it("StandardSQL can parse JOIN queries", () => {
+    const tree = StandardSQL.language.parser.parse("SELECT u.name, o.total FROM users u INNER JOIN orders o ON u.id = o.user_id;");
+    expect(tree.length).toBeGreaterThan(0);
+    expect(tree.type.isTop).toBe(true);
+  });
+
+  it("StandardSQL can parse subqueries", () => {
+    const tree = StandardSQL.language.parser.parse("SELECT * FROM users WHERE id IN (SELECT user_id FROM orders WHERE total > 100);");
+    expect(tree.length).toBeGreaterThan(0);
+  });
+
+  it("StandardSQL can parse CREATE TABLE", () => {
+    const tree = StandardSQL.language.parser.parse("CREATE TABLE users (id INTEGER PRIMARY KEY, name TEXT NOT NULL, email TEXT UNIQUE);");
+    expect(tree.length).toBeGreaterThan(0);
+    expect(tree.type.isTop).toBe(true);
+  });
+
+  it("StandardSQL can parse INSERT", () => {
+    const tree = StandardSQL.language.parser.parse("INSERT INTO users (name, email) VALUES ('Alice', 'alice@example.com');");
+    expect(tree.length).toBeGreaterThan(0);
+  });
+
+  it("StandardSQL can parse UPDATE", () => {
+    const tree = StandardSQL.language.parser.parse("UPDATE users SET email = 'new@example.com' WHERE id = 1;");
+    expect(tree.length).toBeGreaterThan(0);
+  });
+
+  it("StandardSQL can parse DELETE", () => {
+    const tree = StandardSQL.language.parser.parse("DELETE FROM users WHERE id = 1;");
+    expect(tree.length).toBeGreaterThan(0);
+    expect(tree.type.isTop).toBe(true);
+  });
+
+  it("tree.resolve() finds nodes in SQL code", () => {
+    const code = "SELECT id, name FROM users WHERE active = 1;";
+    const tree = StandardSQL.language.parser.parse(code);
+    for (let i = 0; i < code.length; i += 6) {
+      const node = tree.resolve(i);
+      expect(node).toBeDefined();
+    }
+  });
+
+  it("StandardSQL can parse GROUP BY and HAVING", () => {
+    const tree = StandardSQL.language.parser.parse("SELECT dept, COUNT(*) FROM employees GROUP BY dept HAVING COUNT(*) > 5;");
+    expect(tree.length).toBeGreaterThan(0);
+    expect(tree.type.isTop).toBe(true);
+  });
+
+  it("StandardSQL can parse ORDER BY with multiple columns", () => {
+    const tree = StandardSQL.language.parser.parse("SELECT * FROM users ORDER BY last_name ASC, first_name DESC;");
+    expect(tree.length).toBeGreaterThan(0);
+  });
+
+  it("StandardSQL can parse window functions", () => {
+    const tree = StandardSQL.language.parser.parse("SELECT name, salary, RANK() OVER (PARTITION BY dept ORDER BY salary DESC) AS rank FROM employees;");
+    expect(tree.length).toBeGreaterThan(0);
+  });
+
+  it("StandardSQL can parse CTEs (WITH clause)", () => {
+    const tree = StandardSQL.language.parser.parse("WITH active_users AS (SELECT * FROM users WHERE active = 1) SELECT * FROM active_users;");
+    expect(tree.length).toBeGreaterThan(0);
+    expect(tree.type.isTop).toBe(true);
+  });
+
+  it("StandardSQL can parse CASE expressions", () => {
+    const tree = StandardSQL.language.parser.parse("SELECT name, CASE WHEN score > 90 THEN 'A' WHEN score > 80 THEN 'B' ELSE 'C' END AS grade FROM students;");
+    expect(tree.length).toBeGreaterThan(0);
+  });
+
+  it("StandardSQL can parse aggregate functions", () => {
+    const tree = StandardSQL.language.parser.parse("SELECT COUNT(*), SUM(salary), AVG(salary), MIN(salary), MAX(salary) FROM employees;");
+    expect(tree.length).toBeGreaterThan(0);
+    expect(tree.type.isTop).toBe(true);
+  });
+
+  it("StandardSQL can parse UNION queries", () => {
+    const tree = StandardSQL.language.parser.parse("SELECT name FROM customers UNION SELECT name FROM employees;");
+    expect(tree.length).toBeGreaterThan(0);
+  });
+
+  it("StandardSQL can parse CREATE INDEX", () => {
+    const tree = StandardSQL.language.parser.parse("CREATE INDEX idx_users_email ON users (email);");
+    expect(tree.length).toBeGreaterThan(0);
+  });
+
+  it("StandardSQL can parse DROP TABLE", () => {
+    const tree = StandardSQL.language.parser.parse("DROP TABLE IF EXISTS temp_data;");
+    expect(tree.length).toBeGreaterThan(0);
+    expect(tree.type.isTop).toBe(true);
+  });
+
+  it("StandardSQL can parse ALTER TABLE", () => {
+    const tree = StandardSQL.language.parser.parse("ALTER TABLE users ADD COLUMN phone TEXT;");
+    expect(tree.length).toBeGreaterThan(0);
+  });
+
+  it("SQLite dialect parses SQLite-specific syntax", () => {
+    const tree = SQLite.language.parser.parse("SELECT * FROM sqlite_master WHERE type='table';");
+    expect(tree.length).toBeGreaterThan(0);
+  });
+
+  it("MSSQL dialect parses T-SQL syntax", () => {
+    const tree = MSSQL.language.parser.parse("SELECT TOP 10 * FROM users;");
+    expect(tree.length).toBeGreaterThan(0);
+  });
+
+  it("PostgreSQL dialect is defined and has a language", () => {
+    expect(PostgreSQL.language).toBeDefined();
+    const tree = PostgreSQL.language.parser.parse("SELECT * FROM users LIMIT 10 OFFSET 5;");
+    expect(tree.length).toBeGreaterThan(0);
+  });
+
+  it("StandardSQL can parse LEFT and RIGHT joins", () => {
+    const tree = StandardSQL.language.parser.parse("SELECT u.name, o.total FROM users u LEFT JOIN orders o ON u.id = o.user_id RIGHT JOIN payments p ON o.id = p.order_id;");
+    expect(tree.length).toBeGreaterThan(0);
+    expect(tree.type.isTop).toBe(true);
+  });
 });

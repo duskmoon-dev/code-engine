@@ -119,4 +119,83 @@ describe("HTML language pack", () => {
     const support = html({ selfClosingTags: true });
     expect(support).toBeDefined();
   });
+
+  it("htmlLanguage can parse forms", () => {
+    const code = "<form action=\"/submit\" method=\"post\"><input type=\"text\" name=\"q\"><button>Submit</button></form>";
+    const tree = htmlLanguage.parser.parse(code);
+    expect(tree.length).toBe(code.length);
+    expect(tree.type.isTop).toBe(true);
+  });
+
+  it("htmlLanguage can parse script tag", () => {
+    const code = "<script>const x = 1;</script>";
+    const tree = htmlLanguage.parser.parse(code);
+    expect(tree.length).toBe(code.length);
+  });
+
+  it("htmlLanguage can parse style tag", () => {
+    const code = "<style>.btn { color: red; }</style>";
+    const tree = htmlLanguage.parser.parse(code);
+    expect(tree.length).toBe(code.length);
+  });
+
+  it("htmlLanguage can parse DOCTYPE", () => {
+    const code = "<!DOCTYPE html><html><head><title>Test</title></head><body></body></html>";
+    const tree = htmlLanguage.parser.parse(code);
+    expect(tree.length).toBe(code.length);
+    expect(tree.type.isTop).toBe(true);
+  });
+
+  it("tree.resolve() at multiple positions", () => {
+    const code = "<div class=\"container\"><p>Hello <strong>world</strong></p></div>";
+    const tree = htmlLanguage.parser.parse(code);
+    for (let i = 0; i < code.length; i += 8) {
+      const node = tree.resolve(i);
+      expect(node).toBeDefined();
+    }
+  });
+
+  it("htmlLanguage can parse SVG element", () => {
+    const code = "<svg width=\"100\" height=\"100\"><circle cx=\"50\" cy=\"50\" r=\"40\" fill=\"red\"/></svg>";
+    const tree = htmlLanguage.parser.parse(code);
+    expect(tree.length).toBe(code.length);
+  });
+
+  it("htmlLanguage can parse template element", () => {
+    const code = "<template id=\"tmpl\"><p class=\"item\">{{name}}</p></template>";
+    const tree = htmlLanguage.parser.parse(code);
+    expect(tree.length).toBe(code.length);
+    expect(tree.type.isTop).toBe(true);
+  });
+
+  it("htmlLanguage can parse data attributes", () => {
+    const code = "<div data-id=\"123\" data-user=\"alice\" data-role=\"admin\">content</div>";
+    const tree = htmlLanguage.parser.parse(code);
+    expect(tree.length).toBe(code.length);
+  });
+
+  it("htmlLanguage can parse ARIA attributes", () => {
+    const code = "<button aria-label=\"Close\" aria-expanded=\"false\" role=\"button\" tabindex=\"0\">×</button>";
+    const tree = htmlLanguage.parser.parse(code);
+    expect(tree.length).toBe(code.length);
+  });
+
+  it("htmlLanguage can parse meta tags", () => {
+    const code = "<head><meta charset=\"UTF-8\"><meta name=\"viewport\" content=\"width=device-width\"><meta name=\"description\" content=\"Test page\"></head>";
+    const tree = htmlLanguage.parser.parse(code);
+    expect(tree.length).toBe(code.length);
+  });
+
+  it("htmlLanguage can parse table structure", () => {
+    const code = "<table><thead><tr><th>Name</th><th>Age</th></tr></thead><tbody><tr><td>Alice</td><td>30</td></tr></tbody></table>";
+    const tree = htmlLanguage.parser.parse(code);
+    expect(tree.length).toBe(code.length);
+    expect(tree.type.isTop).toBe(true);
+  });
+
+  it("htmlLanguage can parse HTML5 semantic elements", () => {
+    const code = "<main><header><nav><a href=\"/\">Home</a></nav></header><article><section><h2>Title</h2></section></article><footer>© 2025</footer></main>";
+    const tree = htmlLanguage.parser.parse(code);
+    expect(tree.length).toBe(code.length);
+  });
 });

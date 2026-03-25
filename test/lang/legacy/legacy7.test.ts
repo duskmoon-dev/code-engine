@@ -1,5 +1,5 @@
 import { describe, it, expect } from "bun:test";
-import { StreamLanguage, LanguageSupport } from "../../../src/core/language/index";
+import { StreamLanguage, LanguageSupport, syntaxTree } from "../../../src/core/language/index";
 import { EditorState } from "../../../src/core/state/index";
 
 import { asciiArmor } from "../../../src/lang/legacy/asciiarmor";
@@ -153,6 +153,107 @@ describe("Legacy language packs (batch 7)", () => {
         extensions: [new LanguageSupport(lang)],
       });
       expect(state.doc.toString()).toContain("#set");
+    });
+  });
+
+  describe("syntaxTree integration", () => {
+    it("csharp syntaxTree is non-empty", () => {
+      const lang = StreamLanguage.define(csharp);
+      const state = EditorState.create({
+        doc: "class Foo { }",
+        extensions: [new LanguageSupport(lang)],
+      });
+      expect(syntaxTree(state).length).toBeGreaterThan(0);
+    });
+
+    it("kotlin syntaxTree is non-empty", () => {
+      const lang = StreamLanguage.define(kotlin);
+      const state = EditorState.create({
+        doc: "fun main() { println(\"Hello\") }",
+        extensions: [new LanguageSupport(lang)],
+      });
+      expect(syntaxTree(state).length).toBeGreaterThan(0);
+    });
+
+    it("scala syntaxTree is non-empty", () => {
+      const lang = StreamLanguage.define(scala);
+      const state = EditorState.create({
+        doc: "object Hello extends App { println(\"Hello\") }",
+        extensions: [new LanguageSupport(lang)],
+      });
+      expect(syntaxTree(state).length).toBeGreaterThan(0);
+    });
+
+    it("haxe syntaxTree is non-empty", () => {
+      const lang = StreamLanguage.define(haxe);
+      const state = EditorState.create({
+        doc: "class Main { static function main() { trace(\"Hello\"); } }",
+        extensions: [new LanguageSupport(lang)],
+      });
+      expect(syntaxTree(state).length).toBeGreaterThan(0);
+    });
+
+    it("stylus syntaxTree is non-empty", () => {
+      const lang = StreamLanguage.define(stylus);
+      const state = EditorState.create({
+        doc: "body\n  color red",
+        extensions: [new LanguageSupport(lang)],
+      });
+      expect(syntaxTree(state).length).toBeGreaterThan(0);
+    });
+
+    it("asciiArmor syntaxTree is non-empty", () => {
+      const lang = StreamLanguage.define(asciiArmor);
+      const state = EditorState.create({
+        doc: "-----BEGIN PGP MESSAGE-----\nVersion: GnuPG v2\n\nhQIMA\n-----END PGP MESSAGE-----",
+        extensions: [new LanguageSupport(lang)],
+      });
+      expect(syntaxTree(state).length).toBeGreaterThan(0);
+    });
+
+    it("d syntaxTree is non-empty", () => {
+      const lang = StreamLanguage.define(d);
+      const state = EditorState.create({
+        doc: "import std.stdio;\nvoid main() { writeln(\"Hello\"); }",
+        extensions: [new LanguageSupport(lang)],
+      });
+      expect(syntaxTree(state).length).toBeGreaterThan(0);
+    });
+
+    it("mscgen syntaxTree is non-empty", () => {
+      const lang = StreamLanguage.define(mscgen);
+      const state = EditorState.create({
+        doc: "msc { a, b; a->b [label=\"request\"]; b->a [label=\"response\"]; }",
+        extensions: [new LanguageSupport(lang)],
+      });
+      expect(syntaxTree(state).length).toBeGreaterThan(0);
+    });
+
+    it("z80 syntaxTree is non-empty", () => {
+      const lang = StreamLanguage.define(z80);
+      const state = EditorState.create({
+        doc: "LD A, 0\nLD B, 10\nLOOP: DJNZ LOOP\nRET",
+        extensions: [new LanguageSupport(lang)],
+      });
+      expect(syntaxTree(state).length).toBeGreaterThan(0);
+    });
+
+    it("velocity syntaxTree is non-empty", () => {
+      const lang = StreamLanguage.define(velocity);
+      const state = EditorState.create({
+        doc: "#set ($greeting = \"Hello\")\n$greeting, World!",
+        extensions: [new LanguageSupport(lang)],
+      });
+      expect(syntaxTree(state).length).toBeGreaterThan(0);
+    });
+
+    it("vbScript syntaxTree is non-empty", () => {
+      const lang = StreamLanguage.define(vbScript);
+      const state = EditorState.create({
+        doc: "Dim x\nx = 42\nMsgBox \"Value: \" & x",
+        extensions: [new LanguageSupport(lang)],
+      });
+      expect(syntaxTree(state).length).toBeGreaterThan(0);
     });
   });
 });

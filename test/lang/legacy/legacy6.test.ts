@@ -1,5 +1,5 @@
 import { describe, it, expect } from "bun:test";
-import { StreamLanguage, LanguageSupport } from "../../../src/core/language/index";
+import { StreamLanguage, LanguageSupport, syntaxTree } from "../../../src/core/language/index";
 import { EditorState } from "../../../src/core/state/index";
 
 import { dylan } from "../../../src/lang/legacy/dylan";
@@ -141,6 +141,102 @@ describe("Legacy language packs (batch 6)", () => {
         extensions: [new LanguageSupport(lang)],
       });
       expect(state.doc.toString()).toContain("hello");
+    });
+  });
+
+  describe("syntaxTree integration", () => {
+    it("fSharp syntaxTree is non-empty", () => {
+      const lang = StreamLanguage.define(fSharp);
+      const state = EditorState.create({
+        doc: "let x = 42",
+        extensions: [new LanguageSupport(lang)],
+      });
+      expect(syntaxTree(state).length).toBeGreaterThan(0);
+    });
+
+    it("oCaml syntaxTree is non-empty", () => {
+      const lang = StreamLanguage.define(oCaml);
+      const state = EditorState.create({
+        doc: "let x = 42",
+        extensions: [new LanguageSupport(lang)],
+      });
+      expect(syntaxTree(state).length).toBeGreaterThan(0);
+    });
+
+    it("sml syntaxTree is non-empty", () => {
+      const lang = StreamLanguage.define(sml);
+      const state = EditorState.create({
+        doc: "val x = 42",
+        extensions: [new LanguageSupport(lang)],
+      });
+      expect(syntaxTree(state).length).toBeGreaterThan(0);
+    });
+
+    it("eiffel syntaxTree is non-empty", () => {
+      const lang = StreamLanguage.define(eiffel);
+      const state = EditorState.create({
+        doc: "class HELLO\nfeature\nend",
+        extensions: [new LanguageSupport(lang)],
+      });
+      expect(syntaxTree(state).length).toBeGreaterThan(0);
+    });
+
+    it("sieve syntaxTree is non-empty", () => {
+      const lang = StreamLanguage.define(sieve);
+      const state = EditorState.create({
+        doc: "require [\"fileinto\"];",
+        extensions: [new LanguageSupport(lang)],
+      });
+      expect(syntaxTree(state).length).toBeGreaterThan(0);
+    });
+
+    it("dylan syntaxTree is non-empty", () => {
+      const lang = StreamLanguage.define(dylan);
+      const state = EditorState.create({
+        doc: "define method greet (name :: <string>)\n  format-out(\"Hello, %s!\\n\", name);\nend method greet;",
+        extensions: [new LanguageSupport(lang)],
+      });
+      expect(syntaxTree(state).length).toBeGreaterThan(0);
+    });
+
+    it("gas syntaxTree is non-empty", () => {
+      const lang = StreamLanguage.define(gas);
+      const state = EditorState.create({
+        doc: ".section .data\nhello: .asciz \"Hello, World!\"",
+        extensions: [new LanguageSupport(lang)],
+      });
+      expect(syntaxTree(state).length).toBeGreaterThan(0);
+    });
+
+    it("nsis syntaxTree is non-empty", () => {
+      const lang = StreamLanguage.define(nsis);
+      const state = EditorState.create({
+        doc: "!define PRODUCT_NAME \"MyApp\"\nName \"${PRODUCT_NAME}\"\nOutFile \"installer.exe\"",
+        extensions: [new LanguageSupport(lang)],
+      });
+      expect(syntaxTree(state).length).toBeGreaterThan(0);
+    });
+
+    it("ntriples syntaxTree is non-empty", () => {
+      const lang = StreamLanguage.define(ntriples);
+      const state = EditorState.create({
+        doc: "<http://example.org/s> <http://example.org/p> <http://example.org/o> .",
+        extensions: [new LanguageSupport(lang)],
+      });
+      expect(syntaxTree(state).length).toBeGreaterThan(0);
+    });
+
+    it("oz syntaxTree cursor traversal finds nodes", () => {
+      const lang = StreamLanguage.define(oz);
+      const state = EditorState.create({
+        doc: "functor\nexport main: Main\ndefine proc {Main} skip end\nend",
+        extensions: [new LanguageSupport(lang)],
+      });
+      const tree = syntaxTree(state);
+      const cursor = tree.cursor();
+      let count = 0;
+      do { count++; } while (cursor.next() && count < 50);
+      expect(count).toBeGreaterThan(0);
     });
   });
 });

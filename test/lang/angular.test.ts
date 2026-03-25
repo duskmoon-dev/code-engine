@@ -153,5 +153,67 @@ describe("Angular language pack", () => {
       do { nodeCount++; } while (cursor.next() && nodeCount < 100);
       expect(nodeCount).toBeGreaterThan(1);
     });
+
+    it("tree.resolve() finds nodes at multiple positions in Angular template", () => {
+      const code = "<div [class.active]=\"isActive\" (click)=\"toggle()\">{{ label }}</div>";
+      const tree = angularLanguage.parser.parse(code);
+      for (let i = 0; i < code.length; i += 8) {
+        const node = tree.resolve(i);
+        expect(node).toBeDefined();
+      }
+    });
+
+    it("angularLanguage can parse ng-container with ngSwitch", () => {
+      const tree = angularLanguage.parser.parse("<ng-container [ngSwitch]=\"role\"><span *ngSwitchCase=\"'admin'\">Admin</span><span *ngSwitchDefault>User</span></ng-container>");
+      expect(tree.length).toBeGreaterThan(0);
+    });
+
+    it("angularLanguage can parse ng-template", () => {
+      const tree = angularLanguage.parser.parse("<ng-template #loading><p>Loading...</p></ng-template>");
+      expect(tree.length).toBeGreaterThan(0);
+      expect(tree.type.isTop).toBe(true);
+    });
+
+    it("angularLanguage can parse attribute binding with class and style", () => {
+      const tree = angularLanguage.parser.parse("<div [class]=\"myClasses\" [style.color]=\"color\" [style.fontSize.px]=\"size\">text</div>");
+      expect(tree.length).toBeGreaterThan(0);
+    });
+
+    it("angularLanguage can parse event binding with $event", () => {
+      const tree = angularLanguage.parser.parse("<input (input)=\"onChange($event.target.value)\" (blur)=\"onBlur()\">");
+      expect(tree.length).toBeGreaterThan(0);
+    });
+
+    it("angularLanguage can parse router-outlet", () => {
+      const tree = angularLanguage.parser.parse("<router-outlet></router-outlet>");
+      expect(tree.length).toBeGreaterThan(0);
+      expect(tree.type.isTop).toBe(true);
+    });
+
+    it("angularLanguage can parse async pipe", () => {
+      const tree = angularLanguage.parser.parse("<div>{{ data$ | async }}</div>");
+      expect(tree.length).toBeGreaterThan(0);
+    });
+
+    it("angularLanguage can parse template reference variable", () => {
+      const tree = angularLanguage.parser.parse("<input #nameInput type=\"text\"><button (click)=\"greet(nameInput.value)\">Greet</button>");
+      expect(tree.length).toBeGreaterThan(0);
+    });
+
+    it("angularLanguage can parse content projection with ng-content", () => {
+      const tree = angularLanguage.parser.parse("<ng-content select=\"[header]\"></ng-content><ng-content></ng-content>");
+      expect(tree.length).toBeGreaterThan(0);
+      expect(tree.type.isTop).toBe(true);
+    });
+
+    it("angularLanguage can parse @for control flow", () => {
+      const tree = angularLanguage.parser.parse("<div>@for (item of items; track item.id) { <span>{{ item.name }}</span> }</div>");
+      expect(tree.length).toBeGreaterThan(0);
+    });
+
+    it("angularLanguage can parse @if control flow", () => {
+      const tree = angularLanguage.parser.parse("<div>@if (show) { <p>Shown</p> } @else { <p>Hidden</p> }</div>");
+      expect(tree.length).toBeGreaterThan(0);
+    });
   });
 });

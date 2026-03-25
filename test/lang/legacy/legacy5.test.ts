@@ -1,5 +1,5 @@
 import { describe, it, expect } from "bun:test";
-import { StreamLanguage, LanguageSupport } from "../../../src/core/language/index";
+import { StreamLanguage, LanguageSupport, syntaxTree } from "../../../src/core/language/index";
 import { EditorState } from "../../../src/core/state/index";
 
 import { asterisk } from "../../../src/lang/legacy/asterisk";
@@ -131,6 +131,111 @@ describe("Legacy language packs (batch 5)", () => {
         extensions: [new LanguageSupport(lang)],
       });
       expect(state.doc.toString()).toContain("start = word+");
+    });
+  });
+
+  describe("syntaxTree integration", () => {
+    it("crystal syntaxTree is non-empty", () => {
+      const lang = StreamLanguage.define(crystal);
+      const state = EditorState.create({
+        doc: "def hello\n  puts \"Hi\"\nend",
+        extensions: [new LanguageSupport(lang)],
+      });
+      expect(syntaxTree(state).length).toBeGreaterThan(0);
+    });
+
+    it("elm syntaxTree is non-empty", () => {
+      const lang = StreamLanguage.define(elm);
+      const state = EditorState.create({
+        doc: "module Main exposing (..)\nmain = text \"Hello\"",
+        extensions: [new LanguageSupport(lang)],
+      });
+      expect(syntaxTree(state).length).toBeGreaterThan(0);
+    });
+
+    it("cypher syntaxTree is non-empty", () => {
+      const lang = StreamLanguage.define(cypher);
+      const state = EditorState.create({
+        doc: "MATCH (n) RETURN n LIMIT 10",
+        extensions: [new LanguageSupport(lang)],
+      });
+      expect(syntaxTree(state).length).toBeGreaterThan(0);
+    });
+
+    it("http syntaxTree is non-empty", () => {
+      const lang = StreamLanguage.define(http);
+      const state = EditorState.create({
+        doc: "GET /api HTTP/1.1\nHost: example.com",
+        extensions: [new LanguageSupport(lang)],
+      });
+      expect(syntaxTree(state).length).toBeGreaterThan(0);
+    });
+
+    it("smalltalk syntaxTree is non-empty", () => {
+      const lang = StreamLanguage.define(smalltalk);
+      const state = EditorState.create({
+        doc: "| x |\nx := 42.",
+        extensions: [new LanguageSupport(lang)],
+      });
+      expect(syntaxTree(state).length).toBeGreaterThan(0);
+    });
+
+    it("asterisk syntaxTree is non-empty", () => {
+      const lang = StreamLanguage.define(asterisk);
+      const state = EditorState.create({
+        doc: "[general]\ncontext=default\n\n[default]\nexten => s,1,Answer()",
+        extensions: [new LanguageSupport(lang)],
+      });
+      expect(syntaxTree(state).length).toBeGreaterThan(0);
+    });
+
+    it("mathematica syntaxTree is non-empty", () => {
+      const lang = StreamLanguage.define(mathematica);
+      const state = EditorState.create({
+        doc: "f[x_] := x^2 + 1\nPlot[f[x], {x, -2, 2}]",
+        extensions: [new LanguageSupport(lang)],
+      });
+      expect(syntaxTree(state).length).toBeGreaterThan(0);
+    });
+
+    it("spreadsheet syntaxTree is non-empty", () => {
+      const lang = StreamLanguage.define(spreadsheet);
+      const state = EditorState.create({
+        doc: "=SUM(A1:A10)\n=AVERAGE(B1:B5)",
+        extensions: [new LanguageSupport(lang)],
+      });
+      expect(syntaxTree(state).length).toBeGreaterThan(0);
+    });
+
+    it("idl syntaxTree is non-empty", () => {
+      const lang = StreamLanguage.define(idl);
+      const state = EditorState.create({
+        doc: "x = findgen(100)\ny = sin(x / 10)\nplot, x, y",
+        extensions: [new LanguageSupport(lang)],
+      });
+      expect(syntaxTree(state).length).toBeGreaterThan(0);
+    });
+
+    it("modelica syntaxTree is non-empty", () => {
+      const lang = StreamLanguage.define(modelica);
+      const state = EditorState.create({
+        doc: "model Simple\n  Real x(start=1);\nequation\n  der(x) = -x;\nend Simple;",
+        extensions: [new LanguageSupport(lang)],
+      });
+      expect(syntaxTree(state).length).toBeGreaterThan(0);
+    });
+
+    it("pegjs syntaxTree cursor traversal finds nodes", () => {
+      const lang = StreamLanguage.define(pegjs);
+      const state = EditorState.create({
+        doc: "start = word+\nword = chars:$[a-z]+ { return chars; }",
+        extensions: [new LanguageSupport(lang)],
+      });
+      const tree = syntaxTree(state);
+      const cursor = tree.cursor();
+      let count = 0;
+      do { count++; } while (cursor.next() && count < 50);
+      expect(count).toBeGreaterThan(0);
     });
   });
 });

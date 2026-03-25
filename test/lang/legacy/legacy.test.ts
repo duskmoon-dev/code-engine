@@ -1,5 +1,5 @@
 import { describe, it, expect } from "bun:test";
-import { StreamLanguage, LanguageSupport } from "../../../src/core/language/index";
+import { StreamLanguage, LanguageSupport, syntaxTree } from "../../../src/core/language/index";
 import { EditorState } from "../../../src/core/state/index";
 
 // Legacy language packs — StreamParser-based
@@ -161,6 +161,70 @@ describe("Legacy language packs (StreamLanguage)", () => {
         extensions: [new LanguageSupport(lang)],
       });
       expect(state.doc.toString()).toContain("func greet");
+    });
+  });
+
+  describe("syntaxTree integration", () => {
+    it("shell syntaxTree is non-empty", () => {
+      const lang = StreamLanguage.define(shell);
+      const state = EditorState.create({
+        doc: "#!/bin/bash\necho hello",
+        extensions: [new LanguageSupport(lang)],
+      });
+      const tree = syntaxTree(state);
+      expect(tree.length).toBeGreaterThan(0);
+    });
+
+    it("ruby syntaxTree is non-empty", () => {
+      const lang = StreamLanguage.define(ruby);
+      const state = EditorState.create({
+        doc: "def hello\n  puts 'hi'\nend",
+        extensions: [new LanguageSupport(lang)],
+      });
+      const tree = syntaxTree(state);
+      expect(tree.length).toBeGreaterThan(0);
+    });
+
+    it("toml syntaxTree is non-empty", () => {
+      const lang = StreamLanguage.define(toml);
+      const state = EditorState.create({
+        doc: "[package]\nname = \"test\"",
+        extensions: [new LanguageSupport(lang)],
+      });
+      const tree = syntaxTree(state);
+      expect(tree.length).toBeGreaterThan(0);
+    });
+
+    it("lua syntaxTree is non-empty", () => {
+      const lang = StreamLanguage.define(lua);
+      const state = EditorState.create({
+        doc: "function add(a, b) return a + b end",
+        extensions: [new LanguageSupport(lang)],
+      });
+      const tree = syntaxTree(state);
+      expect(tree.length).toBeGreaterThan(0);
+    });
+
+    it("perl syntaxTree is non-empty", () => {
+      const lang = StreamLanguage.define(perl);
+      const state = EditorState.create({
+        doc: "sub greet { my $name = shift; return \"Hello, $name!\"; }",
+        extensions: [new LanguageSupport(lang)],
+      });
+      const tree = syntaxTree(state);
+      expect(tree.length).toBeGreaterThan(0);
+    });
+
+    it("StreamLanguage.define creates a language with a parser", () => {
+      const lang = StreamLanguage.define(shell);
+      expect(lang.parser).toBeDefined();
+    });
+
+    it("multiple StreamLanguage wrappings are independent", () => {
+      const shellLang = StreamLanguage.define(shell);
+      const rubyLang = StreamLanguage.define(ruby);
+      expect(shellLang).not.toBe(rubyLang);
+      expect(typeof shellLang.name).toBe("string");
     });
   });
 });

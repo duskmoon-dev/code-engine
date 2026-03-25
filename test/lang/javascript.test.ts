@@ -159,4 +159,100 @@ describe("JavaScript language pack", () => {
     expect(tsxLanguage).toBeDefined();
     expect(tsxLanguage.name).toBeDefined();
   });
+
+  it("javascriptLanguage can parse arrow functions", () => {
+    const tree = javascriptLanguage.parser.parse("const add = (a, b) => a + b;");
+    expect(tree.length).toBeGreaterThan(0);
+    expect(tree.type.isTop).toBe(true);
+  });
+
+  it("javascriptLanguage can parse class syntax", () => {
+    const tree = javascriptLanguage.parser.parse("class Animal { constructor(name) { this.name = name; } speak() { return this.name; } }");
+    expect(tree.length).toBeGreaterThan(0);
+  });
+
+  it("javascriptLanguage can parse async/await", () => {
+    const tree = javascriptLanguage.parser.parse("async function fetchData() { const data = await fetch('/api'); return data.json(); }");
+    expect(tree.length).toBeGreaterThan(0);
+    expect(tree.type.isTop).toBe(true);
+  });
+
+  it("javascriptLanguage can parse destructuring", () => {
+    const tree = javascriptLanguage.parser.parse("const { a, b: { c } } = obj; const [x, y, ...rest] = arr;");
+    expect(tree.length).toBeGreaterThan(0);
+  });
+
+  it("javascriptLanguage can parse template literals", () => {
+    const tree = javascriptLanguage.parser.parse("const msg = `Hello, ${name}! You have ${count} messages.`;");
+    expect(tree.length).toBeGreaterThan(0);
+  });
+
+  it("javascriptLanguage can parse modules (import/export)", () => {
+    const tree = javascriptLanguage.parser.parse("import { useState, useEffect } from 'react';\nexport default function App() { return null; }");
+    expect(tree.length).toBeGreaterThan(0);
+    expect(tree.type.isTop).toBe(true);
+  });
+
+  it("javascriptLanguage can parse generators", () => {
+    const tree = javascriptLanguage.parser.parse("function* gen() { yield 1; yield 2; yield 3; }");
+    expect(tree.length).toBeGreaterThan(0);
+  });
+
+  it("tree.resolve() finds nodes at many positions", () => {
+    const code = "const x = 1; let y = x + 2; console.log(y);";
+    const tree = javascriptLanguage.parser.parse(code);
+    for (let i = 0; i < code.length; i += 5) {
+      const node = tree.resolve(i);
+      expect(node).toBeDefined();
+    }
+  });
+
+  it("javascriptLanguage can parse optional chaining", () => {
+    const tree = javascriptLanguage.parser.parse("const name = user?.profile?.name ?? 'Anonymous';");
+    expect(tree.length).toBeGreaterThan(0);
+    expect(tree.type.isTop).toBe(true);
+  });
+
+  it("javascriptLanguage can parse nullish coalescing", () => {
+    const tree = javascriptLanguage.parser.parse("const val = first ?? second ?? third;");
+    expect(tree.length).toBeGreaterThan(0);
+  });
+
+  it("javascriptLanguage can parse logical assignment operators", () => {
+    const tree = javascriptLanguage.parser.parse("a ||= b; c &&= d; e ??= f;");
+    expect(tree.length).toBeGreaterThan(0);
+  });
+
+  it("javascriptLanguage can parse tagged template literals", () => {
+    const tree = javascriptLanguage.parser.parse("const result = html`<div>${content}</div>`; const q = gql`query { user { name } }`;");
+    expect(tree.length).toBeGreaterThan(0);
+    expect(tree.type.isTop).toBe(true);
+  });
+
+  it("javascriptLanguage can parse WeakRef and FinalizationRegistry", () => {
+    const tree = javascriptLanguage.parser.parse("const ref = new WeakRef(obj); const registry = new FinalizationRegistry(val => cleanup(val));");
+    expect(tree.length).toBeGreaterThan(0);
+  });
+
+  it("javascriptLanguage can parse private class fields", () => {
+    const tree = javascriptLanguage.parser.parse("class Counter { #count = 0; increment() { this.#count++; } get value() { return this.#count; } }");
+    expect(tree.length).toBeGreaterThan(0);
+    expect(tree.type.isTop).toBe(true);
+  });
+
+  it("javascriptLanguage can parse dynamic import", () => {
+    const tree = javascriptLanguage.parser.parse("const mod = await import('./module.js');");
+    expect(tree.length).toBeGreaterThan(0);
+  });
+
+  it("typescriptLanguage can parse interface with generics", () => {
+    const tree = typescriptLanguage.parser.parse("interface Repository<T extends Entity> { findById(id: string): Promise<T | null>; save(entity: T): Promise<T>; }");
+    expect(tree.length).toBeGreaterThan(0);
+    expect(tree.type.isTop).toBe(true);
+  });
+
+  it("typescriptLanguage can parse mapped types", () => {
+    const tree = typescriptLanguage.parser.parse("type Readonly<T> = { readonly [P in keyof T]: T[P]; }; type Partial<T> = { [P in keyof T]?: T[P]; };");
+    expect(tree.length).toBeGreaterThan(0);
+  });
 });

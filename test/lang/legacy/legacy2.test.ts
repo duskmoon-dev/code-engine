@@ -1,5 +1,5 @@
 import { describe, it, expect } from "bun:test";
-import { StreamLanguage, LanguageSupport } from "../../../src/core/language/index";
+import { StreamLanguage, LanguageSupport, syntaxTree } from "../../../src/core/language/index";
 import { EditorState } from "../../../src/core/state/index";
 
 import { haskell } from "../../../src/lang/legacy/haskell";
@@ -149,6 +149,98 @@ describe("Legacy language packs (batch 2)", () => {
         extensions: [new LanguageSupport(lang)],
       });
       expect(state.doc.toString()).toContain("Get-Greeting");
+    });
+  });
+
+  describe("syntaxTree integration", () => {
+    it("haskell syntaxTree is non-empty", () => {
+      const lang = StreamLanguage.define(haskell);
+      const state = EditorState.create({
+        doc: "main = putStrLn \"Hello\"",
+        extensions: [new LanguageSupport(lang)],
+      });
+      expect(syntaxTree(state).length).toBeGreaterThan(0);
+    });
+
+    it("groovy syntaxTree is non-empty", () => {
+      const lang = StreamLanguage.define(groovy);
+      const state = EditorState.create({
+        doc: "def x = 42",
+        extensions: [new LanguageSupport(lang)],
+      });
+      expect(syntaxTree(state).length).toBeGreaterThan(0);
+    });
+
+    it("nginx syntaxTree is non-empty", () => {
+      const lang = StreamLanguage.define(nginx);
+      const state = EditorState.create({
+        doc: "server { listen 80; }",
+        extensions: [new LanguageSupport(lang)],
+      });
+      expect(syntaxTree(state).length).toBeGreaterThan(0);
+    });
+
+    it("vb syntaxTree is non-empty", () => {
+      const lang = StreamLanguage.define(vb);
+      const state = EditorState.create({
+        doc: "Module Program\n  Sub Main()\n    Console.WriteLine(\"Hello\")\n  End Sub\nEnd Module",
+        extensions: [new LanguageSupport(lang)],
+      });
+      expect(syntaxTree(state).length).toBeGreaterThan(0);
+    });
+
+    it("commonLisp syntaxTree is non-empty", () => {
+      const lang = StreamLanguage.define(commonLisp);
+      const state = EditorState.create({
+        doc: "(defun greet (name) (format t \"Hello, ~a!\" name))",
+        extensions: [new LanguageSupport(lang)],
+      });
+      expect(syntaxTree(state).length).toBeGreaterThan(0);
+    });
+
+    it("pascal syntaxTree is non-empty", () => {
+      const lang = StreamLanguage.define(pascal);
+      const state = EditorState.create({
+        doc: "program HelloWorld;\nbegin\n  writeln('Hello, World!');\nend.",
+        extensions: [new LanguageSupport(lang)],
+      });
+      expect(syntaxTree(state).length).toBeGreaterThan(0);
+    });
+
+    it("scheme syntaxTree is non-empty", () => {
+      const lang = StreamLanguage.define(scheme);
+      const state = EditorState.create({
+        doc: "(define (square x) (* x x))\n(square 5)",
+        extensions: [new LanguageSupport(lang)],
+      });
+      expect(syntaxTree(state).length).toBeGreaterThan(0);
+    });
+
+    it("julia syntaxTree is non-empty", () => {
+      const lang = StreamLanguage.define(julia);
+      const state = EditorState.create({
+        doc: "function square(x)\n  return x^2\nend\nprint(square(5))",
+        extensions: [new LanguageSupport(lang)],
+      });
+      expect(syntaxTree(state).length).toBeGreaterThan(0);
+    });
+
+    it("fortran syntaxTree is non-empty", () => {
+      const lang = StreamLanguage.define(fortran);
+      const state = EditorState.create({
+        doc: "PROGRAM Hello\n  PRINT *, 'Hello!'\nEND PROGRAM Hello",
+        extensions: [new LanguageSupport(lang)],
+      });
+      expect(syntaxTree(state).length).toBeGreaterThan(0);
+    });
+
+    it("powerShell syntaxTree is non-empty", () => {
+      const lang = StreamLanguage.define(powerShell);
+      const state = EditorState.create({
+        doc: "Get-Process | Where-Object { $_.CPU -gt 10 }",
+        extensions: [new LanguageSupport(lang)],
+      });
+      expect(syntaxTree(state).length).toBeGreaterThan(0);
     });
   });
 });

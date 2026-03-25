@@ -135,5 +135,69 @@ describe("Vue language pack", () => {
       do { nodeCount++; } while (cursor.next() && nodeCount < 100);
       expect(nodeCount).toBeGreaterThan(1);
     });
+
+    it("tree.resolve() finds nodes at multiple positions in Vue SFC", () => {
+      const code = "<template><div class=\"container\">{{ message }}</div></template>";
+      const tree = vueLanguage.parser.parse(code);
+      for (let i = 0; i < code.length; i += 8) {
+        const node = tree.resolve(i);
+        expect(node).toBeDefined();
+      }
+    });
+
+    it("vueLanguage can parse v-bind directive", () => {
+      const tree = vueLanguage.parser.parse("<template><img :src=\"imageUrl\" :alt=\"imageAlt\"></template>");
+      expect(tree.length).toBeGreaterThan(0);
+      expect(tree.type.isTop).toBe(true);
+    });
+
+    it("vueLanguage can parse v-on directive", () => {
+      const tree = vueLanguage.parser.parse("<template><button @click=\"handleClick\" @mouseover=\"onHover\">Click</button></template>");
+      expect(tree.length).toBeGreaterThan(0);
+    });
+
+    it("vueLanguage can parse v-if and v-for directives", () => {
+      const tree = vueLanguage.parser.parse("<template><ul><li v-for=\"item in items\" v-if=\"item.active\" :key=\"item.id\">{{ item.name }}</li></ul></template>");
+      expect(tree.length).toBeGreaterThan(0);
+    });
+
+    it("vueLanguage can parse script setup block", () => {
+      const tree = vueLanguage.parser.parse("<script setup>\nimport { ref } from 'vue'\nconst count = ref(0)\n</script>");
+      expect(tree.length).toBeGreaterThan(0);
+    });
+
+    it("vueLanguage can parse v-model directive", () => {
+      const tree = vueLanguage.parser.parse("<template><input v-model=\"username\" type=\"text\"></template>");
+      expect(tree.length).toBeGreaterThan(0);
+      expect(tree.type.isTop).toBe(true);
+    });
+
+    it("vueLanguage can parse v-slot directive", () => {
+      const tree = vueLanguage.parser.parse("<template><my-component><template v-slot:header>Header</template></my-component></template>");
+      expect(tree.length).toBeGreaterThan(0);
+    });
+
+    it("vueLanguage can parse full SFC with template, script, and style", () => {
+      const code = `<template>\n  <div class="app">{{ message }}</div>\n</template>\n<script>\nexport default {\n  data() { return { message: 'Hello' }; }\n}\n</script>\n<style>\n.app { color: red; }\n</style>`;
+      const tree = vueLanguage.parser.parse(code);
+      expect(tree.length).toBeGreaterThan(0);
+      expect(tree.type.isTop).toBe(true);
+    });
+
+    it("vueLanguage can parse computed properties comment", () => {
+      const tree = vueLanguage.parser.parse("<script>\nexport default {\n  computed: {\n    fullName() { return this.first + ' ' + this.last; }\n  }\n}\n</script>");
+      expect(tree.length).toBeGreaterThan(0);
+    });
+
+    it("vueLanguage can parse custom directives", () => {
+      const tree = vueLanguage.parser.parse("<template><div v-focus v-tooltip=\"'Click me'\">focus me</div></template>");
+      expect(tree.length).toBeGreaterThan(0);
+    });
+
+    it("vueLanguage can parse slot content", () => {
+      const tree = vueLanguage.parser.parse("<template><base-layout><template #header><h1>Title</h1></template></base-layout></template>");
+      expect(tree.length).toBeGreaterThan(0);
+      expect(tree.type.isTop).toBe(true);
+    });
   });
 });

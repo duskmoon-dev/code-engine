@@ -1,5 +1,5 @@
 import { describe, it, expect } from "bun:test";
-import { StreamLanguage, LanguageSupport } from "../../../src/core/language/index";
+import { StreamLanguage, LanguageSupport, syntaxTree } from "../../../src/core/language/index";
 import { EditorState } from "../../../src/core/state/index";
 
 import { sparql } from "../../../src/lang/legacy/sparql";
@@ -131,6 +131,111 @@ describe("Legacy language packs (batch 3)", () => {
         extensions: [new LanguageSupport(lang)],
       });
       expect(state.doc.toString()).toContain("plot(x, y)");
+    });
+  });
+
+  describe("syntaxTree integration", () => {
+    it("sparql syntaxTree is non-empty", () => {
+      const lang = StreamLanguage.define(sparql);
+      const state = EditorState.create({
+        doc: "SELECT ?s ?p ?o WHERE { ?s ?p ?o }",
+        extensions: [new LanguageSupport(lang)],
+      });
+      expect(syntaxTree(state).length).toBeGreaterThan(0);
+    });
+
+    it("diff syntaxTree is non-empty", () => {
+      const lang = StreamLanguage.define(diff);
+      const state = EditorState.create({
+        doc: "--- a.txt\n+++ b.txt\n@@ -1 +1 @@\n-old\n+new",
+        extensions: [new LanguageSupport(lang)],
+      });
+      expect(syntaxTree(state).length).toBeGreaterThan(0);
+    });
+
+    it("properties syntaxTree is non-empty", () => {
+      const lang = StreamLanguage.define(properties);
+      const state = EditorState.create({
+        doc: "key=value\nother=123",
+        extensions: [new LanguageSupport(lang)],
+      });
+      expect(syntaxTree(state).length).toBeGreaterThan(0);
+    });
+
+    it("gherkin syntaxTree is non-empty", () => {
+      const lang = StreamLanguage.define(gherkin);
+      const state = EditorState.create({
+        doc: "Feature: Test\n  Scenario: Basic\n    Given something",
+        extensions: [new LanguageSupport(lang)],
+      });
+      expect(syntaxTree(state).length).toBeGreaterThan(0);
+    });
+
+    it("cmake syntaxTree is non-empty", () => {
+      const lang = StreamLanguage.define(cmake);
+      const state = EditorState.create({
+        doc: "cmake_minimum_required(VERSION 3.10)",
+        extensions: [new LanguageSupport(lang)],
+      });
+      expect(syntaxTree(state).length).toBeGreaterThan(0);
+    });
+
+    it("turtle syntaxTree is non-empty", () => {
+      const lang = StreamLanguage.define(turtle);
+      const state = EditorState.create({
+        doc: "@prefix ex: <http://example.org/> .\nex:subject ex:predicate ex:object .",
+        extensions: [new LanguageSupport(lang)],
+      });
+      expect(syntaxTree(state).length).toBeGreaterThan(0);
+    });
+
+    it("octave syntaxTree is non-empty", () => {
+      const lang = StreamLanguage.define(octave);
+      const state = EditorState.create({
+        doc: "x = 1:10; y = x .^ 2;",
+        extensions: [new LanguageSupport(lang)],
+      });
+      expect(syntaxTree(state).length).toBeGreaterThan(0);
+    });
+
+    it("sparql syntaxTree cursor traversal finds nodes", () => {
+      const lang = StreamLanguage.define(sparql);
+      const state = EditorState.create({
+        doc: "SELECT ?s ?p ?o WHERE { ?s ?p ?o }",
+        extensions: [new LanguageSupport(lang)],
+      });
+      const tree = syntaxTree(state);
+      const cursor = tree.cursor();
+      let count = 0;
+      do { count++; } while (cursor.next() && count < 50);
+      expect(count).toBeGreaterThan(0);
+    });
+
+    it("pug syntaxTree is non-empty", () => {
+      const lang = StreamLanguage.define(pug);
+      const state = EditorState.create({
+        doc: "html\n  head\n    title Hello\n  body\n    p World",
+        extensions: [new LanguageSupport(lang)],
+      });
+      expect(syntaxTree(state).length).toBeGreaterThan(0);
+    });
+
+    it("vhdl syntaxTree is non-empty", () => {
+      const lang = StreamLanguage.define(vhdl);
+      const state = EditorState.create({
+        doc: "entity test is end;\narchitecture rtl of test is begin end;",
+        extensions: [new LanguageSupport(lang)],
+      });
+      expect(syntaxTree(state).length).toBeGreaterThan(0);
+    });
+
+    it("sas syntaxTree is non-empty", () => {
+      const lang = StreamLanguage.define(sas);
+      const state = EditorState.create({
+        doc: "data work.test;\n  set sashelp.class;\nrun;",
+        extensions: [new LanguageSupport(lang)],
+      });
+      expect(syntaxTree(state).length).toBeGreaterThan(0);
     });
   });
 });

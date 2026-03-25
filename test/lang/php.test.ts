@@ -82,4 +82,61 @@ describe("PHP language pack", () => {
     expect(tree.length).toBeGreaterThan(0);
     expect(tree.type.isTop).toBe(true);
   });
+
+  it("phpLanguage can parse class declaration", () => {
+    const tree = phpLanguage.parser.parse("<?php class Animal { private $name; public function __construct($n) { $this->name = $n; } } ?>");
+    expect(tree.length).toBeGreaterThan(0);
+    expect(tree.type.isTop).toBe(true);
+  });
+
+  it("phpLanguage can parse interface declaration", () => {
+    const tree = phpLanguage.parser.parse("<?php interface Drawable { public function draw(): void; } ?>");
+    expect(tree.length).toBeGreaterThan(0);
+  });
+
+  it("phpLanguage can parse trait declaration", () => {
+    const tree = phpLanguage.parser.parse("<?php trait Greetable { public function greet() { return 'Hello!'; } } ?>");
+    expect(tree.length).toBeGreaterThan(0);
+    expect(tree.type.isTop).toBe(true);
+  });
+
+  it("phpLanguage can parse namespace declaration", () => {
+    const tree = phpLanguage.parser.parse("<?php namespace App\\Models; class User {} ?>");
+    expect(tree.length).toBeGreaterThan(0);
+  });
+
+  it("phpLanguage can parse use statement", () => {
+    const tree = phpLanguage.parser.parse("<?php use App\\Http\\Controllers\\HomeController; ?>");
+    expect(tree.length).toBeGreaterThan(0);
+  });
+
+  it("phpLanguage can parse array syntax", () => {
+    const tree = phpLanguage.parser.parse("<?php $arr = [1, 2, 3]; $map = ['key' => 'value']; ?>");
+    expect(tree.length).toBeGreaterThan(0);
+    expect(tree.type.isTop).toBe(true);
+  });
+
+  it("phpLanguage can parse try-catch", () => {
+    const tree = phpLanguage.parser.parse("<?php try { riskyOp(); } catch (Exception $e) { echo $e->getMessage(); } finally { cleanup(); } ?>");
+    expect(tree.length).toBeGreaterThan(0);
+  });
+
+  it("phpLanguage can parse arrow function", () => {
+    const tree = phpLanguage.parser.parse("<?php $double = fn($x) => $x * 2; ?>");
+    expect(tree.length).toBeGreaterThan(0);
+  });
+
+  it("phpLanguage can parse heredoc", () => {
+    const tree = phpLanguage.parser.parse("<?php $text = <<<EOT\nHello World\nEOT; ?>");
+    expect(tree.length).toBeGreaterThan(0);
+  });
+
+  it("tree.resolve() finds nodes at multiple positions in PHP", () => {
+    const code = "<?php $x = 10; $y = 20; echo $x + $y; ?>";
+    const tree = phpLanguage.parser.parse(code);
+    for (let i = 0; i < code.length; i += 5) {
+      const node = tree.resolve(i);
+      expect(node).toBeDefined();
+    }
+  });
 });

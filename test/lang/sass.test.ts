@@ -97,5 +97,62 @@ describe("Sass language pack", () => {
       do { nodeCount++; } while (cursor.next() && nodeCount < 100);
       expect(nodeCount).toBeGreaterThan(1);
     });
+
+    it("sassLanguage can parse @if directive", () => {
+      const tree = sassLanguage.parser.parse("@if $theme == dark { .bg { background: black; } }");
+      expect(tree.length).toBeGreaterThan(0);
+    });
+
+    it("sassLanguage can parse @each loop", () => {
+      const tree = sassLanguage.parser.parse("@each $color in red, green, blue { .#{$color} { color: $color; } }");
+      expect(tree.length).toBeGreaterThan(0);
+    });
+
+    it("sassLanguage can parse @function", () => {
+      const tree = sassLanguage.parser.parse("@function px-to-rem($px) { @return #{$px / 16}rem; }");
+      expect(tree.length).toBeGreaterThan(0);
+    });
+
+    it("sassLanguage can parse placeholder selector", () => {
+      const tree = sassLanguage.parser.parse("%button-style { border-radius: 4px; }\n.btn { @extend %button-style; }");
+      expect(tree.length).toBeGreaterThan(0);
+      expect(tree.type.isTop).toBe(true);
+    });
+
+    it("tree.resolve() finds nodes in sass code", () => {
+      const code = "$base: 10px;\n.box { margin: $base * 2; }";
+      const tree = sassLanguage.parser.parse(code);
+      for (let i = 0; i < code.length; i += 5) {
+        const node = tree.resolve(i);
+        expect(node).toBeDefined();
+      }
+    });
+
+    it("sassLanguage can parse @while loop", () => {
+      const tree = sassLanguage.parser.parse("$i: 6;\n@while $i > 0 { .item-#{$i} { width: 2em * $i; } $i: $i - 2; }");
+      expect(tree.length).toBeGreaterThan(0);
+    });
+
+    it("sassLanguage can parse @for loop", () => {
+      const tree = sassLanguage.parser.parse("@for $i from 1 through 3 { .item-#{$i} { width: 2em * $i; } }");
+      expect(tree.length).toBeGreaterThan(0);
+      expect(tree.type.isTop).toBe(true);
+    });
+
+    it("sassLanguage can parse @use and @forward", () => {
+      const tree = sassLanguage.parser.parse("@use 'sass:math';\n@forward 'colors' with ($primary: blue);");
+      expect(tree.length).toBeGreaterThan(0);
+    });
+
+    it("sassLanguage can parse list operations", () => {
+      const tree = sassLanguage.parser.parse("$list: a, b, c, d;\n$len: length($list);\n$second: nth($list, 2);");
+      expect(tree.length).toBeGreaterThan(0);
+    });
+
+    it("sassLanguage can parse complex nesting", () => {
+      const tree = sassLanguage.parser.parse(".nav {\n  &__item {\n    &--active { color: blue; }\n    &:hover { opacity: 0.8; }\n  }\n}");
+      expect(tree.length).toBeGreaterThan(0);
+      expect(tree.type.isTop).toBe(true);
+    });
   });
 });

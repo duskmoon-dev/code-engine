@@ -180,5 +180,62 @@ describe("WAST language pack", () => {
       do { nodeCount++; } while (cursor.next() && nodeCount < 100);
       expect(nodeCount).toBeGreaterThan(1);
     });
+
+    it("tree.resolve() finds nodes at multiple positions in WAST", () => {
+      const code = "(module (func $add (param $a i32) (param $b i32) (result i32) local.get $a local.get $b i32.add))";
+      const tree = wastLanguage.parser.parse(code);
+      for (let i = 0; i < code.length; i += 10) {
+        const node = tree.resolve(i);
+        expect(node).toBeDefined();
+      }
+    });
+
+    it("wastLanguage can parse f64 arithmetic", () => {
+      const tree = wastLanguage.parser.parse("(module (func (result f64) f64.const 3.14 f64.const 2.0 f64.mul))");
+      expect(tree.length).toBeGreaterThan(0);
+      expect(tree.type.isTop).toBe(true);
+    });
+
+    it("wastLanguage can parse loop construct", () => {
+      const tree = wastLanguage.parser.parse("(module (func (param i32) (result i32) (loop $loop (local.get 0) (br_if $loop (i32.const 1)) (i32.const 0)))");
+      expect(tree.length).toBeGreaterThan(0);
+    });
+
+    it("wastLanguage can parse data segment", () => {
+      const tree = wastLanguage.parser.parse("(module (memory 1) (data (i32.const 0) \"hello world\"))");
+      expect(tree.length).toBeGreaterThan(0);
+    });
+
+    it("wastLanguage can parse element segment", () => {
+      const tree = wastLanguage.parser.parse("(module (table 2 funcref) (func $f1) (func $f2) (elem (i32.const 0) $f1 $f2))");
+      expect(tree.length).toBeGreaterThan(0);
+    });
+
+    it("wastLanguage can parse global declarations", () => {
+      const tree = wastLanguage.parser.parse("(module (global $g (mut i32) (i32.const 0)) (func (global.set $g (i32.const 42))))");
+      expect(tree.length).toBeGreaterThan(0);
+    });
+
+    it("wastLanguage can parse import declarations", () => {
+      const tree = wastLanguage.parser.parse("(module (import \"env\" \"print\" (func $print (param i32))))");
+      expect(tree.length).toBeGreaterThan(0);
+      expect(tree.type.isTop).toBe(true);
+    });
+
+    it("wastLanguage can parse export declarations", () => {
+      const tree = wastLanguage.parser.parse("(module (func $add (param i32 i32) (result i32) local.get 0 local.get 1 i32.add) (export \"add\" (func $add)))");
+      expect(tree.length).toBeGreaterThan(0);
+    });
+
+    it("wastLanguage can parse select instruction", () => {
+      const tree = wastLanguage.parser.parse("(module (func (param i32 i32 i32) (result i32) local.get 0 local.get 1 local.get 2 select))");
+      expect(tree.length).toBeGreaterThan(0);
+    });
+
+    it("wastLanguage can parse memory load/store", () => {
+      const tree = wastLanguage.parser.parse("(module (memory 1) (func (param i32) (result i32) (i32.load (local.get 0))) (func (param i32 i32) (i32.store (local.get 0) (local.get 1))))");
+      expect(tree.length).toBeGreaterThan(0);
+      expect(tree.type.isTop).toBe(true);
+    });
   });
 });

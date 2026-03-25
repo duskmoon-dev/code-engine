@@ -1,5 +1,5 @@
 import { describe, it, expect } from "bun:test";
-import { StreamLanguage, LanguageSupport } from "../../../src/core/language/index";
+import { StreamLanguage, LanguageSupport, syntaxTree } from "../../../src/core/language/index";
 import { EditorState } from "../../../src/core/state/index";
 
 import { textile } from "../../../src/lang/legacy/textile";
@@ -131,6 +131,107 @@ describe("Legacy language packs (batch 4)", () => {
         extensions: [new LanguageSupport(lang)],
       });
       expect(state.doc.toString()).toContain("SQUARE");
+    });
+  });
+
+  describe("syntaxTree integration", () => {
+    it("stex syntaxTree is non-empty", () => {
+      const lang = StreamLanguage.define(stex);
+      const state = EditorState.create({
+        doc: "\\documentclass{article}\n\\begin{document}\nHello\n\\end{document}",
+        extensions: [new LanguageSupport(lang)],
+      });
+      expect(syntaxTree(state).length).toBeGreaterThan(0);
+    });
+
+    it("verilog syntaxTree is non-empty", () => {
+      const lang = StreamLanguage.define(verilog);
+      const state = EditorState.create({
+        doc: "module test; endmodule",
+        extensions: [new LanguageSupport(lang)],
+      });
+      expect(syntaxTree(state).length).toBeGreaterThan(0);
+    });
+
+    it("ebnf syntaxTree is non-empty", () => {
+      const lang = StreamLanguage.define(ebnf);
+      const state = EditorState.create({
+        doc: "digit = '0' | '1' ;",
+        extensions: [new LanguageSupport(lang)],
+      });
+      expect(syntaxTree(state).length).toBeGreaterThan(0);
+    });
+
+    it("forth syntaxTree is non-empty", () => {
+      const lang = StreamLanguage.define(forth);
+      const state = EditorState.create({
+        doc: ": DOUBLE 2 * ;",
+        extensions: [new LanguageSupport(lang)],
+      });
+      expect(syntaxTree(state).length).toBeGreaterThan(0);
+    });
+
+    it("textile syntaxTree is non-empty", () => {
+      const lang = StreamLanguage.define(textile);
+      const state = EditorState.create({
+        doc: "h1. Title\n\np. paragraph",
+        extensions: [new LanguageSupport(lang)],
+      });
+      expect(syntaxTree(state).length).toBeGreaterThan(0);
+    });
+
+    it("cobol syntaxTree is non-empty", () => {
+      const lang = StreamLanguage.define(cobol);
+      const state = EditorState.create({
+        doc: "IDENTIFICATION DIVISION.\nPROGRAM-ID. HELLO.",
+        extensions: [new LanguageSupport(lang)],
+      });
+      expect(syntaxTree(state).length).toBeGreaterThan(0);
+    });
+
+    it("solr syntaxTree is non-empty", () => {
+      const lang = StreamLanguage.define(solr);
+      const state = EditorState.create({
+        doc: "title:hello AND body:world",
+        extensions: [new LanguageSupport(lang)],
+      });
+      expect(syntaxTree(state).length).toBeGreaterThan(0);
+    });
+
+    it("apl syntaxTree is non-empty", () => {
+      const lang = StreamLanguage.define(apl);
+      const state = EditorState.create({
+        doc: "sum ← +/⍳10",
+        extensions: [new LanguageSupport(lang)],
+      });
+      expect(syntaxTree(state).length).toBeGreaterThan(0);
+    });
+
+    it("xQuery syntaxTree is non-empty", () => {
+      const lang = StreamLanguage.define(xQuery);
+      const state = EditorState.create({
+        doc: "for $x in doc('books.xml')//book return $x/title",
+        extensions: [new LanguageSupport(lang)],
+      });
+      expect(syntaxTree(state).length).toBeGreaterThan(0);
+    });
+
+    it("pig syntaxTree is non-empty", () => {
+      const lang = StreamLanguage.define(pig);
+      const state = EditorState.create({
+        doc: "A = LOAD 'data.txt' USING PigStorage(',');\nB = FILTER A BY $0 > 0;",
+        extensions: [new LanguageSupport(lang)],
+      });
+      expect(syntaxTree(state).length).toBeGreaterThan(0);
+    });
+
+    it("liveScript syntaxTree is non-empty", () => {
+      const lang = StreamLanguage.define(liveScript);
+      const state = EditorState.create({
+        doc: "add = (x, y) -> x + y\nconsole.log add 1, 2",
+        extensions: [new LanguageSupport(lang)],
+      });
+      expect(syntaxTree(state).length).toBeGreaterThan(0);
     });
   });
 });

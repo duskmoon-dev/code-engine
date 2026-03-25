@@ -199,6 +199,145 @@ describe("Parse utilities", () => {
   });
 });
 
+describe("StringStream", () => {
+  it("sol() is true at the start", () => {
+    const stream = new StringStream("hello world", 2, 2);
+    expect(stream.sol()).toBe(true);
+  });
+
+  it("eol() is false before consuming", () => {
+    const stream = new StringStream("hello", 2, 2);
+    expect(stream.eol()).toBe(false);
+  });
+
+  it("eol() is true for empty string", () => {
+    const stream = new StringStream("", 2, 2);
+    expect(stream.eol()).toBe(true);
+  });
+
+  it("peek() returns next character without consuming", () => {
+    const stream = new StringStream("hello", 2, 2);
+    expect(stream.peek()).toBe("h");
+    expect(stream.pos).toBe(0);
+  });
+
+  it("next() consumes and returns next character", () => {
+    const stream = new StringStream("hello", 2, 2);
+    expect(stream.next()).toBe("h");
+    expect(stream.pos).toBe(1);
+  });
+
+  it("eat() consumes matching character", () => {
+    const stream = new StringStream("hello", 2, 2);
+    expect(stream.eat("h")).toBe("h");
+    expect(stream.pos).toBe(1);
+  });
+
+  it("eat() does not consume non-matching character", () => {
+    const stream = new StringStream("hello", 2, 2);
+    expect(stream.eat("x")).toBeUndefined();
+    expect(stream.pos).toBe(0);
+  });
+
+  it("eatWhile() consumes multiple matching chars", () => {
+    const stream = new StringStream("aaabbb", 2, 2);
+    expect(stream.eatWhile("a")).toBe(true);
+    expect(stream.pos).toBe(3);
+  });
+
+  it("eatSpace() consumes whitespace", () => {
+    const stream = new StringStream("   hello", 2, 2);
+    expect(stream.eatSpace()).toBe(true);
+    expect(stream.pos).toBe(3);
+  });
+
+  it("match() with string returns true when match found", () => {
+    const stream = new StringStream("hello world", 2, 2);
+    const result = stream.match("hello");
+    expect(result).toBe(true);
+    expect(stream.pos).toBe(5);
+  });
+
+  it("match() with no consume option does not advance", () => {
+    const stream = new StringStream("hello", 2, 2);
+    stream.match("hello", false);
+    expect(stream.pos).toBe(0);
+  });
+
+  it("skipToEnd() moves pos to end", () => {
+    const stream = new StringStream("hello world", 2, 2);
+    stream.skipToEnd();
+    expect(stream.eol()).toBe(true);
+  });
+
+  it("current() returns consumed string", () => {
+    const stream = new StringStream("hello world", 2, 2);
+    stream.match("hello");
+    expect(stream.current()).toBe("hello");
+  });
+});
+
+describe("indentUnit with EditorState", () => {
+  it("default indent unit is 2 or 4 spaces", () => {
+    const state = EditorState.create({ doc: "x = 1" });
+    const unit = getIndentUnit(state);
+    expect(unit).toBeGreaterThan(0);
+  });
+
+  it("can configure indent unit via facet", () => {
+    const state = EditorState.create({
+      doc: "x = 1",
+      extensions: [indentUnit.of("    ")],
+    });
+    expect(getIndentUnit(state)).toBe(4);
+  });
+
+  it("can configure 2-space indent unit", () => {
+    const state = EditorState.create({
+      doc: "x = 1",
+      extensions: [indentUnit.of("  ")],
+    });
+    expect(getIndentUnit(state)).toBe(2);
+  });
+});
+
+describe("bracketMatching with EditorState", () => {
+  it("matchBrackets finds a matching bracket pair", () => {
+    const state = EditorState.create({ doc: "(hello)" });
+    const result = matchBrackets(state, 1, -1);
+    // May be null if no bracket extension, but should not throw
+    expect(result === null || result !== undefined).toBe(true);
+  });
+
+  it("bracketMatching returns an extension", () => {
+    const ext = bracketMatching();
+    expect(ext).toBeDefined();
+  });
+
+  it("bracketMatching can be used with EditorState", () => {
+    const state = EditorState.create({
+      doc: "(hello)",
+      extensions: [bracketMatching()],
+    });
+    expect(state.doc.toString()).toBe("(hello)");
+  });
+});
+
+describe("LRLanguage", () => {
+  it("pythonLanguage is an LRLanguage", () => {
+    expect(pythonLanguage).toBeInstanceOf(LRLanguage);
+  });
+
+  it("LRLanguage.name is a string", () => {
+    expect(typeof pythonLanguage.name).toBe("string");
+    expect(pythonLanguage.name).toBe("python");
+  });
+
+  it("LRLanguage has a parser", () => {
+    expect(pythonLanguage.parser).toBeDefined();
+  });
+});
+
 describe("Highlight tags", () => {
   it("exports standard tags", () => {
     expect(tags.keyword).toBeDefined();

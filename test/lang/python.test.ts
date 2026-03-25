@@ -84,4 +84,79 @@ describe("Python language pack", () => {
     expect(tree.length).toBe(code.length);
     expect(tree.type.isTop).toBe(true);
   });
+
+  it("pythonLanguage can parse decorators", () => {
+    const tree = pythonLanguage.parser.parse("@staticmethod\ndef foo(): pass");
+    expect(tree.length).toBeGreaterThan(0);
+    expect(tree.type.isTop).toBe(true);
+  });
+
+  it("pythonLanguage can parse type hints", () => {
+    const tree = pythonLanguage.parser.parse("def greet(name: str) -> str:\n    return f'Hello, {name}'");
+    expect(tree.length).toBeGreaterThan(0);
+    expect(tree.type.isTop).toBe(true);
+  });
+
+  it("pythonLanguage can parse generators", () => {
+    const tree = pythonLanguage.parser.parse("def gen(): yield from range(10)");
+    expect(tree.length).toBeGreaterThan(0);
+  });
+
+  it("pythonLanguage can parse lambda", () => {
+    const tree = pythonLanguage.parser.parse("f = lambda x, y: x + y");
+    expect(tree.length).toBeGreaterThan(0);
+    expect(tree.type.isTop).toBe(true);
+  });
+
+  it("pythonLanguage can parse with statement", () => {
+    const tree = pythonLanguage.parser.parse("with open('file') as f:\n    data = f.read()");
+    expect(tree.length).toBeGreaterThan(0);
+  });
+
+  it("tree.resolve() finds nodes at multiple positions in python code", () => {
+    const code = "import os\nfor x in range(10):\n    print(x)";
+    const tree = pythonLanguage.parser.parse(code);
+    for (let i = 0; i < code.length; i += 5) {
+      const node = tree.resolve(i);
+      expect(node).toBeDefined();
+    }
+  });
+
+  it("pythonLanguage can parse dataclass", () => {
+    const tree = pythonLanguage.parser.parse("from dataclasses import dataclass\n@dataclass\nclass Point:\n    x: float\n    y: float");
+    expect(tree.length).toBeGreaterThan(0);
+    expect(tree.type.isTop).toBe(true);
+  });
+
+  it("pythonLanguage can parse async/await", () => {
+    const tree = pythonLanguage.parser.parse("async def fetch(url):\n    async with session.get(url) as resp:\n        return await resp.json()");
+    expect(tree.length).toBeGreaterThan(0);
+  });
+
+  it("pythonLanguage can parse list/dict/set comprehensions", () => {
+    const tree = pythonLanguage.parser.parse("squares = [x**2 for x in range(10) if x % 2 == 0]\nd = {k: v for k, v in items.items()}");
+    expect(tree.length).toBeGreaterThan(0);
+    expect(tree.type.isTop).toBe(true);
+  });
+
+  it("pythonLanguage can parse walrus operator", () => {
+    const tree = pythonLanguage.parser.parse("if (n := len(a)) > 10:\n    print(n)");
+    expect(tree.length).toBeGreaterThan(0);
+  });
+
+  it("pythonLanguage can parse match statement", () => {
+    const tree = pythonLanguage.parser.parse("match command:\n    case 'quit':\n        quit_game()\n    case 'go' if direction in valid_dirs:\n        move(direction)");
+    expect(tree.length).toBeGreaterThan(0);
+  });
+
+  it("pythonLanguage can parse property decorator", () => {
+    const tree = pythonLanguage.parser.parse("class Circle:\n    @property\n    def radius(self): return self._r\n    @radius.setter\n    def radius(self, r): self._r = r");
+    expect(tree.length).toBeGreaterThan(0);
+    expect(tree.type.isTop).toBe(true);
+  });
+
+  it("pythonLanguage can parse f-string expressions", () => {
+    const tree = pythonLanguage.parser.parse("msg = f'Hello {name!r}, you are {age:.1f} years old'");
+    expect(tree.length).toBeGreaterThan(0);
+  });
 });

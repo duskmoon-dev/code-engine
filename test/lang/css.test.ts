@@ -89,4 +89,78 @@ describe("CSS language pack", () => {
     const source = defineCSSCompletionSource(() => null);
     expect(typeof source).toBe("function");
   });
+
+  it("cssLanguage can parse media queries", () => {
+    const tree = cssLanguage.parser.parse("@media (max-width: 768px) { .box { display: none; } }");
+    expect(tree.length).toBeGreaterThan(0);
+    expect(tree.type.isTop).toBe(true);
+  });
+
+  it("cssLanguage can parse keyframes", () => {
+    const tree = cssLanguage.parser.parse("@keyframes slide-in { from { transform: translateX(-100%); } to { transform: translateX(0); } }");
+    expect(tree.length).toBeGreaterThan(0);
+  });
+
+  it("cssLanguage can parse CSS custom properties", () => {
+    const tree = cssLanguage.parser.parse(":root { --primary: #333; --accent: blue; } .btn { color: var(--primary); }");
+    expect(tree.length).toBeGreaterThan(0);
+    expect(tree.type.isTop).toBe(true);
+  });
+
+  it("cssLanguage can parse pseudo-selectors", () => {
+    const tree = cssLanguage.parser.parse("a:hover { color: red; } li:first-child { font-weight: bold; }");
+    expect(tree.length).toBeGreaterThan(0);
+  });
+
+  it("cssLanguage can parse attribute selectors", () => {
+    const tree = cssLanguage.parser.parse("input[type='text'] { border: 1px solid; }");
+    expect(tree.length).toBeGreaterThan(0);
+  });
+
+  it("tree.resolve() finds nodes in CSS at multiple positions", () => {
+    const code = ".container { margin: 0 auto; padding: 20px; }";
+    const tree = cssLanguage.parser.parse(code);
+    for (let i = 0; i < code.length; i += 6) {
+      const node = tree.resolve(i);
+      expect(node).toBeDefined();
+    }
+  });
+
+  it("cssLanguage can parse grid layout", () => {
+    const tree = cssLanguage.parser.parse(".grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; }");
+    expect(tree.length).toBeGreaterThan(0);
+    expect(tree.type.isTop).toBe(true);
+  });
+
+  it("cssLanguage can parse flexbox", () => {
+    const tree = cssLanguage.parser.parse(".flex { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; }");
+    expect(tree.length).toBeGreaterThan(0);
+  });
+
+  it("cssLanguage can parse calc() function", () => {
+    const tree = cssLanguage.parser.parse(".full { width: calc(100% - 2rem); height: calc(100vh - 60px); }");
+    expect(tree.length).toBeGreaterThan(0);
+  });
+
+  it("cssLanguage can parse @supports rule", () => {
+    const tree = cssLanguage.parser.parse("@supports (display: grid) { .layout { display: grid; } }");
+    expect(tree.length).toBeGreaterThan(0);
+    expect(tree.type.isTop).toBe(true);
+  });
+
+  it("cssLanguage can parse pseudo-elements", () => {
+    const tree = cssLanguage.parser.parse("p::before { content: '> '; } a::after { content: ' ↗'; }");
+    expect(tree.length).toBeGreaterThan(0);
+  });
+
+  it("cssLanguage can parse CSS transitions", () => {
+    const tree = cssLanguage.parser.parse(".btn { transition: all 0.3s ease-in-out; transform: scale(1); } .btn:hover { transform: scale(1.05); }");
+    expect(tree.length).toBeGreaterThan(0);
+  });
+
+  it("cssLanguage can parse CSS animations", () => {
+    const tree = cssLanguage.parser.parse(".spinner { animation: spin 1s linear infinite; } @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }");
+    expect(tree.length).toBeGreaterThan(0);
+    expect(tree.type.isTop).toBe(true);
+  });
 });

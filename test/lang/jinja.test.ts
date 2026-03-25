@@ -272,5 +272,62 @@ describe("Jinja language pack", () => {
       do { nodeCount++; } while (cursor.next() && nodeCount < 100);
       expect(nodeCount).toBeGreaterThan(1);
     });
+
+    it("tree.resolve() finds nodes at multiple positions in jinja template", () => {
+      const code = "{% for item in items %}{{ item.name }}{% endfor %}";
+      const tree = jinjaLanguage.parser.parse(code);
+      for (let i = 0; i < code.length; i += 6) {
+        const node = tree.resolve(i);
+        expect(node).toBeDefined();
+      }
+    });
+
+    it("jinjaLanguage can parse filter expression", () => {
+      const tree = jinjaLanguage.parser.parse("{{ title | upper | truncate(50) }}");
+      expect(tree.length).toBeGreaterThan(0);
+      expect(tree.type.isTop).toBe(true);
+    });
+
+    it("jinjaLanguage can parse if-elif-else", () => {
+      const tree = jinjaLanguage.parser.parse("{% if x > 10 %}big{% elif x > 5 %}medium{% else %}small{% endif %}");
+      expect(tree.length).toBeGreaterThan(0);
+    });
+
+    it("jinjaLanguage can parse macro definition", () => {
+      const tree = jinjaLanguage.parser.parse("{% macro input(name, value='') %}<input name=\"{{ name }}\" value=\"{{ value }}\">{% endmacro %}");
+      expect(tree.length).toBeGreaterThan(0);
+    });
+
+    it("jinjaLanguage can parse set variable", () => {
+      const tree = jinjaLanguage.parser.parse("{% set navigation = [('index.html', 'Index'), ('about.html', 'About')] %}");
+      expect(tree.length).toBeGreaterThan(0);
+    });
+
+    it("jinjaLanguage can parse include tag", () => {
+      const tree = jinjaLanguage.parser.parse("{% include 'header.html' %}\n{% include 'footer.html' ignore missing %}");
+      expect(tree.length).toBeGreaterThan(0);
+    });
+
+    it("jinjaLanguage can parse import tag", () => {
+      const tree = jinjaLanguage.parser.parse("{% import 'macros.html' as macros %}\n{{ macros.input('username') }}");
+      expect(tree.length).toBeGreaterThan(0);
+      expect(tree.type.isTop).toBe(true);
+    });
+
+    it("jinjaLanguage can parse test expressions (is defined)", () => {
+      const tree = jinjaLanguage.parser.parse("{% if value is defined %}{{ value }}{% endif %}");
+      expect(tree.length).toBeGreaterThan(0);
+    });
+
+    it("jinjaLanguage can parse raw block", () => {
+      const tree = jinjaLanguage.parser.parse("{% raw %}{{ not jinja }}{% endraw %}");
+      expect(tree.length).toBeGreaterThan(0);
+    });
+
+    it("jinjaLanguage can parse call block", () => {
+      const tree = jinjaLanguage.parser.parse("{% call(user) render_dialog(users) %}Hello, {{ user.name }}!{% endcall %}");
+      expect(tree.length).toBeGreaterThan(0);
+      expect(tree.type.isTop).toBe(true);
+    });
   });
 });

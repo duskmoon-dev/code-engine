@@ -99,5 +99,81 @@ describe("JSON language pack", () => {
       do { nodeCount++; } while (cursor.next() && nodeCount < 100);
       expect(nodeCount).toBeGreaterThan(1);
     });
+
+    it("tree.resolve() finds nodes at various positions", () => {
+      const code = '{"key": "value", "num": 42}';
+      const tree = jsonLanguage.parser.parse(code);
+      for (let i = 0; i < code.length; i += 4) {
+        const node = tree.resolve(i);
+        expect(node).toBeDefined();
+        expect(node.type).toBeDefined();
+      }
+    });
+
+    it("jsonLanguage can parse deeply nested JSON", () => {
+      const code = '{"a": {"b": {"c": {"d": [1, 2, 3]}}}}';
+      const tree = jsonLanguage.parser.parse(code);
+      expect(tree.length).toBe(code.length);
+      expect(tree.type.isTop).toBe(true);
+    });
+
+    it("jsonLanguage can parse JSON with all primitive types", () => {
+      const code = '{"str": "hello", "num": 3.14, "bool": true, "null": null, "int": -42}';
+      const tree = jsonLanguage.parser.parse(code);
+      expect(tree.length).toBe(code.length);
+    });
+  });
+
+  describe("jsonParseLinter behavioral", () => {
+    it("jsonParseLinter returns a function (requires EditorView at runtime)", () => {
+      const lint = jsonParseLinter();
+      expect(typeof lint).toBe("function");
+    });
+  });
+
+  describe("additional parse tree tests", () => {
+    it("jsonLanguage can parse empty array", () => {
+      const tree = jsonLanguage.parser.parse("[]");
+      expect(tree.length).toBeGreaterThan(0);
+      expect(tree.type.isTop).toBe(true);
+    });
+
+    it("jsonLanguage can parse empty object", () => {
+      const tree = jsonLanguage.parser.parse("{}");
+      expect(tree.length).toBeGreaterThan(0);
+    });
+
+    it("jsonLanguage can parse array of objects", () => {
+      const tree = jsonLanguage.parser.parse('[{"id": 1, "name": "Alice"}, {"id": 2, "name": "Bob"}]');
+      expect(tree.length).toBeGreaterThan(0);
+      expect(tree.type.isTop).toBe(true);
+    });
+
+    it("jsonLanguage can parse unicode string", () => {
+      const tree = jsonLanguage.parser.parse('{"greeting": "こんにちは", "emoji": "🎉"}');
+      expect(tree.length).toBeGreaterThan(0);
+    });
+
+    it("jsonLanguage can parse scientific notation", () => {
+      const tree = jsonLanguage.parser.parse('{"val": 1.5e10, "neg": -2.5e-3}');
+      expect(tree.length).toBeGreaterThan(0);
+    });
+
+    it("jsonLanguage cursor traversal counts nodes", () => {
+      const tree = jsonLanguage.parser.parse('{"a": 1, "b": [1, 2, 3], "c": {"d": true}}');
+      const cursor = tree.cursor();
+      let nodeCount = 0;
+      do { nodeCount++; } while (cursor.next() && nodeCount < 100);
+      expect(nodeCount).toBeGreaterThan(5);
+    });
+
+    it("tree.resolve() in JSON at multiple positions", () => {
+      const code = '{"name": "Alice", "age": 30, "tags": ["dev", "ops"]}';
+      const tree = jsonLanguage.parser.parse(code);
+      for (let i = 0; i < code.length; i += 6) {
+        const node = tree.resolve(i);
+        expect(node).toBeDefined();
+      }
+    });
   });
 });

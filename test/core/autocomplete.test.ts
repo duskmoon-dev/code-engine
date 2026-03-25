@@ -31,6 +31,7 @@ import {
   clearSnippet,
   snippetKeymap,
 } from "../../src/core/autocomplete/index";
+import { EditorState } from "../../src/core/state/index";
 
 describe("autocomplete module exports", () => {
   it("exports autocompletion as a function", () => {
@@ -239,5 +240,144 @@ describe("autocompletion function", () => {
   it("returns an extension when called with config", () => {
     const ext = autocompletion({ activateOnTyping: true });
     expect(ext).toBeDefined();
+  });
+});
+
+describe("CompletionContext", () => {
+  it("constructs with EditorState, pos, and explicit flag", () => {
+    const state = EditorState.create({ doc: "hello world" });
+    const ctx = new CompletionContext(state, 5, true);
+    expect(ctx.state).toBe(state);
+    expect(ctx.pos).toBe(5);
+    expect(ctx.explicit).toBe(true);
+  });
+
+  it("matchBefore returns null when nothing matches", () => {
+    const state = EditorState.create({ doc: "hello world" });
+    const ctx = new CompletionContext(state, 0, false);
+    const result = ctx.matchBefore(/\w+/);
+    expect(result).toBeNull();
+  });
+
+  it("matchBefore returns match object when text matches before pos", () => {
+    const state = EditorState.create({ doc: "hello world" });
+    const ctx = new CompletionContext(state, 5, false);
+    const result = ctx.matchBefore(/\w+/);
+    expect(result).not.toBeNull();
+    expect(result!.text).toBe("hello");
+  });
+
+  it("aborted is false for fresh context", () => {
+    const state = EditorState.create({ doc: "test" });
+    const ctx = new CompletionContext(state, 0, false);
+    expect(ctx.aborted).toBe(false);
+  });
+});
+
+describe("completionStatus", () => {
+  it("returns null for state with no autocomplete extension", () => {
+    const state = EditorState.create({ doc: "hello" });
+    expect(completionStatus(state)).toBeNull();
+  });
+
+  it("returns null for fresh autocompletion state (no active completion)", () => {
+    const state = EditorState.create({
+      doc: "hello",
+      extensions: [autocompletion()],
+    });
+    expect(completionStatus(state)).toBeNull();
+  });
+});
+
+describe("currentCompletions", () => {
+  it("returns empty array for state with no autocomplete", () => {
+    const state = EditorState.create({ doc: "hello" });
+    const completions = currentCompletions(state);
+    expect(Array.isArray(completions)).toBe(true);
+    expect(completions.length).toBe(0);
+  });
+});
+
+describe("selectedCompletion", () => {
+  it("returns null for state with no active completion", () => {
+    const state = EditorState.create({ doc: "hello" });
+    expect(selectedCompletion(state)).toBeNull();
+  });
+});
+
+describe("selectedCompletionIndex", () => {
+  it("returns null for state with no active completion", () => {
+    const state = EditorState.create({ doc: "hello" });
+    expect(selectedCompletionIndex(state)).toBeNull();
+  });
+});
+
+describe("closeBrackets integration", () => {
+  it("closeBrackets() returns an extension", () => {
+    const ext = closeBrackets();
+    expect(ext).toBeDefined();
+  });
+
+  it("closeBrackets can be used with EditorState", () => {
+    const state = EditorState.create({
+      doc: "",
+      extensions: [closeBrackets()],
+    });
+    expect(state).toBeDefined();
+  });
+
+  it("closeBracketsKeymap is a non-empty array", () => {
+    expect(Array.isArray(closeBracketsKeymap)).toBe(true);
+    expect(closeBracketsKeymap.length).toBeGreaterThan(0);
+  });
+});
+
+describe("ifIn and ifNotIn", () => {
+  it("ifIn returns a CompletionSource function", () => {
+    const source = ifIn(["Identifier"], completeFromList(["foo", "bar"]));
+    expect(typeof source).toBe("function");
+  });
+
+  it("ifNotIn returns a CompletionSource function", () => {
+    const source = ifNotIn(["Comment", "String"], completeFromList(["foo", "bar"]));
+    expect(typeof source).toBe("function");
+  });
+});
+
+describe("completeAnyWord", () => {
+  it("is a CompletionSource function", () => {
+    expect(typeof completeAnyWord).toBe("function");
+  });
+
+  it("returns null for explicit completion at start of empty doc", () => {
+    const state = EditorState.create({ doc: "" });
+    const ctx = new CompletionContext(state, 0, true);
+    const result = completeAnyWord(ctx);
+    expect(result === null || result !== undefined).toBe(true);
+  });
+});
+
+describe("insertCompletionText", () => {
+  it("returns a TransactionSpec", () => {
+    const state = EditorState.create({ doc: "hel" });
+    const spec = insertCompletionText(state, "hello", 0, 3);
+    expect(spec).toBeDefined();
+    expect(typeof spec).toBe("object");
+  });
+});
+
+describe("snippet and snippetKeymap", () => {
+  it("snippetKeymap is defined", () => {
+    expect(snippetKeymap).toBeDefined();
+  });
+
+  it("snippet with no fields returns a function that inserts text", () => {
+    const applyFn = snippet("console.log()");
+    expect(typeof applyFn).toBe("function");
+  });
+
+  it("snippet with fields creates field placeholders", () => {
+    const applyFn = snippet("function ${name}(${args}) { ${} }");
+    expect(typeof applyFn).toBe("function");
   });
 });

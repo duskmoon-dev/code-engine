@@ -490,3 +490,155 @@ describe("combineConfig", () => {
     expect(() => combineConfig([{ a: 1 }, { a: 2 }], { a: 0 })).toThrow();
   });
 });
+
+describe("Text advanced methods", () => {
+  it("Text.of creates a multiline text", () => {
+    const text = Text.of(["hello", "world", "foo"]);
+    expect(text.lines).toBe(3);
+  });
+
+  it("toString() reconstructs the full string", () => {
+    const text = Text.of(["hello", "world"]);
+    expect(text.toString()).toBe("hello\nworld");
+  });
+
+  it("lineAt() returns the right line for offset", () => {
+    const text = Text.of(["hello", "world"]);
+    const line = text.lineAt(6); // 'w' in 'world'
+    expect(line.number).toBe(2);
+    expect(line.text).toBe("world");
+  });
+
+  it("sliceString handles multiline ranges", () => {
+    const text = Text.of(["abc", "def", "ghi"]);
+    const slice = text.sliceString(4, 7); // "def"
+    expect(slice).toBe("def");
+  });
+
+  it("eq() returns true for same text", () => {
+    const t1 = Text.of(["hello"]);
+    const t2 = Text.of(["hello"]);
+    expect(t1.eq(t2)).toBe(true);
+  });
+
+  it("eq() returns false for different text", () => {
+    const t1 = Text.of(["hello"]);
+    const t2 = Text.of(["world"]);
+    expect(t1.eq(t2)).toBe(false);
+  });
+
+  it("Text.empty.eq(Text.empty) is true", () => {
+    expect(Text.empty.eq(Text.empty)).toBe(true);
+  });
+});
+
+describe("ChangeSet advanced", () => {
+  it("empty ChangeSet has newLength equal to length", () => {
+    const cs = ChangeSet.empty(100);
+    expect(cs.newLength).toBe(100);
+    expect(cs.length).toBe(100);
+  });
+
+  it("iterChanges with {A/B} positions", () => {
+    const cs = ChangeSet.of([
+      { from: 0, to: 2, insert: "X" },
+      { from: 5, to: 7, insert: "YY" },
+    ], 10);
+    const spans: Array<{ fromA: number; toA: number; fromB: number; toB: number }> = [];
+    cs.iterChanges((fromA, toA, fromB, toB) => {
+      spans.push({ fromA, toA, fromB, toB });
+    });
+    expect(spans.length).toBe(2);
+    expect(spans[0].fromA).toBe(0);
+    expect(spans[0].toA).toBe(2);
+  });
+
+  it("toJSON/fromJSON round-trips correctly", () => {
+    const cs = ChangeSet.of([{ from: 2, to: 4, insert: "hello" }], 10);
+    const json = cs.toJSON();
+    const restored = ChangeSet.fromJSON(json);
+    expect(restored.length).toBe(cs.length);
+    expect(restored.newLength).toBe(cs.newLength);
+  });
+});
+
+describe("EditorSelection multi-range", () => {
+  it("create() builds a selection with multiple ranges", () => {
+    const sel = EditorSelection.create([
+      EditorSelection.range(0, 5),
+      EditorSelection.range(10, 15),
+    ]);
+    expect(sel.ranges.length).toBe(2);
+  });
+
+  it("mainIndex selects main range", () => {
+    const sel = EditorSelection.create([
+      EditorSelection.cursor(0),
+      EditorSelection.cursor(5),
+    ], 1);
+    expect(sel.mainIndex).toBe(1);
+    expect(sel.main.anchor).toBe(5);
+  });
+
+  it("ranges are sorted by from position", () => {
+    const sel = EditorSelection.create([
+      EditorSelection.cursor(10),
+      EditorSelection.cursor(0),
+    ]);
+    expect(sel.ranges[0].from).toBeLessThanOrEqual(sel.ranges[1].from);
+  });
+});
+
+describe("Compartment.get", () => {
+  it("get() returns the current extension value", () => {
+    const myFacet = Facet.define<number, number[]>({ combine: (vs) => vs });
+    const compartment = new Compartment();
+    const state = EditorState.create({
+      extensions: [compartment.of(myFacet.of(42))],
+    });
+    const current = compartment.get(state);
+    expect(current).toBeDefined();
+  });
+});
+
+describe("Transaction.effects", () => {
+  it("effects contains applied state effects", () => {
+    const myEffect = StateEffect.define<number>();
+    const state = EditorState.create({ doc: "hello" });
+    const tr = state.update({ effects: myEffect.of(99) });
+    expect(tr.effects.length).toBe(1);
+    expect(tr.effects[0].is(myEffect)).toBe(true);
+    expect(tr.effects[0].value).toBe(99);
+  });
+
+  it("multiple effects are all present", () => {
+    const e1 = StateEffect.define<string>();
+    const e2 = StateEffect.define<number>();
+    const state = EditorState.create({ doc: "hello" });
+    const tr = state.update({ effects: [e1.of("a"), e2.of(1)] });
+    expect(tr.effects.length).toBe(2);
+  });
+});
+
+describe("Facet with combine function", () => {
+  it("sum combiner aggregates values", () => {
+    const sumFacet = Facet.define<number, number>({
+      combine: (values) => values.reduce((a, b) => a + b, 0),
+    });
+    const state = EditorState.create({
+      extensions: [sumFacet.of(3), sumFacet.of(7), sumFacet.of(10)],
+    });
+    expect(state.facet(sumFacet)).toBe(20);
+  });
+
+  it("facet without combine returns array of values", () => {
+    const arrFacet = Facet.define<string>();
+    const state = EditorState.create({
+      extensions: [arrFacet.of("hello"), arrFacet.of("world")],
+    });
+    const value = state.facet(arrFacet);
+    expect(Array.isArray(value)).toBe(true);
+    expect(value).toContain("hello");
+    expect(value).toContain("world");
+  });
+});

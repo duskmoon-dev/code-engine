@@ -258,5 +258,72 @@ describe("Liquid language pack", () => {
       do { nodeCount++; } while (cursor.next() && nodeCount < 100);
       expect(nodeCount).toBeGreaterThan(1);
     });
+
+    it("tree.resolve() finds nodes at multiple positions in liquid template", () => {
+      const code = "{% for item in cart.items %}{{ item.title | upcase }}{% endfor %}";
+      const tree = liquidLanguage.parser.parse(code);
+      for (let i = 0; i < code.length; i += 6) {
+        const node = tree.resolve(i);
+        expect(node).toBeDefined();
+      }
+    });
+
+    it("liquidLanguage can parse filter expression", () => {
+      const tree = liquidLanguage.parser.parse("{{ product.title | upcase | truncate: 50 }}");
+      expect(tree.length).toBeGreaterThan(0);
+      expect(tree.type.isTop).toBe(true);
+    });
+
+    it("liquidLanguage can parse unless tag", () => {
+      const tree = liquidLanguage.parser.parse("{% unless product.available %}Sold out{% endunless %}");
+      expect(tree.length).toBeGreaterThan(0);
+    });
+
+    it("liquidLanguage can parse case/when tag", () => {
+      const tree = liquidLanguage.parser.parse("{% case handle %}{% when 'home' %}Home{% when 'about' %}About{% else %}Other{% endcase %}");
+      expect(tree.length).toBeGreaterThan(0);
+    });
+
+    it("liquidLanguage can parse assign tag", () => {
+      const tree = liquidLanguage.parser.parse("{% assign my_var = 'hello' | upcase %}{{ my_var }}");
+      expect(tree.length).toBeGreaterThan(0);
+    });
+
+    it("liquidLanguage can parse capture tag", () => {
+      const tree = liquidLanguage.parser.parse("{% capture fullname %}{{ first }} {{ last }}{% endcapture %}{{ fullname }}");
+      expect(tree.length).toBeGreaterThan(0);
+    });
+
+    it("liquidLanguage can parse increment/decrement tags", () => {
+      const tree = liquidLanguage.parser.parse("{% increment counter %}{% decrement counter %}");
+      expect(tree.length).toBeGreaterThan(0);
+      expect(tree.type.isTop).toBe(true);
+    });
+
+    it("liquidLanguage can parse include/render tags", () => {
+      const tree = liquidLanguage.parser.parse("{% include 'header' %}{% render 'footer', product: product %}");
+      expect(tree.length).toBeGreaterThan(0);
+    });
+
+    it("liquidLanguage can parse raw block", () => {
+      const tree = liquidLanguage.parser.parse("{% raw %}{{ not liquid }}{% endraw %}");
+      expect(tree.length).toBeGreaterThan(0);
+    });
+
+    it("liquidLanguage can parse paginate tag", () => {
+      const tree = liquidLanguage.parser.parse("{% paginate collection.products by 12 %}{% endpaginate %}");
+      expect(tree.length).toBeGreaterThan(0);
+      expect(tree.type.isTop).toBe(true);
+    });
+
+    it("liquidLanguage can parse tablerow tag", () => {
+      const tree = liquidLanguage.parser.parse("{% tablerow item in items cols:3 %}{{ item }}{% endtablerow %}");
+      expect(tree.length).toBeGreaterThan(0);
+    });
+
+    it("liquidLanguage can parse comment tag", () => {
+      const tree = liquidLanguage.parser.parse("{% comment %}This is a Liquid comment{% endcomment %}Hello");
+      expect(tree.length).toBeGreaterThan(0);
+    });
   });
 });

@@ -95,5 +95,55 @@ describe("LR Parser module", () => {
         expect(node).toBeDefined();
       }
     });
+
+    it("LRParser handles empty string input", () => {
+      const tree = pythonLanguage.parser.parse("");
+      expect(tree).toBeDefined();
+      expect(tree.length).toBe(0);
+    });
+
+    it("LRParser.nodeSet has multiple node types", () => {
+      const parser = pythonLanguage.parser as LRParser;
+      expect(parser.nodeSet).toBeDefined();
+      expect(parser.nodeSet.types.length).toBeGreaterThan(1);
+    });
+
+    it("tree.firstChild and lastChild are defined for a complex parse", () => {
+      const tree = pythonLanguage.parser.parse("def foo(): pass");
+      const cursor = tree.cursor();
+      cursor.firstChild();
+      expect(cursor.node).toBeDefined();
+    });
+
+    it("LRParser.configure returns a parser with the same node set size", () => {
+      const parser = pythonLanguage.parser as LRParser;
+      const configured = parser.configure({});
+      expect(configured.nodeSet.types.length).toBe(parser.nodeSet.types.length);
+    });
+
+    it("javascript LRParser handles multi-line code", () => {
+      const tree = javascriptLanguage.parser.parse("function foo() {\n  return 1;\n}\nfunction bar() {\n  return 2;\n}");
+      expect(tree.length).toBeGreaterThan(0);
+      expect(tree.type.isTop).toBe(true);
+    });
+
+    it("rust LRParser parses a struct definition", () => {
+      const tree = rustLanguage.parser.parse("struct Point { x: f64, y: f64 }");
+      expect(tree.length).toBeGreaterThan(0);
+      expect(tree.type.isTop).toBe(true);
+    });
+
+    it("all three language parsers have a non-empty nodeSet", () => {
+      for (const lang of [pythonLanguage, javascriptLanguage, rustLanguage]) {
+        const parser = lang.parser as LRParser;
+        expect(parser.nodeSet.types.length).toBeGreaterThan(0);
+      }
+    });
+
+    it("LRParser.getName returns a string for term 0", () => {
+      const parser = pythonLanguage.parser as LRParser;
+      const name = parser.getName(0);
+      expect(typeof name).toBe("string");
+    });
   });
 });

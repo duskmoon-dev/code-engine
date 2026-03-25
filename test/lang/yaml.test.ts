@@ -92,4 +92,62 @@ describe("YAML language pack", () => {
     expect(tree.length).toBeGreaterThan(0);
     expect(tree.type.isTop).toBe(true);
   });
+
+  it("yamlLanguage can parse sequence (list) syntax", () => {
+    const tree = yamlLanguage.parser.parse("- item1\n- item2\n- item3");
+    expect(tree.length).toBeGreaterThan(0);
+    expect(tree.type.isTop).toBe(true);
+  });
+
+  it("yamlLanguage can parse inline sequence", () => {
+    const tree = yamlLanguage.parser.parse("colors: [red, green, blue]");
+    expect(tree.length).toBeGreaterThan(0);
+  });
+
+  it("yamlLanguage can parse inline mapping", () => {
+    const tree = yamlLanguage.parser.parse("point: {x: 1, y: 2}");
+    expect(tree.length).toBeGreaterThan(0);
+  });
+
+  it("yamlLanguage can parse multi-line string (literal block)", () => {
+    const tree = yamlLanguage.parser.parse("text: |\n  line one\n  line two");
+    expect(tree.length).toBeGreaterThan(0);
+    expect(tree.type.isTop).toBe(true);
+  });
+
+  it("yamlLanguage can parse folded block scalar", () => {
+    const tree = yamlLanguage.parser.parse("description: >\n  This is a long\n  description folded");
+    expect(tree.length).toBeGreaterThan(0);
+  });
+
+  it("yamlLanguage can parse comments", () => {
+    const tree = yamlLanguage.parser.parse("# A comment\nkey: value # inline comment");
+    expect(tree.length).toBeGreaterThan(0);
+    expect(tree.type.isTop).toBe(true);
+  });
+
+  it("yamlLanguage can parse boolean values", () => {
+    const tree = yamlLanguage.parser.parse("enabled: true\ndisabled: false");
+    expect(tree.length).toBeGreaterThan(0);
+  });
+
+  it("yamlLanguage can parse null values", () => {
+    const tree = yamlLanguage.parser.parse("optional: null\nalso_null: ~");
+    expect(tree.length).toBeGreaterThan(0);
+  });
+
+  it("yamlLanguage can parse numeric values", () => {
+    const tree = yamlLanguage.parser.parse("count: 42\npi: 3.14159\nneg: -7");
+    expect(tree.length).toBeGreaterThan(0);
+    expect(tree.type.isTop).toBe(true);
+  });
+
+  it("tree.resolve() finds nodes at multiple positions in YAML", () => {
+    const code = "name: Alice\nage: 30\nroles:\n  - admin\n  - user";
+    const tree = yamlLanguage.parser.parse(code);
+    for (let i = 0; i < code.length; i += 6) {
+      const node = tree.resolve(i);
+      expect(node).toBeDefined();
+    }
+  });
 });

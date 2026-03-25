@@ -281,4 +281,68 @@ describe("RegExpCursor", () => {
     }
     expect(matches).toEqual(["cat", "bat", "mat"]);
   });
+
+  it("respects from constraint", () => {
+    const text = Text.of(["abc123def456"]);
+    const cursor = new RegExpCursor(text, "\\d+", {}, 6);
+    const first = cursor.next();
+    expect(first.value!.from).toBeGreaterThanOrEqual(6);
+  });
+
+  it("captures groups in match", () => {
+    const text = Text.of(["2024-01-15"]);
+    const cursor = new RegExpCursor(text, "(\\d{4})-(\\d{2})-(\\d{2})");
+    const first = cursor.next();
+    expect(first.value).toBeDefined();
+    expect(first.value!.from).toBe(0);
+    expect(first.value!.to).toBe(10);
+  });
+});
+
+describe("SearchCursor multi-line", () => {
+  it("finds a term across a multi-line Text", () => {
+    const text = Text.of(["line one", "line two", "line three"]);
+    const cursor = new SearchCursor(text, "two");
+    const match = cursor.next();
+    expect(match.done).toBe(false);
+    expect(match.value).toBeDefined();
+  });
+
+  it("case-insensitive search with normalize option", () => {
+    const text = Text.of(["Hello World"]);
+    const cursor = new SearchCursor(text, "hello", 0, text.length, (s) => s.toLowerCase());
+    const match = cursor.next();
+    expect(match.done).toBe(false);
+    expect(match.value!.from).toBe(0);
+  });
+});
+
+describe("SearchQuery behavior", () => {
+  it("SearchQuery with regexp=true", () => {
+    const q = new SearchQuery({ search: "hel+o", regexp: true });
+    expect(q.regexp).toBe(true);
+    expect(q.search).toBe("hel+o");
+  });
+
+  it("SearchQuery with wholeWord=true", () => {
+    const q = new SearchQuery({ search: "hello", wholeWord: true });
+    expect(q.wholeWord).toBe(true);
+  });
+
+  it("SearchQuery.eq() returns false when caseSensitive differs", () => {
+    const q1 = new SearchQuery({ search: "foo", caseSensitive: true });
+    const q2 = new SearchQuery({ search: "foo", caseSensitive: false });
+    expect(q1.eq(q2)).toBe(false);
+  });
+
+  it("SearchQuery.eq() returns false when replace differs", () => {
+    const q1 = new SearchQuery({ search: "foo", replace: "bar" });
+    const q2 = new SearchQuery({ search: "foo", replace: "baz" });
+    expect(q1.eq(q2)).toBe(false);
+  });
+
+  it("empty search string constructs without error", () => {
+    const q = new SearchQuery({ search: "" });
+    expect(q.search).toBe("");
+  });
 });

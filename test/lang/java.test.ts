@@ -63,4 +63,73 @@ describe("Java language pack", () => {
     expect(tree.length).toBeGreaterThan(0);
     expect(tree.type.isTop).toBe(true);
   });
+
+  it("javaLanguage can parse generic types", () => {
+    const tree = javaLanguage.parser.parse("List<String> list = new ArrayList<>();");
+    expect(tree.length).toBeGreaterThan(0);
+  });
+
+  it("javaLanguage can parse annotation", () => {
+    const tree = javaLanguage.parser.parse("@Override public String toString() { return \"foo\"; }");
+    expect(tree.length).toBeGreaterThan(0);
+    expect(tree.type.isTop).toBe(true);
+  });
+
+  it("javaLanguage can parse enum", () => {
+    const tree = javaLanguage.parser.parse("enum Day { MON, TUE, WED, THU, FRI, SAT, SUN }");
+    expect(tree.length).toBeGreaterThan(0);
+    expect(tree.type.isTop).toBe(true);
+  });
+
+  it("javaLanguage can parse try-catch", () => {
+    const tree = javaLanguage.parser.parse("try { risky(); } catch (Exception e) { handle(e); } finally { cleanup(); }");
+    expect(tree.length).toBeGreaterThan(0);
+  });
+
+  it("tree.resolve() finds nodes in java code", () => {
+    const code = "public class Foo { int x = 0; }";
+    const tree = javaLanguage.parser.parse(code);
+    for (let i = 0; i < code.length; i += 5) {
+      const node = tree.resolve(i);
+      expect(node).toBeDefined();
+    }
+  });
+
+  it("javaLanguage can parse lambda expression", () => {
+    const tree = javaLanguage.parser.parse("Runnable r = () -> System.out.println(\"Hello\");");
+    expect(tree.length).toBeGreaterThan(0);
+    expect(tree.type.isTop).toBe(true);
+  });
+
+  it("javaLanguage can parse stream operations", () => {
+    const tree = javaLanguage.parser.parse("list.stream().filter(x -> x > 0).map(x -> x * 2).collect(Collectors.toList());");
+    expect(tree.length).toBeGreaterThan(0);
+  });
+
+  it("javaLanguage can parse switch expression", () => {
+    const tree = javaLanguage.parser.parse("String result = switch(day) { case MON, TUE -> \"Weekday\"; case SAT, SUN -> \"Weekend\"; default -> \"Unknown\"; };");
+    expect(tree.length).toBeGreaterThan(0);
+  });
+
+  it("javaLanguage can parse record type", () => {
+    const tree = javaLanguage.parser.parse("record Point(int x, int y) {}");
+    expect(tree.length).toBeGreaterThan(0);
+  });
+
+  it("javaLanguage can parse text block", () => {
+    const tree = javaLanguage.parser.parse("String json = \"\"\"\n  {\n    \"name\": \"Alice\"\n  }\"\"\";");
+    expect(tree.length).toBeGreaterThan(0);
+    expect(tree.type.isTop).toBe(true);
+  });
+
+  it("javaLanguage can parse static import", () => {
+    const tree = javaLanguage.parser.parse("import static java.util.Arrays.asList;");
+    expect(tree.length).toBeGreaterThan(0);
+  });
+
+  it("javaLanguage can parse abstract class", () => {
+    const tree = javaLanguage.parser.parse("abstract class Shape { abstract double area(); String name() { return \"Shape\"; } }");
+    expect(tree.length).toBeGreaterThan(0);
+    expect(tree.type.isTop).toBe(true);
+  });
 });

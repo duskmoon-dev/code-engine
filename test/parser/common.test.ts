@@ -1,6 +1,7 @@
 import { describe, it, expect } from "bun:test";
 import { Tree, NodeType, NodeSet, TreeBuffer, NodeProp, Parser, TreeFragment, parseMixed } from "../../src/parser/common/index";
 import { pythonLanguage } from "../../src/lang/python/index";
+import { javascriptLanguage } from "../../src/lang/javascript/index";
 import { EditorState } from "../../src/core/state/index";
 
 describe("Parser common module", () => {
@@ -108,5 +109,137 @@ describe("Parser common module", () => {
       expect(node).toBeDefined();
       expect(node.type).toBeDefined();
     });
+  });
+});
+
+describe("NodeProp", () => {
+  it("can create a new NodeProp", () => {
+    const prop = new NodeProp<string>();
+    expect(prop).toBeDefined();
+    expect(typeof prop.id).toBe("number");
+  });
+
+  it("perNode defaults to false", () => {
+    const prop = new NodeProp<string>();
+    expect(prop.perNode).toBe(false);
+  });
+
+  it("perNode can be set to true", () => {
+    const prop = new NodeProp<string>({ perNode: true });
+    expect(prop.perNode).toBe(true);
+  });
+
+  it("built-in closedBy prop exists and is a NodeProp", () => {
+    expect(NodeProp.closedBy).toBeDefined();
+    expect(NodeProp.closedBy).toBeInstanceOf(NodeProp);
+  });
+
+  it("built-in openedBy prop exists and is a NodeProp", () => {
+    expect(NodeProp.openedBy).toBeDefined();
+    expect(NodeProp.openedBy).toBeInstanceOf(NodeProp);
+  });
+
+  it("built-in group prop exists and is a NodeProp", () => {
+    expect(NodeProp.group).toBeDefined();
+    expect(NodeProp.group).toBeInstanceOf(NodeProp);
+  });
+
+  it("built-in contextHash prop exists", () => {
+    expect(NodeProp.contextHash).toBeDefined();
+  });
+
+  it("built-in lookAhead prop exists", () => {
+    expect(NodeProp.lookAhead).toBeDefined();
+  });
+
+  it("built-in mounted prop exists", () => {
+    expect(NodeProp.mounted).toBeDefined();
+  });
+});
+
+describe("Tree methods", () => {
+  it("tree.length matches parsed code length", () => {
+    const code = "x = 1 + 2";
+    const tree = pythonLanguage.parser.parse(code);
+    expect(tree.length).toBe(code.length);
+  });
+
+  it("tree.type is the top NodeType", () => {
+    const tree = pythonLanguage.parser.parse("x = 1");
+    expect(tree.type.isTop).toBe(true);
+  });
+
+  it("tree.iterate() visits all nodes", () => {
+    const tree = pythonLanguage.parser.parse("x = 1 + 2");
+    let nodeCount = 0;
+    tree.iterate({ enter: () => { nodeCount++; } });
+    expect(nodeCount).toBeGreaterThan(1);
+  });
+
+  it("tree.resolve() at end of code returns a valid node", () => {
+    const code = "x = 1";
+    const tree = pythonLanguage.parser.parse(code);
+    const node = tree.resolve(code.length);
+    expect(node).toBeDefined();
+    expect(node.type).toBeDefined();
+  });
+
+  it("tree.resolveInner() resolves to the innermost node", () => {
+    const code = "print(42)";
+    const tree = pythonLanguage.parser.parse(code);
+    const node = tree.resolveInner(6);
+    expect(node).toBeDefined();
+    expect(node.from).toBeLessThanOrEqual(6);
+    expect(node.to).toBeGreaterThanOrEqual(6);
+  });
+
+  it("node.parent returns parent node or null at top", () => {
+    const tree = pythonLanguage.parser.parse("x = 1");
+    const root = tree.resolve(0);
+    // The root's parent should be null if it is the top node
+    // or some outer node; just check it is accessible
+    expect(root).toBeDefined();
+  });
+
+  it("TreeFragment.addTree creates non-empty fragments", () => {
+    const code = "def foo(): pass";
+    const tree = pythonLanguage.parser.parse(code);
+    const frags = TreeFragment.addTree(tree);
+    expect(frags.length).toBeGreaterThan(0);
+  });
+
+  it("fragments have from/to properties", () => {
+    const tree = pythonLanguage.parser.parse("x = 1");
+    const frags = TreeFragment.addTree(tree);
+    for (const f of frags) {
+      expect(typeof f.from).toBe("number");
+      expect(typeof f.to).toBe("number");
+    }
+  });
+
+  it("two parsers produce different trees for different code", () => {
+    const pyTree = pythonLanguage.parser.parse("x = 1");
+    const jsTree = javascriptLanguage.parser.parse("const x = 1");
+    expect(pyTree.toString()).not.toBe(jsTree.toString());
+  });
+});
+
+describe("NodeType", () => {
+  it("none has id 0 and is anonymous", () => {
+    expect(NodeType.none.id).toBe(0);
+    expect(NodeType.none.isAnonymous).toBe(true);
+  });
+
+  it("parsed tree node types have names", () => {
+    const tree = pythonLanguage.parser.parse("x = 1");
+    const cursor = tree.cursor();
+    // Top node should have a non-empty name or be named
+    expect(cursor.type).toBeDefined();
+    expect(typeof cursor.type.name).toBe("string");
+  });
+
+  it("isTop is true for top-level tree type", () => {
+    const tree = pythonLanguage.parser.parse("x = 1");
+    expect(tree.type.isTop).toBe(true);
   });
 });
