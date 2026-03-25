@@ -1,6 +1,8 @@
 import { describe, it, expect } from "bun:test";
 import { yaml, yamlLanguage, yamlFrontmatter } from "../../src/lang/yaml/index";
 import { javascript } from "../../src/lang/javascript/index";
+import { EditorState } from "../../src/core/state/index";
+import { syntaxTree, LanguageSupport } from "../../src/core/language/index";
 
 describe("YAML language pack", () => {
   it("exports yaml function", () => {
@@ -51,5 +53,32 @@ describe("YAML language pack", () => {
   it("yamlLanguage parser tree has a top-level type", () => {
     const tree = yamlLanguage.parser.parse("a: 1\nb: 2");
     expect(tree.type.isTop).toBe(true);
+  });
+
+  it("yaml() returns LanguageSupport instance", () => {
+    expect(yaml()).toBeInstanceOf(LanguageSupport);
+  });
+
+  it("syntaxTree from EditorState with yaml() is non-empty", () => {
+    const state = EditorState.create({
+      doc: "name: Alice\nage: 30",
+      extensions: [yaml()],
+    });
+    const tree = syntaxTree(state);
+    expect(tree.length).toBeGreaterThan(0);
+  });
+
+  it("yamlLanguage can parse nested structures", () => {
+    const tree = yamlLanguage.parser.parse("outer:\n  inner:\n    deep: value");
+    expect(tree.length).toBeGreaterThan(0);
+    expect(tree.type.isTop).toBe(true);
+  });
+
+  it("yamlFrontmatter integrates with EditorState", () => {
+    const state = EditorState.create({
+      doc: "---\ntitle: Test\n---\nconsole.log('hi')",
+      extensions: [yamlFrontmatter({ content: javascript() })],
+    });
+    expect(state.doc.toString()).toContain("title: Test");
   });
 });

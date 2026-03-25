@@ -1,5 +1,6 @@
 import { describe, it, expect } from "bun:test";
 import { duskMoon, duskMoonTheme, duskMoonHighlightStyle } from "../../src/theme/duskmoon";
+import { EditorState } from "../../src/core/state/index";
 
 describe("theme/duskmoon", () => {
   describe("duskMoonTheme", () => {
@@ -55,6 +56,30 @@ describe("theme/duskmoon", () => {
       expect(result).toBeDefined();
       expect(Array.isArray(result)).toBe(true);
       expect((result as unknown[]).length).toBe(2);
+    });
+
+    it("can be used as an EditorState extension (light)", () => {
+      const state = EditorState.create({
+        doc: "hello",
+        extensions: [duskMoon()],
+      });
+      expect(state.doc.toString()).toBe("hello");
+    });
+
+    it("can be used as an EditorState extension (dark)", () => {
+      const state = EditorState.create({
+        doc: "world",
+        extensions: [duskMoon({ dark: true })],
+      });
+      expect(state.doc.toString()).toBe("world");
+    });
+  });
+
+  describe("duskMoonHighlightStyle return type", () => {
+    it("returns an array of extensions", () => {
+      const hl = duskMoonHighlightStyle();
+      expect(Array.isArray(hl)).toBe(true);
+      expect((hl as unknown[]).length).toBeGreaterThan(0);
     });
   });
 });

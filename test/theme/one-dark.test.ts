@@ -1,5 +1,6 @@
 import { describe, it, expect } from "bun:test";
 import { oneDark, oneDarkTheme, oneDarkHighlightStyle, color } from "../../src/theme/one-dark";
+import { EditorState } from "../../src/core/state/index";
 
 describe("theme/one-dark", () => {
   describe("color", () => {
@@ -62,6 +63,22 @@ describe("theme/one-dark", () => {
     it("is an array with two entries (theme + highlight)", () => {
       expect(Array.isArray(oneDark)).toBe(true);
       expect((oneDark as unknown[]).length).toBe(2);
+    });
+
+    it("can be used as an EditorState extension", () => {
+      const state = EditorState.create({
+        doc: "hello world",
+        extensions: [oneDark],
+      });
+      expect(state.doc.toString()).toBe("hello world");
+    });
+  });
+
+  describe("oneDarkHighlightStyle tag styling", () => {
+    it("style() is callable with a tag array", () => {
+      const result = oneDarkHighlightStyle.style([]);
+      // Empty array returns null or a string
+      expect(result === null || typeof result === "string").toBe(true);
     });
   });
 });

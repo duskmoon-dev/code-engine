@@ -1,6 +1,8 @@
 import { describe, it, expect } from "bun:test";
 import { php, phpLanguage } from "../../src/lang/php/index";
 import { htmlLanguage } from "../../src/lang/html/index";
+import { EditorState } from "../../src/core/state/index";
+import { syntaxTree, LanguageSupport } from "../../src/core/language/index";
 
 describe("PHP language pack", () => {
   it("exports php function", () => {
@@ -44,6 +46,29 @@ describe("PHP language pack", () => {
 
   it("phpLanguage parser tree has a top-level type", () => {
     const tree = phpLanguage.parser.parse("<?php $x = 1; ?>");
+    expect(tree.type.isTop).toBe(true);
+  });
+
+  it("php() returns LanguageSupport instance", () => {
+    expect(php()).toBeInstanceOf(LanguageSupport);
+  });
+
+  it("php({ plain: true }) returns LanguageSupport instance", () => {
+    expect(php({ plain: true })).toBeInstanceOf(LanguageSupport);
+  });
+
+  it("syntaxTree from EditorState with php() is non-empty", () => {
+    const state = EditorState.create({
+      doc: "<?php echo 'hello'; ?>",
+      extensions: [php()],
+    });
+    const tree = syntaxTree(state);
+    expect(tree.length).toBeGreaterThan(0);
+  });
+
+  it("phpLanguage parser can parse function declaration", () => {
+    const tree = phpLanguage.parser.parse("<?php function greet($name) { return 'Hello, ' . $name; } ?>");
+    expect(tree.length).toBeGreaterThan(0);
     expect(tree.type.isTop).toBe(true);
   });
 });
