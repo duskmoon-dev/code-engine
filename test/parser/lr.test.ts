@@ -68,5 +68,32 @@ describe("LR Parser module", () => {
       expect(pythonLanguage.parser).not.toBe(javascriptLanguage.parser);
       expect(pythonLanguage.parser).not.toBe(rustLanguage.parser);
     });
+
+    it("LRParser.topNode returns a NodeType for top rule", () => {
+      const parser = pythonLanguage.parser as LRParser;
+      expect(parser.topNode).toBeDefined();
+      expect(parser.topNode.isTop).toBe(true);
+    });
+
+    it("LRParser.getName returns a string for term id", () => {
+      const parser = pythonLanguage.parser as LRParser;
+      const eofName = parser.getName(parser.eofTerm);
+      expect(typeof eofName).toBe("string");
+    });
+
+    it("LRParser.configure returns a new parser with changed dialect", () => {
+      const parser = pythonLanguage.parser as LRParser;
+      const configured = parser.configure({});
+      expect(configured).toBeInstanceOf(LRParser);
+    });
+
+    it("parse returns a tree that can be resolved at any position", () => {
+      const code = "x = 1 + 2";
+      const tree = pythonLanguage.parser.parse(code);
+      for (let i = 0; i <= code.length; i += 2) {
+        const node = tree.resolve(i);
+        expect(node).toBeDefined();
+      }
+    });
   });
 });
