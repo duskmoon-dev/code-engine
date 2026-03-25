@@ -51,6 +51,7 @@ import {
   shadowDOMTooltipSpace,
   __test,
 } from "../../src/core/view/index";
+import { EditorState } from "../../src/core/state/index";
 
 describe("core/view exports", () => {
   describe("EditorView", () => {
@@ -192,6 +193,31 @@ describe("core/view exports", () => {
   describe("getDrawSelectionConfig", () => {
     it("is exported as a function", () => {
       expect(typeof getDrawSelectionConfig).toBe("function");
+    });
+
+    it("returns default config when no drawSelection extension is present", () => {
+      const state = EditorState.create({ doc: "hello" });
+      const config = getDrawSelectionConfig(state);
+      expect(config.cursorBlinkRate).toBe(1200);
+      expect(config.drawRangeCursor).toBe(true);
+    });
+
+    it("returns custom cursorBlinkRate when drawSelection is configured", () => {
+      const state = EditorState.create({
+        doc: "hello",
+        extensions: [drawSelection({ cursorBlinkRate: 0 })],
+      });
+      const config = getDrawSelectionConfig(state);
+      expect(config.cursorBlinkRate).toBe(0);
+    });
+
+    it("combines two drawSelection configs with min cursorBlinkRate", () => {
+      const state = EditorState.create({
+        doc: "hello",
+        extensions: [drawSelection({ cursorBlinkRate: 800 }), drawSelection({ cursorBlinkRate: 600 })],
+      });
+      const config = getDrawSelectionConfig(state);
+      expect(config.cursorBlinkRate).toBe(600);
     });
   });
 
