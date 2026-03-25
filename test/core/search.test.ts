@@ -362,3 +362,244 @@ describe("SearchQuery behavior", () => {
     expect(typeof validRegExp).toBe("function");
   });
 });
+
+describe("RegExpCursor detailed", () => {
+  it("finds two matches of 'hello' in 'hello world hello'", () => {
+    const text = Text.of(["hello world hello"]);
+    const cursor = new RegExpCursor(text, "hello");
+    const matches: Array<{ from: number; to: number }> = [];
+    while (!cursor.next().done) {
+      matches.push({ from: cursor.value.from, to: cursor.value.to });
+    }
+    expect(matches.length).toBe(2);
+    expect(matches[0]).toEqual({ from: 0, to: 5 });
+    expect(matches[1]).toEqual({ from: 12, to: 17 });
+  });
+
+  it("iterates all matches with next() verifying from/to positions", () => {
+    const text = Text.of(["ab ab ab"]);
+    const cursor = new RegExpCursor(text, "ab");
+    cursor.next();
+    expect(cursor.done).toBe(false);
+    expect(cursor.value.from).toBe(0);
+    expect(cursor.value.to).toBe(2);
+    cursor.next();
+    expect(cursor.value.from).toBe(3);
+    expect(cursor.value.to).toBe(5);
+    cursor.next();
+    expect(cursor.value.from).toBe(6);
+    expect(cursor.value.to).toBe(8);
+    cursor.next();
+    expect(cursor.done).toBe(true);
+  });
+
+  it("supports case-insensitive search with ignoreCase option", () => {
+    const text = Text.of(["Hello HELLO hello"]);
+    const cursor = new RegExpCursor(text, "hello", { ignoreCase: true });
+    const matches: number[] = [];
+    while (!cursor.next().done) {
+      matches.push(cursor.value.from);
+    }
+    expect(matches).toEqual([0, 6, 12]);
+  });
+
+  it("restricts search with from/to range", () => {
+    const text = Text.of(["aaa bbb aaa bbb aaa"]);
+    const cursor = new RegExpCursor(text, "aaa", {}, 4, 15);
+    const matches: number[] = [];
+    while (!cursor.next().done) {
+      matches.push(cursor.value.from);
+    }
+    expect(matches).toEqual([8]);
+  });
+
+  it("done flag starts false and becomes true after exhausting matches", () => {
+    const text = Text.of(["x"]);
+    const cursor = new RegExpCursor(text, "x");
+    expect(cursor.done).toBe(false);
+    cursor.next();
+    expect(cursor.done).toBe(false);
+    cursor.next();
+    expect(cursor.done).toBe(true);
+  });
+
+  it("no matches — done after first next()", () => {
+    const text = Text.of(["abcdef"]);
+    const cursor = new RegExpCursor(text, "z");
+    cursor.next();
+    expect(cursor.done).toBe(true);
+  });
+
+  it("match object contains capture groups", () => {
+    const text = Text.of(["2024-01-15"]);
+    const cursor = new RegExpCursor(text, "(\\d{4})-(\\d{2})-(\\d{2})");
+    cursor.next();
+    expect(cursor.done).toBe(false);
+    expect(cursor.value.match[0]).toBe("2024-01-15");
+    expect(cursor.value.match[1]).toBe("2024");
+    expect(cursor.value.match[2]).toBe("01");
+    expect(cursor.value.match[3]).toBe("15");
+  });
+
+  it("searches from middle of text", () => {
+    const text = Text.of(["foo bar foo bar"]);
+    const cursor = new RegExpCursor(text, "foo", {}, 4);
+    cursor.next();
+    expect(cursor.done).toBe(false);
+    expect(cursor.value.from).toBe(8);
+    cursor.next();
+    expect(cursor.done).toBe(true);
+  });
+
+  it("test function filters matches", () => {
+    const text = Text.of(["aa bb cc dd"]);
+    // Only accept matches starting at even positions
+    const cursor = new RegExpCursor(text, "[a-z]+", {
+      test: (from, _to, _match) => from % 2 === 0,
+    });
+    const matches: string[] = [];
+    while (!cursor.next().done) {
+      matches.push(text.sliceString(cursor.value.from, cursor.value.to));
+    }
+    expect(matches).toEqual(["aa", "cc"]);
+  });
+
+  it("handles pattern that matches at end of text", () => {
+    const text = Text.of(["hello world"]);
+    const cursor = new RegExpCursor(text, "world$");
+    cursor.next();
+    expect(cursor.done).toBe(false);
+    expect(cursor.value.from).toBe(6);
+    expect(cursor.value.to).toBe(11);
+  });
+});
+
+describe("MultilineRegExpCursor", () => {
+  it("pattern with \\n searches across lines", () => {
+    const text = Text.of(["line1", "line2", "line3"]);
+    const cursor = new RegExpCursor(text, "line1\\nline2");
+    cursor.next();
+    expect(cursor.done).toBe(false);
+    expect(cursor.value.from).toBe(0);
+    expect(cursor.value.to).toBe(11);
+  });
+
+  it("pattern with \\s matches across lines", () => {
+    const text = Text.of(["hello", "world"]);
+    const cursor = new RegExpCursor(text, "hello\\sworld");
+    cursor.next();
+    expect(cursor.done).toBe(false);
+    expect(cursor.value.from).toBe(0);
+    expect(cursor.value.to).toBe(11);
+  });
+
+  it("pattern with \\r triggers multiline mode", () => {
+    const text = Text.of(["abc", "def"]);
+    // \r in pattern triggers MultilineRegExpCursor; it should still work
+    const cursor = new RegExpCursor(text, "abc[\\r\\n]+def");
+    cursor.next();
+    expect(cursor.done).toBe(false);
+    expect(text.sliceString(cursor.value.from, cursor.value.to)).toBe("abc\ndef");
+  });
+
+  it("multiline search with Text.of for multiple lines", () => {
+    const text = Text.of(["alpha", "beta", "gamma"]);
+    const cursor = new RegExpCursor(text, "beta\\ngamma");
+    cursor.next();
+    expect(cursor.done).toBe(false);
+    expect(cursor.value.from).toBe(6);
+    // "beta\ngamma" = 10 chars, starting at 6 => to = 16
+    expect(cursor.value.to).toBe(16);
+  });
+});
+
+describe("SearchCursor detailed", () => {
+  it("basic string search finds match at correct position", () => {
+    const text = Text.of(["hello world"]);
+    const cursor = new SearchCursor(text, "world");
+    cursor.next();
+    expect(cursor.done).toBe(false);
+    expect(cursor.value.from).toBe(6);
+    expect(cursor.value.to).toBe(11);
+  });
+
+  it("case-insensitive search via normalize function", () => {
+    const text = Text.of(["Hello World HELLO"]);
+    const cursor = new SearchCursor(text, "hello", 0, text.length, s => s.toLowerCase());
+    const matches: number[] = [];
+    while (!cursor.next().done) {
+      matches.push(cursor.value.from);
+    }
+    expect(matches).toEqual([0, 12]);
+  });
+
+  it("search from a given position", () => {
+    const text = Text.of(["aaa bbb aaa"]);
+    const cursor = new SearchCursor(text, "aaa", 4);
+    cursor.next();
+    expect(cursor.done).toBe(false);
+    expect(cursor.value.from).toBe(8);
+  });
+
+  it("no match returns done=true", () => {
+    const text = Text.of(["some text"]);
+    const cursor = new SearchCursor(text, "xyz");
+    cursor.next();
+    expect(cursor.done).toBe(true);
+  });
+
+  it("multiple matches iteration returns all occurrences", () => {
+    const text = Text.of(["abcabcabc"]);
+    const cursor = new SearchCursor(text, "abc");
+    const positions: number[] = [];
+    while (!cursor.next().done) {
+      positions.push(cursor.value.from);
+    }
+    expect(positions).toEqual([0, 3, 6]);
+  });
+});
+
+describe("SearchQuery extended", () => {
+  it("valid is true for non-empty search string", () => {
+    const q = new SearchQuery({ search: "test" });
+    expect(q.valid).toBe(true);
+  });
+
+  it("valid is false for empty search string", () => {
+    const q = new SearchQuery({ search: "" });
+    expect(q.valid).toBe(false);
+  });
+
+  it("valid is false for invalid regexp", () => {
+    const q = new SearchQuery({ search: "[", regexp: true });
+    expect(q.valid).toBe(false);
+  });
+
+  it("valid is true for valid regexp", () => {
+    const q = new SearchQuery({ search: "a.*b", regexp: true });
+    expect(q.valid).toBe(true);
+  });
+
+  it("getCursor returns an iterator over a Text", () => {
+    const text = Text.of(["foo bar foo"]);
+    const q = new SearchQuery({ search: "foo" });
+    const cursor = q.getCursor(text);
+    const result = cursor.next();
+    expect(result.done).toBe(false);
+    expect(result.value!.from).toBe(0);
+    expect(result.value!.to).toBe(3);
+  });
+});
+
+describe("validRegExp extended", () => {
+  it("returns true for valid patterns", () => {
+    expect(validRegExp("a+b*")).toBe(true);
+    expect(validRegExp("^\\d{3}$")).toBe(true);
+    expect(validRegExp("[a-z]")).toBe(true);
+  });
+
+  it("returns false for invalid patterns", () => {
+    expect(validRegExp("*")).toBe(false);
+    expect(validRegExp("(?P<name>a)")).toBe(false);
+  });
+});

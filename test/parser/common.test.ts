@@ -626,3 +626,172 @@ describe("Tree cursor and node methods", () => {
     });
   });
 });
+
+describe("TreeFragment", () => {
+  it("addTree creates fragments with correct from/to covering the tree", () => {
+    const code = "const x = 1; const y = 2;";
+    const tree = javascriptLanguage.parser.parse(code);
+    const fragments = TreeFragment.addTree(tree);
+    expect(fragments.length).toBe(1);
+    expect(fragments[0].from).toBe(0);
+    expect(fragments[0].to).toBe(code.length);
+    expect(fragments[0].tree).toBe(tree);
+  });
+
+  it("addTree with partial=true sets openEnd on the fragment", () => {
+    const tree = javascriptLanguage.parser.parse("let a = 1;");
+    const fragments = TreeFragment.addTree(tree, [], true);
+    expect(fragments[0].openEnd).toBe(true);
+    expect(fragments[0].openStart).toBe(false);
+  });
+
+  it("addTree merges with existing fragments beyond tree length", () => {
+    const tree1 = javascriptLanguage.parser.parse("let a = 1;");
+    const frags1 = TreeFragment.addTree(tree1);
+    // Create a second shorter tree — fragments from frags1 that extend beyond tree2.length are kept
+    const tree2 = javascriptLanguage.parser.parse("x");
+    const merged = TreeFragment.addTree(tree2, frags1);
+    // Should have the new fragment plus any old fragments past tree2.length
+    expect(merged.length).toBe(2);
+    expect(merged[0].tree).toBe(tree2);
+    expect(merged[1].tree).toBe(tree1);
+  });
+
+  it("applyChanges returns same fragments when no changes given", () => {
+    const tree = javascriptLanguage.parser.parse("let x = 1;");
+    const fragments = TreeFragment.addTree(tree);
+    const result = TreeFragment.applyChanges(fragments, []);
+    expect(result).toBe(fragments);
+  });
+
+  it("applyChanges adjusts fragments for an insertion change", () => {
+    const code = "let x = 1; let y = 2;";
+    const tree = javascriptLanguage.parser.parse(code);
+    const fragments = TreeFragment.addTree(tree);
+    // Simulate inserting 5 chars at position 10
+    const changes = [{ fromA: 10, toA: 10, fromB: 10, toB: 15 }];
+    const result = TreeFragment.applyChanges(fragments, changes);
+    // The fragment should be split/adjusted around the change
+    expect(result.length).toBeGreaterThan(0);
+    // With minGap=128 (default), only fragments with gaps >= 128 survive,
+    // but the post-change fragment is shifted by the insertion offset
+    for (const f of result) {
+      expect(f.from).toBeGreaterThanOrEqual(0);
+      expect(f.to).toBeGreaterThan(f.from);
+    }
+  });
+
+  it("applyChanges removes fragments fully covered by a change", () => {
+    const code = "ab";
+    const tree = javascriptLanguage.parser.parse(code);
+    const fragments = TreeFragment.addTree(tree);
+    // A change that covers the entire fragment
+    const changes = [{ fromA: 0, toA: 2, fromB: 0, toB: 5 }];
+    const result = TreeFragment.applyChanges(fragments, changes);
+    // Fragment is too small relative to the gap, so nothing survives
+    expect(result.length).toBe(0);
+  });
+
+  it("fragment offset property is accessible", () => {
+    const tree = javascriptLanguage.parser.parse("let x = 1;");
+    const fragments = TreeFragment.addTree(tree);
+    expect(typeof fragments[0].offset).toBe("number");
+    expect(fragments[0].offset).toBe(0);
+  });
+});
+
+describe("NodeSet", () => {
+  it("can be created from an array of NodeTypes", () => {
+    const type1 = NodeType.define({ id: 0, name: "A", top: true });
+    const type2 = NodeType.define({ id: 1, name: "B" });
+    const set = new NodeSet([type1, type2]);
+    expect(set.types.length).toBe(2);
+    expect(set.types[0].name).toBe("A");
+    expect(set.types[1].name).toBe("B");
+  });
+
+  it("extend adds a prop to types via a NodePropSource", () => {
+    const type1 = NodeType.define({ id: 0, name: "Root", top: true });
+    const type2 = NodeType.define({ id: 1, name: "Leaf" });
+    const set = new NodeSet([type1, type2]);
+    const myProp = new NodeProp<string>();
+    const extended = set.extend(myProp.add({ Root: "root-value" }));
+    expect(extended).toBeInstanceOf(NodeSet);
+    expect(extended.types.length).toBe(2);
+    expect(extended.types[0].prop(myProp)).toBe("root-value");
+    expect(extended.types[1].prop(myProp)).toBeUndefined();
+  });
+
+  it("extend can be chained multiple times", () => {
+    const type1 = NodeType.define({ id: 0, name: "X" });
+    const set = new NodeSet([type1]);
+    const prop1 = new NodeProp<string>();
+    const prop2 = new NodeProp<number>();
+    const extended = set
+      .extend(prop1.add({ X: "hello" }))
+      .extend(prop2.add({ X: 42 }));
+    expect(extended.types[0].prop(prop1)).toBe("hello");
+    expect(extended.types[0].prop(prop2)).toBe(42);
+  });
+});
+
+describe("parseMixed", () => {
+  it("returns a function (ParseWrapper)", () => {
+    const wrapper = parseMixed(() => null);
+    expect(typeof wrapper).toBe("function");
+  });
+
+  it("wrapper can be called with a base parser to create a PartialParse", () => {
+    const wrapper = parseMixed(() => null);
+    const baseParser = javascriptLanguage.parser;
+    const code = "const x = 1;";
+    const baseParse = baseParser.startParse(code);
+    const input = {
+      length: code.length,
+      chunk(from: number) { return code.slice(from); },
+      get lineChunks() { return false; },
+      read(from: number, to: number) { return code.slice(from, to); },
+    };
+    const mixed = wrapper(baseParse, input, [], [{ from: 0, to: code.length }]);
+    expect(mixed).toBeDefined();
+    expect(typeof mixed.advance).toBe("function");
+    expect(typeof mixed.stopAt).toBe("function");
+    expect(mixed.parsedPos).toBe(0);
+  });
+
+  it("mixed parse completes and returns a tree when nest returns null", () => {
+    const wrapper = parseMixed(() => null);
+    const baseParser = javascriptLanguage.parser;
+    const code = "const x = 1;";
+    const baseParse = baseParser.startParse(code);
+    const input = {
+      length: code.length,
+      chunk(from: number) { return code.slice(from); },
+      get lineChunks() { return false; },
+      read(from: number, to: number) { return code.slice(from, to); },
+    };
+    const mixed = wrapper(baseParse, input, [], [{ from: 0, to: code.length }]);
+    let result: any = null;
+    for (let i = 0; i < 100 && !result; i++) {
+      result = mixed.advance();
+    }
+    expect(result).toBeInstanceOf(Tree);
+    expect(result.length).toBe(code.length);
+  });
+
+  it("stopAt can be called on a mixed parse before completion", () => {
+    const wrapper = parseMixed(() => null);
+    const baseParser = javascriptLanguage.parser;
+    const code = "const x = 1; const y = 2;";
+    const baseParse = baseParser.startParse(code);
+    const input = {
+      length: code.length,
+      chunk(from: number) { return code.slice(from); },
+      get lineChunks() { return false; },
+      read(from: number, to: number) { return code.slice(from, to); },
+    };
+    const mixed = wrapper(baseParse, input, [], [{ from: 0, to: code.length }]);
+    mixed.stopAt(10);
+    expect(mixed.stoppedAt).toBe(10);
+  });
+});
