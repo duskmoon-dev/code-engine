@@ -237,4 +237,183 @@ describe('playground build output', () => {
     expect(html).toContain('<noscript>')
     expect(html).toContain('JavaScript is required')
   }))
+
+  it('playground has font size controls', requireBuild(() => {
+    const html = readFileSync(join(distDir, 'playground/index.html'), 'utf-8')
+    expect(html).toContain('btn-font-decrease')
+    expect(html).toContain('btn-font-increase')
+    expect(html).toContain('font-size-display')
+  }))
+
+  it('playground has download button', requireBuild(() => {
+    const html = readFileSync(join(distDir, 'playground/index.html'), 'utf-8')
+    expect(html).toContain('btn-download')
+    expect(html).toContain('Download editor content')
+  }))
+
+  it('playground has fullscreen button', requireBuild(() => {
+    const html = readFileSync(join(distDir, 'playground/index.html'), 'utf-8')
+    expect(html).toContain('btn-fullscreen')
+    expect(html).toContain('Toggle fullscreen')
+  }))
+
+  it('playground has word wrap checkbox', requireBuild(() => {
+    const html = readFileSync(join(distDir, 'playground/index.html'), 'utf-8')
+    expect(html).toContain('ext-wordwrap')
+    expect(html).toContain('Word Wrap')
+  }))
+
+  it('playground has read-only mode checkbox', requireBuild(() => {
+    const html = readFileSync(join(distDir, 'playground/index.html'), 'utf-8')
+    expect(html).toContain('ext-readonly')
+    expect(html).toContain('Read-only')
+  }))
+
+  it('playground has whitespace visibility checkbox', requireBuild(() => {
+    const html = readFileSync(join(distDir, 'playground/index.html'), 'utf-8')
+    expect(html).toContain('ext-whitespace')
+    expect(html).toContain('Whitespace')
+  }))
+
+  it('playground has bracket matching checkbox', requireBuild(() => {
+    const html = readFileSync(join(distDir, 'playground/index.html'), 'utf-8')
+    expect(html).toContain('ext-brackets')
+    expect(html).toContain('Brackets')
+  }))
+
+  it('playground has code folding checkbox', requireBuild(() => {
+    const html = readFileSync(join(distDir, 'playground/index.html'), 'utf-8')
+    expect(html).toContain('ext-fold')
+    expect(html).toContain('Folding')
+  }))
+
+  it('playground has active line highlight checkbox', requireBuild(() => {
+    const html = readFileSync(join(distDir, 'playground/index.html'), 'utf-8')
+    expect(html).toContain('ext-highlight-line')
+    expect(html).toContain('Active Line')
+  }))
+
+  it('playground has tab size selector', requireBuild(() => {
+    const html = readFileSync(join(distDir, 'playground/index.html'), 'utf-8')
+    expect(html).toContain('id="tab-size"')
+    expect(html).toContain('Select tab size')
+  }))
+
+  it('playground has vim and emacs keymap checkboxes', requireBuild(() => {
+    const html = readFileSync(join(distDir, 'playground/index.html'), 'utf-8')
+    expect(html).toContain('ext-vim')
+    expect(html).toContain('ext-emacs')
+    expect(html).toContain('Toggle Vim keymap')
+    expect(html).toContain('Toggle Emacs keymap')
+  }))
+
+  it('playground has language loading indicator', requireBuild(() => {
+    const html = readFileSync(join(distDir, 'playground/index.html'), 'utf-8')
+    expect(html).toContain('lang-loading')
+    expect(html).toContain('aria-live="polite"')
+  }))
+
+  it('playground has load error message element', requireBuild(() => {
+    const html = readFileSync(join(distDir, 'playground/index.html'), 'utf-8')
+    expect(html).toContain('load-error')
+    expect(html).toContain('role="alert"')
+    expect(html).toContain('Failed to load language pack')
+  }))
+
+  it('all pages have twitter card meta tags', requireBuild(() => {
+    const pages = ['index.html', 'docs/index.html', 'playground/index.html']
+    for (const page of pages) {
+      const html = readFileSync(join(distDir, page), 'utf-8')
+      expect(html).toContain('twitter:card')
+      expect(html).toContain('twitter:title')
+      expect(html).toContain('twitter:description')
+    }
+  }))
+
+  it('all pages have canonical link', requireBuild(() => {
+    const pages = ['index.html', 'docs/index.html', 'playground/index.html']
+    for (const page of pages) {
+      const html = readFileSync(join(distDir, page), 'utf-8')
+      expect(html).toContain('rel="canonical"')
+    }
+  }))
+
+  it('all pages have skip navigation link for accessibility', requireBuild(() => {
+    const pages = ['index.html', 'docs/index.html', 'playground/index.html', '404.html']
+    for (const page of pages) {
+      const html = readFileSync(join(distDir, page), 'utf-8')
+      expect(html).toContain('skip-link')
+      expect(html).toContain('Skip to content')
+    }
+  }))
+
+  it('all pages have nav with aria-label', requireBuild(() => {
+    const pages = ['index.html', 'docs/index.html', 'playground/index.html']
+    for (const page of pages) {
+      const html = readFileSync(join(distDir, page), 'utf-8')
+      expect(html).toContain('aria-label="Main navigation"')
+    }
+  }))
+
+  it('homepage has install command', requireBuild(() => {
+    const html = readFileSync(join(distDir, 'index.html'), 'utf-8')
+    expect(html).toContain('bun add @duskmoon-dev/code-engine')
+  }))
+
+  it('homepage has quick start code snippet', requireBuild(() => {
+    const html = readFileSync(join(distDir, 'index.html'), 'utf-8')
+    expect(html).toContain('EditorState')
+    expect(html).toContain('EditorView')
+    expect(html).toContain('basicSetup')
+  }))
+
+  it('homepage has version, license and zero-deps badges', requireBuild(() => {
+    const html = readFileSync(join(distDir, 'index.html'), 'utf-8')
+    expect(html).toContain('MIT License')
+    expect(html).toContain('Zero Dependencies')
+    const pkg = JSON.parse(readFileSync(join(import.meta.dir, '../../package.json'), 'utf-8'))
+    expect(html).toContain(`v${pkg.version}`)
+  }))
+
+  it('docs page has try-in-playground link', requireBuild(() => {
+    const html = readFileSync(join(distDir, 'docs/index.html'), 'utf-8')
+    expect(html).toContain('/code-engine/playground')
+    expect(html).toContain('Try in Playground')
+  }))
+
+  it('playground editor region has aria-label', requireBuild(() => {
+    const html = readFileSync(join(distDir, 'playground/index.html'), 'utf-8')
+    expect(html).toContain('role="region"')
+    expect(html).toContain('aria-label="Code editor"')
+  }))
+
+  it('playground controls toolbar has aria-label', requireBuild(() => {
+    const html = readFileSync(join(distDir, 'playground/index.html'), 'utf-8')
+    expect(html).toContain('role="toolbar"')
+    expect(html).toContain('aria-label="Editor settings"')
+  }))
+
+  it('docs page has export table with import paths', requireBuild(() => {
+    const html = readFileSync(join(distDir, 'docs/index.html'), 'utf-8')
+    expect(html).toContain('@duskmoon-dev/code-engine/state')
+    expect(html).toContain('@duskmoon-dev/code-engine/view')
+    expect(html).toContain('@duskmoon-dev/code-engine/lang/javascript')
+  }))
+
+  it('all pages have footer with copyright', requireBuild(() => {
+    const pages = ['index.html', 'docs/index.html', 'playground/index.html']
+    for (const page of pages) {
+      const html = readFileSync(join(distDir, page), 'utf-8')
+      expect(html).toContain('duskmoon-dev')
+      expect(html).toContain('MIT License')
+    }
+  }))
+
+  it('all pages have og:url meta tag', requireBuild(() => {
+    const pages = ['index.html', 'docs/index.html', 'playground/index.html']
+    for (const page of pages) {
+      const html = readFileSync(join(distDir, page), 'utf-8')
+      expect(html).toContain('og:url')
+    }
+  }))
 })
