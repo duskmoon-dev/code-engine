@@ -64,4 +64,29 @@ describe("CSS language pack", () => {
     const tree = syntaxTree(state);
     expect(tree.length).toBeGreaterThan(0);
   });
+
+  it("css parse tree cursor traversal works", () => {
+    const tree = cssLanguage.parser.parse(".container { display: flex; flex-direction: column; }");
+    const cursor = tree.cursor();
+    let nodeCount = 0;
+    do { nodeCount++; } while (cursor.next() && nodeCount < 100);
+    expect(nodeCount).toBeGreaterThan(1);
+  });
+
+  it("css parse tree resolves node at position", () => {
+    const code = "body { color: #333; }";
+    const tree = cssLanguage.parser.parse(code);
+    const node = tree.resolve(5);
+    expect(node).toBeDefined();
+    expect(node.type).toBeDefined();
+  });
+
+  it("cssCompletionSource is a function", () => {
+    expect(typeof cssCompletionSource).toBe("function");
+  });
+
+  it("defineCSSCompletionSource returns a function", () => {
+    const source = defineCSSCompletionSource(() => null);
+    expect(typeof source).toBe("function");
+  });
 });
