@@ -1,14 +1,17 @@
 :root {
+  /* Site shell colors (dark theme) */
   --color-bg: #0d1117;
   --color-surface: #161b22;
   --color-surface-alt: #1c2128;
   --color-text: #e6edf3;
   --color-text-muted: #8b949e;
   --color-accent: #58a6ff;
-  --color-primary: #58a6ff;
   --color-border: #30363d;
   --color-code-bg: #1c2128;
-  /* duskmoon theme integration vars */
+
+  /* DuskMoon theme integration — read by duskMoonTheme() */
+  --color-primary: #58a6ff;
+  --color-primary-text: #ffffff;
   --color-gutter: transparent;
   --color-gutter-text: #8b949e;
   --color-active-line: rgba(255, 255, 255, 0.04);
@@ -19,7 +22,24 @@
   --color-highlight-active: rgba(255, 150, 50, 0.4);
   --color-fold: transparent;
   --color-fold-text: #8b949e;
-  --color-primary-text: #ffffff;
+
+  /* DuskMoon syntax highlighting — read by duskMoonHighlightStyle() */
+  --syntax-keyword: #c678dd;
+  --syntax-name: #e06c75;
+  --syntax-function: #61afef;
+  --syntax-constant: #d19a66;
+  --syntax-definition: #abb2bf;
+  --syntax-type: #e5c07b;
+  --syntax-operator: #56b6c2;
+  --syntax-comment: #5c6370;
+  --syntax-link: #56b6c2;
+  --syntax-heading: #e06c75;
+  --syntax-atom: #d19a66;
+  --syntax-string: #98c379;
+  --syntax-invalid: #ffffff;
+  --syntax-invalid-bg: #e06c75;
+
+  /* Typography & spacing */
   --font-mono: 'JetBrains Mono', 'Fira Code', monospace;
   --font-sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
   --font-size-sm: 14px;
