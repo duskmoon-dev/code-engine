@@ -423,6 +423,35 @@ describe("core/commands exports", () => {
   });
 });
 
+describe("deleteTrailingWhitespace", () => {
+  it("deleteTrailingWhitespace is a function", () => {
+    expect(typeof deleteTrailingWhitespace).toBe("function");
+  });
+});
+
+describe("invertedEffects and isolateHistory", () => {
+  it("invertedEffects is defined (Facet)", () => {
+    expect(invertedEffects).toBeDefined();
+  });
+
+  it("isolateHistory is an Annotation (object with .of method)", () => {
+    expect(isolateHistory).toBeDefined();
+    expect(typeof isolateHistory.of).toBe("function");
+  });
+
+  it("isolateHistory extension integrates with EditorState", () => {
+    const state = EditorState.create({
+      doc: "hello",
+      extensions: [history()],
+    });
+    const tr = state.update({
+      changes: { from: 5, insert: "!" },
+      annotations: isolateHistory.of("full"),
+    });
+    expect(tr.state.doc.toString()).toBe("hello!");
+  });
+});
+
 describe("history() behavioral tests", () => {
   it("undoDepth returns 0 for a fresh state", () => {
     const state = EditorState.create({
