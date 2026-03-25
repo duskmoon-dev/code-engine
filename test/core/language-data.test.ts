@@ -130,4 +130,46 @@ describe("LanguageDescription.load()", () => {
     const support = await desc.load();
     expect(support).toBeDefined();
   });
+
+  it("Go load() returns a LanguageSupport", async () => {
+    const desc = languages.find(l => l.name === "Go")!;
+    const support = await desc.load();
+    expect(support).toBeDefined();
+  });
+
+  it("Java load() returns a LanguageSupport", async () => {
+    const desc = languages.find(l => l.name === "Java")!;
+    const support = await desc.load();
+    expect(support).toBeDefined();
+  });
+
+  it("C++ load() returns a LanguageSupport", async () => {
+    const desc = languages.find(l => l.name === "C++")!;
+    const support = await desc.load();
+    expect(support).toBeDefined();
+  });
+
+  it("SQL load() returns a LanguageSupport", async () => {
+    const desc = languages.find(l => l.name === "SQL")!;
+    const support = await desc.load();
+    expect(support).toBeDefined();
+  });
+
+  it("XML load() returns a LanguageSupport", async () => {
+    const desc = languages.find(l => l.name === "XML")!;
+    const support = await desc.load();
+    expect(support).toBeDefined();
+  });
+
+  it("Markdown load() returns a LanguageSupport", async () => {
+    const desc = languages.find(l => l.name === "Markdown")!;
+    const support = await desc.load();
+    expect(support).toBeDefined();
+  });
+
+  it("YAML load() returns a LanguageSupport", async () => {
+    const desc = languages.find(l => l.name === "YAML")!;
+    const support = await desc.load();
+    expect(support).toBeDefined();
+  });
 });

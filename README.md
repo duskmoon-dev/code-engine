@@ -61,7 +61,7 @@ new EditorView({
 
 ```bash
 bun install                           # install dependencies
-bun test                              # run tests (1100+ tests across 48 files)
+bun test                              # run tests (1200+ tests across 50 files)
 bun test test/core/state.test.ts      # run a single test file
 bun run typecheck                     # type check
 bun run build                         # full build pipeline
