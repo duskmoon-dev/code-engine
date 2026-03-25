@@ -30,7 +30,7 @@ const path = Astro.url.pathname
 </head>
 <body>
   <a href="#main-content" class="skip-link">Skip to content</a>
-  <nav>
+  <nav aria-label="Main navigation">
     <a href={base} class="nav-brand">code-engine</a>
     <div class="nav-links">
       <a href={`${base}docs`} aria-current={path.includes('/docs') ? 'page' : undefined}>Docs</a>

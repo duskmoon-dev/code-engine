@@ -83,6 +83,7 @@ const categories = categoryOrder
 {categories.map(cat => (
   <div class="category">
     <h3>{cat.name} <span class="count">({cat.exports.length})</span></h3>
+    <div class="table-wrap" role="region" aria-label={`${cat.name} exports`} tabindex="0">
     <table>
       <thead>
         <tr>
@@ -107,6 +108,7 @@ const categories = categoryOrder
         ))}
       </tbody>
     </table>
+    </div>
   </div>
 ))}
 
@@ -122,10 +124,19 @@ const categories = categoryOrder
     font-weight: normal;
     font-size: 0.9em;
   }
+  .table-wrap {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+  .table-wrap:focus-visible {
+    outline: 2px solid var(--color-accent);
+    outline-offset: 2px;
+  }
   table {
     width: 100%;
     border-collapse: collapse;
     table-layout: fixed;
+    min-width: 28rem;
   }
 
   td:first-child, th:first-child {
