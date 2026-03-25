@@ -17,7 +17,7 @@
         </select>
       </label>
     </div>
-    <hr class="divider" />
+    <hr class="divider" aria-hidden="true" />
     <div class="control-group">
       <label class="checkbox">
         <input type="checkbox" id="ext-linenumbers" checked aria-label="Toggle line numbers">
@@ -52,7 +52,7 @@
         Whitespace
       </label>
     </div>
-    <hr class="divider" />
+    <hr class="divider" aria-hidden="true" />
     <div class="control-group">
       <label for="tab-size">
         Tab
@@ -538,6 +538,9 @@ BinaryExpression { expression !add "+" expression }
     }),
     parent: document.getElementById('editor')!,
   })
+
+  // Remove loading placeholder now that editor is ready
+  document.querySelector('.editor-loading')?.remove()
 
   // Initialize doc stats
   updateDocStats(view.state.doc)

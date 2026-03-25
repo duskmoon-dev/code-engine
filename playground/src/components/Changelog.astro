@@ -3,7 +3,16 @@ import changelog from '../../../CHANGELOG.md?raw'
 
 // Basic markdown-to-HTML conversion at build time (no dependency needed)
 function renderMarkdown(md: string): string {
-  return md
+  // First pass: extract fenced code blocks to protect them from inline processing
+  const codeBlocks: string[] = []
+  let processed = md.replace(/^```(\w*)\n([\s\S]*?)^```$/gm, (_match, lang, code) => {
+    const idx = codeBlocks.length
+    const escaped = code.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+    codeBlocks.push(`<pre><code${lang ? ` class="language-${lang}"` : ''}>${escaped}</code></pre>`)
+    return `%%CODEBLOCK_${idx}%%`
+  })
+
+  processed = processed
     // headings
     .replace(/^### (.+)$/gm, '<h4>$1</h4>')
     .replace(/^## (.+)$/gm, '<h3>$1</h3>')
@@ -13,16 +22,27 @@ function renderMarkdown(md: string): string {
     .replace(/\*(.+?)\*/g, '<em>$1</em>')
     // inline code
     .replace(/`([^`]+)`/g, '<code>$1</code>')
+    // links
+    .replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2" target="_blank" rel="noopener">$1</a>')
     // unordered lists
     .replace(/^- (.+)$/gm, '<li>$1</li>')
+    // ordered lists
+    .replace(/^\d+\. (.+)$/gm, '<li>$1</li>')
     // wrap consecutive <li> in <ul>
     .replace(/((?:<li>.*<\/li>\n?)+)/g, '<ul>$1</ul>')
     // paragraphs: blank-line separated blocks that aren't already HTML
-    .replace(/^(?!<[a-z])([\s\S]+?)(?=\n\n|$)/gm, (match) => {
+    .replace(/^(?!<[a-z]|%%CODEBLOCK)([\s\S]+?)(?=\n\n|$)/gm, (match) => {
       const trimmed = match.trim()
-      if (!trimmed || trimmed.startsWith('<')) return match
+      if (!trimmed || trimmed.startsWith('<') || trimmed.startsWith('%%CODEBLOCK')) return match
       return `<p>${trimmed}</p>`
     })
+
+  // Restore code blocks
+  for (let i = 0; i < codeBlocks.length; i++) {
+    processed = processed.replace(`%%CODEBLOCK_${i}%%`, codeBlocks[i])
+  }
+
+  return processed
 }
 
 const sections = changelog.split('\n## ').map((s, i) => i === 0 ? s : '## ' + s)
@@ -72,5 +92,22 @@ const rendered = sections.map(s => renderMarkdown(s))
   }
   .changelog :global(p) {
     margin: var(--space-sm) 0;
+  }
+  .changelog :global(pre) {
+    background: var(--color-code-bg, var(--color-surface));
+    padding: var(--space-md);
+    border-radius: var(--radius, 6px);
+    overflow-x: auto;
+    margin: var(--space-sm) 0;
+  }
+  .changelog :global(pre code) {
+    background: none;
+    padding: 0;
+  }
+  .changelog :global(a) {
+    color: var(--color-accent);
+  }
+  .changelog :global(a:hover) {
+    text-decoration: underline;
   }
 </style>
