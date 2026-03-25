@@ -31,6 +31,9 @@
       Emacs
     </label>
   </div>
+  <p id="load-error" class="load-error" role="alert" hidden>
+    Failed to load language pack. Check your network connection.
+  </p>
   <div id="editor" role="region" aria-label="Code editor"></div>
 </div>
 
@@ -394,14 +397,23 @@ BinaryExpression { expression !add "+" expression }
     return factory
   }
 
+  const loadError = document.getElementById('load-error') as HTMLElement
+
   async function switchLanguage(key: string) {
     langSelect.disabled = true
+    loadError.hidden = true
     try {
       const factory = await loadLanguage(key)
       view.dispatch({
         changes: { from: 0, to: view.state.doc.length, insert: sampleCode[key] ?? '' },
         effects: languageCompartment.reconfigure(factory()),
       })
+    } catch {
+      loadError.hidden = false
+      // Revert select to previous value
+      langSelect.value = [...langSelect.options].find(o =>
+        o.value !== key && resolvedFactories.has(o.value)
+      )?.value ?? 'javascript'
     } finally {
       langSelect.disabled = false
     }
@@ -484,6 +496,16 @@ BinaryExpression { expression !add "+" expression }
 
   .controls input[type="checkbox"] {
     accent-color: var(--color-accent);
+  }
+
+  .load-error {
+    padding: var(--space-sm) var(--space-md);
+    background: rgba(248, 81, 73, 0.1);
+    border: 1px solid rgba(248, 81, 73, 0.4);
+    border-radius: var(--radius);
+    color: #f85149;
+    font-size: 0.85rem;
+    margin: var(--space-sm) 0;
   }
 
   #editor {
