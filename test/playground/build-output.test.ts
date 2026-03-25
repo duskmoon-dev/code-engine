@@ -201,4 +201,40 @@ describe('playground build output', () => {
     // The changelog contains a link to the playground
     expect(html).toContain('duskmoon-dev.github.io/code-engine')
   }))
+
+  it('homepage has feature highlights section', requireBuild(() => {
+    const html = readFileSync(join(distDir, 'index.html'), 'utf-8')
+    expect(html).toContain('42 Subpath Exports')
+    expect(html).toContain('22 Languages')
+    expect(html).toContain('Single Package')
+  }))
+
+  it('all pages have JSON-LD structured data', requireBuild(() => {
+    const pages = ['index.html', 'docs/index.html', 'playground/index.html']
+    for (const page of pages) {
+      const html = readFileSync(join(distDir, page), 'utf-8')
+      expect(html).toContain('application/ld+json')
+      expect(html).toContain('SoftwareSourceCode')
+    }
+  }))
+
+  it('404 page has navigation links', requireBuild(() => {
+    const html = readFileSync(join(distDir, '404.html'), 'utf-8')
+    expect(html).toContain('API Docs')
+    expect(html).toContain('Playground')
+    expect(html).toContain('/code-engine/docs')
+    expect(html).toContain('/code-engine/playground')
+  }))
+
+  it('playground has copy code button', requireBuild(() => {
+    const html = readFileSync(join(distDir, 'playground/index.html'), 'utf-8')
+    expect(html).toContain('btn-copy')
+    expect(html).toContain('Copy code to clipboard')
+  }))
+
+  it('playground has noscript fallback', requireBuild(() => {
+    const html = readFileSync(join(distDir, 'playground/index.html'), 'utf-8')
+    expect(html).toContain('<noscript>')
+    expect(html).toContain('JavaScript is required')
+  }))
 })
