@@ -49,11 +49,7 @@ jobs:
         run: bun run build
 
       - name: Publish to npm
-        run: |
-          printf '//registry.npmjs.org/:_authToken=%s\n@duskmoon-dev:registry=https://registry.npmjs.org/\n' "${NPM_TOKEN}" > ~/.npmrc
-          bun publish --access public
-        env:
-          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
+        run: bun publish --access public --provenance
 
       - name: Commit version bump and tag
         run: |
