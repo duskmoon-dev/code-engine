@@ -224,7 +224,8 @@
     "README.md"
   ],
   "scripts": {
-    "build:playground": "cd playground && bun run build",
+    "dev": "bun run --filter @duskmoon-dev/code-engine-playground dev",
+    "build:playground": "bun run --filter @duskmoon-dev/code-engine-playground build",
     "build": "bun run scripts/build.ts",
     "build:grammars": "bun run scripts/build-grammars.ts",
     "test": "bun test",

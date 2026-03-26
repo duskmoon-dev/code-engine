@@ -3,13 +3,13 @@
   "version": "0.0.1",
   "private": true,
   "scripts": {
-    "dev": "astro dev",
+    "dev": "astro dev --host 0.0.0.0",
     "build": "astro build",
     "preview": "astro preview"
   },
   "dependencies": {
     "@astrojs/sitemap": "^3.7.1",
-    "@duskmoon-dev/code-engine": "file:.."
+    "@duskmoon-dev/code-engine": "*"
   },
   "devDependencies": {
     "astro": "^5.x"

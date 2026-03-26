@@ -15,7 +15,7 @@
       "version": "0.0.1",
       "dependencies": {
         "@astrojs/sitemap": "^3.7.1",
-        "@duskmoon-dev/code-engine": "file:..",
+        "@duskmoon-dev/code-engine": "*",
       },
       "devDependencies": {
         "astro": "^5.x",
@@ -45,7 +45,7 @@
 
     "@capsizecss/unpack": ["@capsizecss/unpack@4.0.0", "", { "dependencies": { "fontkitten": "^1.0.0" } }, "sha512-VERIM64vtTP1C4mxQ5thVT9fK0apjPFobqybMtA1UdUujWka24ERHbRHFGmpbbhp73MhV+KSsHQH9C6uOTdEQA=="],
 
-    "@duskmoon-dev/code-engine": ["@duskmoon-dev/code-engine@root:", {}],
+    "@duskmoon-dev/code-engine": ["@duskmoon-dev/code-engine@0.1.1", "", {}, "sha512-6Hrh9wbTTTbH8CGCH7P2gYm2C2RIbc4E4ogsdxpIaurtMuOhT50oyg0WUb6sNRzOX00tgijldwvS/1CnG+tO3Q=="],
 
     "@duskmoon-dev/code-engine-playground": ["@duskmoon-dev/code-engine-playground@workspace:playground"],
 
