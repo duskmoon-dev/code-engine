@@ -37,17 +37,17 @@ const caddyfileStream = {
     // Double-quoted strings
     if (stream.eat('"')) { state.inString = '"'; return "string" }
 
+    // Matchers: @name
+    if (stream.match(/^@[a-zA-Z_][a-zA-Z0-9_]*/)) return "variableName"
+
+    // Placeholders: {placeholder.name} — must come before block-delimiter check
+    if (stream.match(/^\{[a-zA-Z_$.][a-zA-Z0-9_.]*\}/)) return "string.special"
+
     // Block delimiters
     if (stream.eat("{") || stream.eat("}")) return "brace"
 
     // Parentheses (Caddy snippets)
     if (stream.eat("(") || stream.eat(")")) return "bracket"
-
-    // Matchers: @name
-    if (stream.match(/^@[a-zA-Z_][a-zA-Z0-9_]*/)) return "variableName"
-
-    // Placeholders: {placeholder.name}
-    if (stream.match(/^\{[a-zA-Z_$.][a-zA-Z0-9_.]*\}/)) return "string.special"
 
     // Numbers (ports, sizes)
     if (stream.match(/^\d+[a-zA-Z]*/)) return "number"
@@ -59,8 +59,6 @@ const caddyfileStream = {
     stream.next()
     return null
   },
-
-  blankLine(_state: CaddyState) {},
 }
 
 /// Caddyfile language definition using StreamLanguage.
