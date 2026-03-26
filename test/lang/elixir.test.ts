@@ -34,4 +34,32 @@ describe("Elixir language pack", () => {
     })
     expect(state.doc.toString()).toContain("defmodule")
   })
+
+  it("parses a defmodule correctly", () => {
+    const tree = elixirLanguage.parser.parse("defmodule Hello do\n  def greet, do: :world\nend")
+    expect(tree.length).toBe("defmodule Hello do\n  def greet, do: :world\nend".length)
+  })
+
+  it("tree cursor traverses more than one node", () => {
+    const tree = elixirLanguage.parser.parse("x = 1 + 2")
+    const cursor = tree.cursor()
+    let count = 0
+    while (cursor.next()) count++
+    expect(count).toBeGreaterThan(1)
+  })
+
+  it("tree.resolve returns a defined node", () => {
+    const tree = elixirLanguage.parser.parse(":atom")
+    const node = tree.resolve(1)
+    expect(node).toBeDefined()
+  })
+
+  it("EditorState handles a transaction", () => {
+    const state = EditorState.create({
+      doc: "x = 1",
+      extensions: [elixir()]
+    })
+    const next = state.update({ changes: { from: 4, insert: "2 + " } }).state
+    expect(next.doc.toString()).toBe("x = 2 + 1")
+  })
 })

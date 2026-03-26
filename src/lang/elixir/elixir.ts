@@ -2,8 +2,9 @@ import {parser} from "./parser"
 import {
   LRLanguage, LanguageSupport,
   continuedIndent, indentNodeProp, foldNodeProp, foldInside,
-  delimitedIndent, flatIndent, TreeIndentContext
+  delimitedIndent, flatIndent,
 } from "../../core/language"
+import type {TreeIndentContext} from "../../core/language"
 import type {SyntaxNode} from "../../parser/common"
 
 function withContinuedStabClause(baseStrategy: (context: TreeIndentContext) => number | null) {
@@ -23,15 +24,6 @@ function withContinuedStabClause(baseStrategy: (context: TreeIndentContext) => n
     }
     return baseStrategy(context)
   }
-}
-
-function foldMap(context: {getChild: (type: string) => {to: number, from: number} | null}) {
-  const open = context.getChild("{")
-  const close = context.getChild("}")
-  if (open && close) {
-    return {from: open.to, to: close.from}
-  }
-  return null
 }
 
 /// Elixir language definition (vendored from livebook-dev/lezer-elixir v1.1.3).
@@ -56,8 +48,7 @@ export const elixirLanguage = LRLanguage.define({
         Pair: continuedIndent(),
       }),
       foldNodeProp.add({
-        "DoBlock Block List Tuple Bitstring AnonymousFunction": foldInside,
-        Map: foldMap as any,
+        "DoBlock Block List Tuple Bitstring AnonymousFunction Map": foldInside,
       })
     ]
   }),
