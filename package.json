@@ -172,6 +172,14 @@
       "types": "./dist/theme/duskmoon.d.ts",
       "import": "./dist/theme/duskmoon.js"
     },
+    "./theme/sunshine": {
+      "types": "./dist/theme/sunshine.d.ts",
+      "import": "./dist/theme/sunshine.js"
+    },
+    "./theme/moonlight": {
+      "types": "./dist/theme/moonlight.d.ts",
+      "import": "./dist/theme/moonlight.js"
+    },
     "./setup": {
       "types": "./dist/setup.d.ts",
       "import": "./dist/setup.js"

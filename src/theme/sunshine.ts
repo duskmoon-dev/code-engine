@@ -24,7 +24,7 @@ const activeLine   = "oklch(97% 0.008 75)",  // active line / gutter highlight
       selectedText = "oklch(15% 0 0)"        // text color on selected autocomplete item
 
 /// The colors used in the Sunshine theme, as CSS color strings.
-export const color = {
+export const sunshineColor = {
   amber,
   coral,
   violet,

@@ -24,7 +24,7 @@ const neutral      = "oklch(85% 0 0)",
       onAccent     = "oklch(98% 0 0)"
 
 /// The colors used in the Moonlight theme, as CSS color strings.
-export const color = {
+export const moonlightColor = {
   neutral, gold, lavender, mauve, mint, periwinkle, warmAmber,
   errorBg, background, panels, activeLine, border, text, stone, selection, cursor, onAccent,
 }
