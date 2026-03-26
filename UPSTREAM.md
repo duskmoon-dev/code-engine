@@ -58,3 +58,5 @@ Last full sync: 2026-03-19
 | core/view/style-mod | marijnh/style-mod | b81da5f | 2026-03-19 |
 | keymaps/vim | replit/codemirror-vim | v6.3.0 | 2026-03-25 |
 | keymaps/emacs | replit/codemirror-emacs | v6.1.0 | 2026-03-25 |
+| lang/elixir | livebook-dev/lezer-elixir | v1.1.3 | 2026-03-26 |
+| lang/elixir (parser) | livebook-dev/lezer-elixir | v1.1.3 | 2026-03-26 |

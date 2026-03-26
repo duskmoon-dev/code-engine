@@ -156,6 +156,10 @@
       "types": "./dist/lang/jinja/index.d.ts",
       "import": "./dist/lang/jinja/index.js"
     },
+    "./lang/elixir": {
+      "types": "./dist/lang/elixir/index.d.ts",
+      "import": "./dist/lang/elixir/index.js"
+    },
     "./lang/lezer": {
       "types": "./dist/lang/lezer/index.d.ts",
       "import": "./dist/lang/lezer/index.js"
