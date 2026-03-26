@@ -82,6 +82,29 @@ describe('playground source validation', () => {
     })
   })
 
+  describe('theme registry consistency', () => {
+    it('all four themes are present as select options and in themes object', () => {
+      const editor = readComponent('EditorDemo.astro')
+      const knownThemes = ['one-dark', 'duskmoon', 'sunshine', 'moonlight']
+      for (const theme of knownThemes) {
+        expect(editor).toContain(`value="${theme}"`)
+        expect(editor).toContain(`'${theme}'`)
+      }
+    })
+
+    it('all theme imports reference valid package exports', () => {
+      const editor = readComponent('EditorDemo.astro')
+      const pkg = JSON.parse(readFileSync(join(rootDir, 'package.json'), 'utf-8'))
+      const exportKeys = Object.keys(pkg.exports)
+
+      const staticImports = [...editor.matchAll(/from '(@duskmoon-dev\/code-engine\/theme\/[^']+)'/g)]
+      for (const [, path] of staticImports) {
+        const subpath = './' + path.replace('@duskmoon-dev/code-engine/', '')
+        expect(exportKeys).toContain(subpath)
+      }
+    })
+  })
+
   describe('ExportList component', () => {
     it('exports descriptions cover all package.json exports', () => {
       const exportList = readComponent('ExportList.astro')

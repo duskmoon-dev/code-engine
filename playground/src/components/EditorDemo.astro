@@ -14,6 +14,8 @@
         <select id="theme-select" aria-label="Select editor theme">
           <option value="one-dark">One Dark</option>
           <option value="duskmoon">DuskMoon</option>
+          <option value="sunshine">Sunshine</option>
+          <option value="moonlight">Moonlight</option>
         </select>
       </label>
     </div>
@@ -137,6 +139,8 @@
   import { highlightSelectionMatches, searchKeymap } from '@duskmoon-dev/code-engine/search'
   import { oneDark } from '@duskmoon-dev/code-engine/theme/one-dark'
   import { duskMoon } from '@duskmoon-dev/code-engine/theme/duskmoon'
+  import { sunshine } from '@duskmoon-dev/code-engine/theme/sunshine'
+  import { moonlight } from '@duskmoon-dev/code-engine/theme/moonlight'
   import { vim } from '@duskmoon-dev/code-engine/keymaps/vim'
   import { emacs } from '@duskmoon-dev/code-engine/keymaps/emacs'
 
@@ -411,6 +415,8 @@ BinaryExpression { expression !add "+" expression }
   const themes: Record<string, any> = {
     'one-dark': oneDark,
     'duskmoon': duskMoon(),
+    'sunshine': sunshine,
+    'moonlight': moonlight,
   }
 
   const languageCompartment = new Compartment()
