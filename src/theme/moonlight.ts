@@ -12,7 +12,7 @@ const neutral      = "oklch(85% 0 0)",
       mint         = "oklch(82% 0.062 133)",
       periwinkle   = "oklch(82% 0.098 241)",
       warmAmber    = "oklch(76% 0.175 62)",
-      muted        = "oklch(46% 0.190 29)",
+      errorBg      = "oklch(46% 0.190 29)",
       background   = "oklch(22% 0.019 238)",
       panels       = "oklch(18% 0.019 238)",
       activeLine   = "oklch(25% 0.019 238)",
@@ -20,12 +20,13 @@ const neutral      = "oklch(85% 0 0)",
       text         = "oklch(77% 0.043 245)",
       stone        = "oklch(50% 0.035 245)",
       selection    = "oklch(35% 0.040 245)",
-      cursor       = neutral
+      cursor       = neutral,
+      onAccent     = "oklch(98% 0 0)"
 
 /// The colors used in the Moonlight theme, as CSS color strings.
 export const color = {
   neutral, gold, lavender, mauve, mint, periwinkle, warmAmber,
-  muted, background, panels, activeLine, border, text, stone, selection, cursor,
+  errorBg, background, panels, activeLine, border, text, stone, selection, cursor, onAccent,
 }
 
 /// Editor theme styles for Moonlight.
@@ -52,7 +53,7 @@ export const moonlightTheme = EditorView.theme({
   ".cm-tooltip .cm-tooltip-arrow:before": {borderTopColor: "transparent", borderBottomColor: "transparent"},
   ".cm-tooltip .cm-tooltip-arrow:after": {borderTopColor: panels, borderBottomColor: panels},
   ".cm-tooltip-autocomplete": {
-    "& > ul > li[aria-selected]": {backgroundColor: lavender, color: "oklch(98% 0 0)"}
+    "& > ul > li[aria-selected]": {backgroundColor: lavender, color: onAccent}
   }
 }, {dark: true})
 
@@ -75,7 +76,7 @@ export const moonlightHighlightStyle = HighlightStyle.define([
   {tag: t.heading,             fontWeight: "bold", color: lavender},
   {tag: [t.atom, t.bool, t.special(t.variableName)],                      color: mauve},
   {tag: [t.processingInstruction, t.string, t.inserted],                  color: mint},
-  {tag: t.invalid,             color: "oklch(98% 0 0)", backgroundColor: muted},
+  {tag: t.invalid,             color: onAccent, backgroundColor: errorBg},
 ])
 
 /// Combined Moonlight editor theme + highlight style.

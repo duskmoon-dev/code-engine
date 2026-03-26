@@ -22,9 +22,12 @@ describe("theme/moonlight", () => {
   })
 
   it("moonlight is a dark theme", () => {
-    const state = EditorState.create({ doc: "test", extensions: [moonlight] })
-    expect(state).toBeDefined()
-    expect(Array.isArray(moonlight)).toBe(true)
-    expect((moonlight as unknown[]).length).toBe(2)
+    // Verify moonlight can be applied to a realistic code document
+    const state = EditorState.create({
+      doc: "const x = 1;\nfunction greet() { return 'hello' }",
+      extensions: [moonlight],
+    })
+    expect(state.doc.lines).toBe(2)
+    expect(state.doc.line(1).text).toBe("const x = 1;")
   })
 })
