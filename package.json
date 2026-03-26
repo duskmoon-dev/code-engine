@@ -160,6 +160,10 @@
       "types": "./dist/lang/elixir/index.d.ts",
       "import": "./dist/lang/elixir/index.js"
     },
+    "./lang/erlang": {
+      "types": "./dist/lang/erlang/index.d.ts",
+      "import": "./dist/lang/erlang/index.js"
+    },
     "./lang/lezer": {
       "types": "./dist/lang/lezer/index.d.ts",
       "import": "./dist/lang/lezer/index.js"
