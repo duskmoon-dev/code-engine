@@ -1,6 +1,6 @@
 {
   "name": "@duskmoon-dev/code-engine",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Deep fork of CodeMirror 6 + Lezer ecosystem — single package, zero dependencies",
   "type": "module",
   "license": "MIT",
@@ -10,7 +10,14 @@
   },
   "homepage": "https://duskmoon-dev.github.io/code-engine/",
   "bugs": "https://github.com/duskmoon-dev/code-engine/issues",
-  "keywords": ["codemirror", "editor", "code-editor", "lezer", "syntax-highlighting", "language-support"],
+  "keywords": [
+    "codemirror",
+    "editor",
+    "code-editor",
+    "lezer",
+    "syntax-highlighting",
+    "language-support"
+  ],
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
@@ -185,7 +192,9 @@
       "import": "./dist/keymaps/emacs/index.js"
     }
   },
-  "workspaces": ["playground"],
+  "workspaces": [
+    "playground"
+  ],
   "files": [
     "dist",
     "LICENSE",
