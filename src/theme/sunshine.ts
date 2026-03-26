@@ -1,4 +1,4 @@
-// [DUSKMOON] Sunshine theme — light palette from @duskmoon-dev/core
+// Sunshine theme — light palette from @duskmoon-dev/core
 import {EditorView} from "../core/view"
 import {Extension} from "../core/state"
 import {HighlightStyle, syntaxHighlighting} from "../core/language"
@@ -19,6 +19,27 @@ const amber        = "oklch(72% 0.17 75)",    // primary — warm amber
       highlight    = "oklch(85% 0.10 75)",    // search highlight
       selection    = "oklch(80% 0.08 75)"     // selection amber-tinted
 
+const activeLine   = "oklch(97% 0.008 75)",  // active line / gutter highlight
+      border       = "oklch(88% 0.01 255)",  // panel borders and tooltip border
+      selectedText = "oklch(15% 0 0)"        // text color on selected autocomplete item
+
+/// The colors used in the Sunshine theme, as CSS color strings.
+export const color = {
+  amber,
+  coral,
+  violet,
+  mint,
+  gold,
+  sky,
+  error,
+  background,
+  panels,
+  text,
+  stone,
+  highlight,
+  selection,
+}
+
 /// Editor theme styles for Sunshine.
 export const sunshineTheme = EditorView.theme({
   "&": {color: text, backgroundColor: background},
@@ -27,23 +48,23 @@ export const sunshineTheme = EditorView.theme({
   "&.cm-focused > .cm-scroller > .cm-selectionLayer .cm-selectionBackground, .cm-selectionBackground, .cm-content ::selection":
     {backgroundColor: `color-mix(in oklch, ${selection} 35%, transparent)`},
   ".cm-panels": {backgroundColor: panels, color: text},
-  ".cm-panels.cm-panels-top": {borderBottom: "1px solid oklch(88% 0.01 255)"},
-  ".cm-panels.cm-panels-bottom": {borderTop: "1px solid oklch(88% 0.01 255)"},
+  ".cm-panels.cm-panels-top": {borderBottom: `1px solid ${border}`},
+  ".cm-panels.cm-panels-bottom": {borderTop: `1px solid ${border}`},
   ".cm-searchMatch": {backgroundColor: `color-mix(in oklch, ${highlight} 40%, transparent)`,
     outline: `1px solid ${highlight}`},
   ".cm-searchMatch.cm-searchMatch-selected": {backgroundColor: `color-mix(in oklch, ${amber} 30%, transparent)`},
-  ".cm-activeLine": {backgroundColor: "oklch(97% 0.008 75)"},
+  ".cm-activeLine": {backgroundColor: activeLine},
   ".cm-selectionMatch": {backgroundColor: `color-mix(in oklch, ${amber} 15%, transparent)`},
   "&.cm-focused .cm-matchingBracket, &.cm-focused .cm-nonmatchingBracket":
     {backgroundColor: `color-mix(in oklch, ${amber} 25%, transparent)`},
   ".cm-gutters": {backgroundColor: background, color: stone, border: "none"},
-  ".cm-activeLineGutter": {backgroundColor: "oklch(97% 0.008 75)"},
+  ".cm-activeLineGutter": {backgroundColor: activeLine},
   ".cm-foldPlaceholder": {backgroundColor: "transparent", border: "none", color: stone},
-  ".cm-tooltip": {border: "1px solid oklch(88% 0.01 255)", backgroundColor: background},
+  ".cm-tooltip": {border: `1px solid ${border}`, backgroundColor: background},
   ".cm-tooltip .cm-tooltip-arrow:before": {borderTopColor: "transparent", borderBottomColor: "transparent"},
   ".cm-tooltip .cm-tooltip-arrow:after": {borderTopColor: background, borderBottomColor: background},
   ".cm-tooltip-autocomplete": {
-    "& > ul > li[aria-selected]": {backgroundColor: amber, color: "oklch(15% 0 0)"}
+    "& > ul > li[aria-selected]": {backgroundColor: amber, color: selectedText}
   }
 }, {dark: false})
 
