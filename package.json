@@ -168,6 +168,10 @@
       "types": "./dist/lang/heex/index.d.ts",
       "import": "./dist/lang/heex/index.js"
     },
+    "./lang/zig": {
+      "types": "./dist/lang/zig/index.d.ts",
+      "import": "./dist/lang/zig/index.js"
+    },
     "./lang/lezer": {
       "types": "./dist/lang/lezer/index.d.ts",
       "import": "./dist/lang/lezer/index.js"

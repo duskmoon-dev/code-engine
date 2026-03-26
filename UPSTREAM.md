@@ -60,3 +60,5 @@ Last full sync: 2026-03-19
 | keymaps/emacs | replit/codemirror-emacs | v6.1.0 | 2026-03-25 |
 | lang/elixir | livebook-dev/lezer-elixir | v1.1.3 | 2026-03-26 |
 | lang/elixir (parser) | livebook-dev/lezer-elixir | v1.1.3 | 2026-03-26 |
+| lang/zig | nDimensional/lezer-zig | v0.1.0 | 2026-03-26 |
+| lang/zig (parser) | nDimensional/lezer-zig | v0.1.0 | 2026-03-26 |
