@@ -15,7 +15,7 @@ const dartKeywords = new Set([
 
 const dartBuiltins = new Set([
   "bool", "double", "int", "num", "String", "List", "Map", "Set", "Iterable",
-  "Future", "Stream", "Object", "dynamic", "Never", "Null", "Type", "Symbol"
+  "Future", "Stream", "Object", "Never", "Null", "Type", "Symbol"
 ])
 
 interface DartState {
@@ -40,7 +40,7 @@ const dartStream = {
 
     // Inside a string (handles only simple single-line strings; not multi-line)
     if (state.inString) {
-      if (stream.eat(state.inString as string)) { state.inString = null; return "string" }
+      if (stream.match(state.inString)) { state.inString = null; return "string" }
       if (stream.eat("\\")) stream.next()
       else if (stream.match("${")) {
         // string interpolation start — we don't track depth here, just highlight as string
@@ -93,7 +93,6 @@ const dartStream = {
     return null
   },
 
-  blankLine(_state: DartState) {},
 }
 
 /// Dart language definition using StreamLanguage.
