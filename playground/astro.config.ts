@@ -63,7 +63,7 @@ export default defineConfig({
     resolve: {
       // .grammar.js files use bare relative imports (e.g. '../html') that
       // resolve to TypeScript index files — ensure Vite tries .ts before .js
-      extensions: ['.mjs', '.js', '.mts', '.ts', '.jsx', '.tsx', '.json'],
+      extensions: ['.mts', '.ts', '.mjs', '.js', '.jsx', '.tsx', '.json'],
     },
     build: {
       rollupOptions: {
