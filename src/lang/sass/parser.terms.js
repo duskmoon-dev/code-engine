@@ -1,0 +1,22 @@
+// This file was generated to provide parser term constants.
+export const
+  Dialect_indented = 0,
+  InterpolationEnd = 1,
+  InterpolationContinue = 2,
+  Unit = 3,
+  VariableName = 4,
+  InterpolationStart = 5,
+  LineComment = 6,
+  Comment = 7,
+  IndentedMixin = 8,
+  IndentedInclude = 9,
+  indent = 168,
+  dedent = 169,
+  descendantOp = 170,
+  callee = 171,
+  identifier = 172,
+  queryIdentifier = 173,
+  newline = 174,
+  blankLineStart = 175,
+  eof = 176,
+  whitespace = 177
