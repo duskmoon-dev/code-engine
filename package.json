@@ -1,6 +1,6 @@
 {
   "name": "@duskmoon-dev/code-engine",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "Deep fork of CodeMirror 6 + Lezer ecosystem — single package, zero dependencies",
   "type": "module",
   "license": "MIT",
