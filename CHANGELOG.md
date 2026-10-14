@@ -23,6 +23,12 @@
 - Behavioral tests for `history` module: `addMapping`, `eqSelectionShape`, undo/redo selection
 - Behavioral tests for `completeAnyWord`: dedup, ignoreAt, large docs with tree structure
 
+## 0.3.1 (2026-10-15)
+
+### Fixes
+
+- Fix a crash when multiple editors mount in separate ShadowRoots and reuse an adopted stylesheet (#9).
+
 ## 0.1.0 (2026-03-19)
 
 Initial release — deep fork of CodeMirror 6 + Lezer ecosystem.
