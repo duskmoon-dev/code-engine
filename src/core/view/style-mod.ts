@@ -76,7 +76,8 @@ class StyleSet {
     let doc = root.ownerDocument || root, win = doc.defaultView
     if (!root.head && root.adoptedStyleSheets && win.CSSStyleSheet) {
       let adopted = adoptedSet.get(doc)
-      if (adopted) { (root as any)[SET] = adopted; return }
+      // [DUSKMOON] Return the shared set so mount uses its initialized stylesheet.
+      if (adopted) { (root as any)[SET] = adopted; return adopted }
       this.sheet = new win.CSSStyleSheet()
       adoptedSet.set(doc, this)
     } else {
